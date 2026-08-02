@@ -1,0 +1,50 @@
+{
+  "site": {
+    "name": "ArenaHub"
+  },
+  "nav": {
+    "home": "Ana Səhifə",
+    "matches": "Matçlar",
+    "results": "Nəticələr",
+    "live": "Canlı",
+    "teams": "Komandalar",
+    "players": "Oyunçular",
+    "news": "Xəbərlər",
+    "events": "Turnirlər",
+    "stats": "Statistika",
+    "local": "Yerli Səhnə"
+  },
+  "footer": {
+    "rights": "Bütün hüquqlar qorunur."
+  },
+  "home": {
+    "title": "Esports dünyası bir yerdə",
+    "subtitle": "Canlı matçlar, statistika və xəbərlər"
+  },
+  "local": {
+    "title": "Yerli Səhnə",
+    "subtitle": "Azərbaycanın esports icması — komandalar, oyunçular və xəbərlər bir yerdə",
+    "teams": "Azərbaycan komandaları",
+    "players": "Azərbaycan oyunçuları",
+    "news": "Yerli xəbərlər",
+    "empty": "Hələ məlumat yoxdur."
+  },
+  "match": {
+    "mvp": "Matçın MVP-si"
+  },
+  "auth": {
+    "team": "Komanda yarat",
+    "player": "Oyunçu yarat",
+    "fan": "İzləyici ol",
+    "login": "Giriş",
+    "register": "Qeydiyyat"
+  },
+  "predictions": {
+    "title": "Lider Cədvəli",
+    "subtitle": "Ən dəqiq matç proqnozları verən izləyicilər",
+    "rank": "Sıra",
+    "username": "İstifadəçi",
+    "points": "Xal",
+    "empty": "Hələ heç kim xal qazanmayıb."
+  }
+}

@@ -1,0 +1,108 @@
+@import "tailwindcss";
+@import "flag-icons/css/flag-icons.min.css";
+
+:root {
+  --background: #0a0b10;
+  --surface: #111319;
+  --surface-raised: #171a22;
+  --border-subtle: #262b38;
+  --foreground: #e7e9ee;
+  --foreground-muted: #8b93a7;
+
+  --brand-from: #7c3aed;
+  --brand-via: #d946ef;
+  --brand-to: #22d3ee;
+
+  --live: #ef4444;
+
+  /* Overridden per-section via inline style using Game.accentColor */
+  --game-accent: var(--brand-via);
+
+  --font-display: var(--font-space-grotesk);
+  --font-sans: var(--font-inter);
+}
+
+:root[data-theme="light"] {
+  --background: #f6f6fb;
+  --surface: #ffffff;
+  --surface-raised: #f0f0f7;
+  --border-subtle: #e2e2ec;
+  --foreground: #14141f;
+  --foreground-muted: #5c5f70;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border-subtle: var(--border-subtle);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+
+  --color-brand-from: var(--brand-from);
+  --color-brand-via: var(--brand-via);
+  --color-brand-to: var(--brand-to);
+  --color-live: var(--live);
+  --color-game-accent: var(--game-accent);
+
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+
+  --animate-glow-pulse: glow-pulse 2s ease-in-out infinite;
+  --animate-score-pop: score-pop 0.35s ease-out;
+
+  @keyframes glow-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 color-mix(in oklab, var(--live) 55%, transparent);
+    }
+    50% {
+      box-shadow: 0 0 0 6px color-mix(in oklab, var(--live) 0%, transparent);
+    }
+  }
+
+  @keyframes score-pop {
+    0% {
+      transform: scale(1.35);
+      color: var(--game-accent);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+}
+
+.brand-gradient-text {
+  background: linear-gradient(
+    90deg,
+    var(--brand-from),
+    var(--brand-via),
+    var(--brand-to)
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.brand-gradient-bg {
+  background: linear-gradient(
+    90deg,
+    var(--brand-from),
+    var(--brand-via),
+    var(--brand-to)
+  );
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

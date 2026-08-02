@@ -1,0 +1,50 @@
+{
+  "site": {
+    "name": "ArenaHub"
+  },
+  "nav": {
+    "home": "Home",
+    "matches": "Matches",
+    "results": "Results",
+    "live": "Live",
+    "teams": "Teams",
+    "players": "Players",
+    "news": "News",
+    "events": "Events",
+    "stats": "Stats",
+    "local": "Local Scene"
+  },
+  "footer": {
+    "rights": "All rights reserved."
+  },
+  "home": {
+    "title": "Esports, all in one place",
+    "subtitle": "Live matches, stats and news"
+  },
+  "local": {
+    "title": "Local Scene",
+    "subtitle": "Azerbaijan's esports community — teams, players and news in one place",
+    "teams": "Azerbaijani teams",
+    "players": "Azerbaijani players",
+    "news": "Local news",
+    "empty": "No data yet."
+  },
+  "match": {
+    "mvp": "Match MVP"
+  },
+  "auth": {
+    "team": "Create Team",
+    "player": "Create Player",
+    "fan": "Become a Fan",
+    "login": "Login",
+    "register": "Register"
+  },
+  "predictions": {
+    "title": "Leaderboard",
+    "subtitle": "Fans with the sharpest match predictions",
+    "rank": "Rank",
+    "username": "User",
+    "points": "Points",
+    "empty": "No one has scored points yet."
+  }
+}

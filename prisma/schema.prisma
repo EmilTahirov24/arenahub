@@ -1,0 +1,444 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Enums ----------
+
+enum MatchStatus {
+  UPCOMING
+  LIVE
+  FINISHED
+  POSTPONED
+  CANCELLED
+}
+
+enum MapStatus {
+  UPCOMING
+  LIVE
+  FINISHED
+}
+
+enum VetoAction {
+  BAN
+  PICK
+  DECIDER
+}
+
+enum TournamentTier {
+  S
+  A
+  B
+  C
+}
+
+enum TournamentStatus {
+  UPCOMING
+  ONGOING
+  FINISHED
+}
+
+enum PlayerStatus {
+  ACTIVE
+  BENCHED
+  RETIRED
+}
+
+enum AdPlacement {
+  HEADER
+  SIDEBAR_LEFT
+  SIDEBAR_RIGHT_TOP
+  SIDEBAR_RIGHT_BOTTOM
+  IN_CONTENT
+  MATCH_PAGE_TOP
+  FOOTER
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  EDITOR
+}
+
+// ---------- Core entities ----------
+
+model Game {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  shortName   String
+  accentColor String
+  logoUrl     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  teams        Team[]
+  players      Player[]
+  tournaments  Tournament[]
+  matches      Match[]
+  newsArticles NewsArticle[]
+}
+
+model Team {
+  id             String    @id @default(cuid())
+  slug           String    @unique
+  name           String
+  logoUrl        String?
+  country        String?
+  worldRanking   Int?
+  primaryColor   String?
+  secondaryColor String?
+  description    String?
+  isActive       Boolean   @default(true)
+  foundedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  email         String?  @unique
+  passwordHash  String?
+  isClaimed     Boolean  @default(false)
+  emailVerified Boolean  @default(false)
+
+  failedLoginAttempts Int       @default(0)
+  lockUntil           DateTime?
+
+  resetToken       String?   @unique
+  resetTokenExpiry DateTime?
+
+  verifyToken       String?   @unique
+  verifyTokenExpiry DateTime?
+
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id])
+
+  memberships       TeamMembership[]
+  tournamentEntries TournamentParticipant[]
+  homeMatches       Match[]                 @relation("TeamAMatches")
+  awayMatches       Match[]                 @relation("TeamBMatches")
+  wonMatches        Match[]                 @relation("MatchWinner")
+  wonMaps           MatchMap[]              @relation("MapWinner")
+  vetoSteps         MatchVetoStep[]
+  playerStats       PlayerMatchStat[]
+  relatedNews       NewsArticle[]
+  predictedInMatches MatchPrediction[]      @relation("PredictionPick")
+
+  @@index([gameId])
+}
+
+model Player {
+  id        String       @id @default(cuid())
+  slug      String       @unique
+  nickname  String
+  firstName String?
+  lastName  String?
+  country   String?
+  birthDate DateTime?
+  photoUrl  String?
+  role      String?
+  status    PlayerStatus @default(ACTIVE)
+  socials   Json?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  email         String?  @unique
+  passwordHash  String?
+  isClaimed     Boolean  @default(false)
+  emailVerified Boolean  @default(false)
+
+  failedLoginAttempts Int       @default(0)
+  lockUntil           DateTime?
+
+  resetToken       String?   @unique
+  resetTokenExpiry DateTime?
+
+  verifyToken       String?   @unique
+  verifyTokenExpiry DateTime?
+
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id])
+
+  memberships TeamMembership[]
+  stats       PlayerMatchStat[]
+
+  @@index([gameId])
+}
+
+model TeamMembership {
+  id        String    @id @default(cuid())
+  joinedAt  DateTime  @default(now())
+  leftAt    DateTime?
+  isStandin Boolean   @default(false)
+  isCoach   Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  teamId   String
+  team     Team   @relation(fields: [teamId], references: [id])
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id])
+
+  @@index([teamId])
+  @@index([playerId])
+}
+
+model Tournament {
+  id        String           @id @default(cuid())
+  slug      String           @unique
+  name      String
+  logoUrl   String?
+  tier      TournamentTier   @default(B)
+  startDate DateTime
+  endDate   DateTime
+  location  String?
+  prizePool String?
+  format    String?
+  status    TournamentStatus @default(UPCOMING)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id])
+
+  participants TournamentParticipant[]
+  matches      Match[]
+
+  @@index([gameId])
+}
+
+model TournamentParticipant {
+  id        String @id @default(cuid())
+  seed      Int?
+  placement Int?
+
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  teamId       String
+  team         Team       @relation(fields: [teamId], references: [id])
+
+  @@unique([tournamentId, teamId])
+}
+
+model Match {
+  id          String      @id @default(cuid())
+  slug        String      @unique
+  scheduledAt DateTime
+  status      MatchStatus @default(UPCOMING)
+  bestOf      Int         @default(1)
+  teamAScore  Int         @default(0)
+  teamBScore  Int         @default(0)
+  stage       String?
+  isFeatured  Boolean     @default(false)
+  starRating  Int         @default(1)
+  streamUrl   String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id])
+
+  tournamentId String?
+  tournament   Tournament? @relation(fields: [tournamentId], references: [id])
+
+  teamAId String
+  teamA   Team   @relation("TeamAMatches", fields: [teamAId], references: [id])
+  teamBId String
+  teamB   Team   @relation("TeamBMatches", fields: [teamBId], references: [id])
+
+  winnerId String?
+  winner   Team?   @relation("MatchWinner", fields: [winnerId], references: [id])
+
+  maps         MatchMap[]
+  vetoSteps    MatchVetoStep[]
+  playerStats  PlayerMatchStat[]
+  newsArticles NewsArticle[]
+  predictions  MatchPrediction[]
+
+  @@index([gameId])
+  @@index([tournamentId])
+  @@index([status, scheduledAt])
+}
+
+model MatchVetoStep {
+  id      String     @id @default(cuid())
+  order   Int
+  action  VetoAction
+  mapName String
+
+  matchId String
+  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  teamId String?
+  team   Team?   @relation(fields: [teamId], references: [id])
+
+  @@index([matchId])
+}
+
+model MatchMap {
+  id              String    @id @default(cuid())
+  mapOrder        Int
+  mapName         String
+  teamAScore      Int       @default(0)
+  teamBScore      Int       @default(0)
+  status          MapStatus @default(UPCOMING)
+  durationMinutes Int?
+
+  matchId String
+  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  winnerId String?
+  winner   Team?   @relation("MapWinner", fields: [winnerId], references: [id])
+
+  playerStats PlayerMatchStat[]
+
+  @@unique([matchId, mapOrder])
+}
+
+/// Generic top-level columns cover the stats every game shares (kills/deaths/assists/rating)
+/// so leaderboards can sort on real indexed columns; game-specific numbers (ADR, GPM, ACS, CS...)
+/// live in `coreStats` so new games don't require new tables/migrations.
+model PlayerMatchStat {
+  id        String @id @default(cuid())
+  kills     Int    @default(0)
+  deaths    Int    @default(0)
+  assists   Int    @default(0)
+  rating    Float?
+  coreStats Json?
+
+  matchId String
+  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  mapId String?
+  map   MatchMap? @relation(fields: [mapId], references: [id], onDelete: Cascade)
+
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id])
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  @@index([matchId])
+  @@index([playerId])
+  @@index([mapId])
+}
+
+model NewsArticle {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  coverImageUrl String?
+  tags          String[]
+  publishedAt   DateTime?
+  isFeatured    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  authorId String
+  author   AdminUser @relation(fields: [authorId], references: [id])
+
+  gameId String?
+  game   Game?   @relation(fields: [gameId], references: [id])
+
+  relatedTeamId String?
+  relatedTeam   Team?   @relation(fields: [relatedTeamId], references: [id])
+
+  relatedMatchId String?
+  relatedMatch   Match?  @relation(fields: [relatedMatchId], references: [id])
+
+  translations NewsArticleTranslation[]
+
+  @@index([gameId])
+  @@index([publishedAt])
+}
+
+/// One row per locale ("az" | "en") so UI language and article language stay independent;
+/// Team/Player/Tournament names are proper nouns and intentionally not translated.
+model NewsArticleTranslation {
+  id       String  @id @default(cuid())
+  locale   String
+  title    String
+  excerpt  String?
+  bodyHtml String
+
+  articleId String
+  article   NewsArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, locale])
+}
+
+model AdBanner {
+  id          String      @id @default(cuid())
+  name        String
+  placement   AdPlacement
+  imageUrl    String
+  linkUrl     String
+  altText     String?
+  startDate   DateTime    @default(now())
+  endDate     DateTime?
+  weight      Int         @default(1)
+  isActive    Boolean     @default(true)
+  impressions Int         @default(0)
+  clicks      Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([placement, isActive])
+}
+
+model Fan {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  points       Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  emailVerified Boolean @default(false)
+
+  failedLoginAttempts Int       @default(0)
+  lockUntil           DateTime?
+
+  resetToken       String?   @unique
+  resetTokenExpiry DateTime?
+
+  verifyToken       String?   @unique
+  verifyTokenExpiry DateTime?
+
+  predictions MatchPrediction[]
+}
+
+model MatchPrediction {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  matchId String
+  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  fanId String
+  fan   Fan    @relation(fields: [fanId], references: [id], onDelete: Cascade)
+
+  predictedWinnerId String
+  predictedWinner   Team   @relation("PredictionPick", fields: [predictedWinnerId], references: [id])
+
+  @@unique([matchId, fanId])
+  @@index([matchId])
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         AdminRole @default(EDITOR)
+  createdAt    DateTime  @default(now())
+  lastLoginAt  DateTime?
+
+  failedLoginAttempts Int       @default(0)
+  lockUntil           DateTime?
+
+  newsArticles NewsArticle[]
+}
