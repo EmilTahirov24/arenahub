@@ -117,7 +117,7 @@ const ROLE_POOL: Record<string, string[]> = {
  * Roles are left empty rather than guessed. Rosters are a snapshot and go stale
  * as players transfer — they are maintained from the admin panel.
  */
-const REAL_CS2_TEAMS: { name: string; country: string; earnings?: number; players: string[] }[] = [
+const REAL_CS2_TEAMS: { name: string; country: string | null; earnings?: number; players: string[] }[] = [
   { name: "Vitality", country: "FR", earnings: 1_082_500, players: ["apEX", "ropz", "ZywOo", "flameZ", "mezii"] },
   { name: "Falcons", country: "SA", earnings: 789_000, players: ["NiKo", "karrigan", "TeSeS", "m0NESY", "kyousuke"] },
   { name: "Spirit", country: "RU", earnings: 568_188, players: ["sh1ro", "magixx", "zont1x", "tN1R", "donk"] },
@@ -143,6 +143,133 @@ const REAL_CS2_TEAMS: { name: string; country: string; earnings?: number; player
   { name: "MIBR", country: "BR", players: ["nqz", "LNZ", "brnz4n", "venomzera", "insani"] },
   { name: "Alliance", country: "SE", players: ["twist", "eraa", "bobeksde", "upE", "Avid"] },
   { name: "TYLOO", country: "CN", players: ["JamYoung", "Jee", "Mercury", "Moseyuh", "Zero"] },
+  // Teams that appear in the recorded results below but not in the ranking the
+  // owner supplied. Country and roster are left blank rather than guessed —
+  // both are one edit away in the admin panel.
+  { name: "paiN", country: null, players: [] },
+  { name: "Liquid", country: null, players: [] },
+  { name: "Lynn Vision", country: null, players: [] },
+  { name: "M80", country: null, players: [] },
+  { name: "Monte", country: null, players: [] },
+];
+
+/**
+ * Real CS2 tournaments and results, supplied by the site owner from a public
+ * source. Only what was actually shown is recorded:
+ *
+ *  - series scores, not map scores — the individual maps were not in the source,
+ *    so no MatchMap rows are created and the map columns stay empty;
+ *  - no extra matches are invented to round out the table. The owner asked for
+ *    filler results, but a fabricated scoreline is a false claim about two real
+ *    organisations. The 23 real results below are enough for a genuine ranking;
+ *  - no MVP awards, for the same reason — that is an award given to a real
+ *    person, not something to estimate.
+ *
+ * Dates are approximate (the source showed no exact dates) and only need to be
+ * in the right order for the rating replay. Edit them in the admin panel.
+ */
+type SeedTournament = {
+  name: string;
+  prizePool: string;
+  daysAgo: number;
+  prizes: { placeFrom: number; placeTo: number; amount: number; label?: string }[];
+  /** placement -> team names finishing there */
+  placements: { place: number; teams: string[] }[];
+  /** [teamA, scoreA, scoreB, teamB, bestOf] */
+  matches: [string, number, number, string, number][];
+};
+
+const CS2_TOURNAMENTS: SeedTournament[] = [
+  {
+    name: "Intel Extreme Masters Cologne Major 2026",
+    prizePool: "$1 170 000",
+    daysAgo: 24,
+    prizes: [
+      { placeFrom: 1, placeTo: 1, amount: 500_000, label: "Winner" },
+      { placeFrom: 2, placeTo: 2, amount: 170_000 },
+      { placeFrom: 3, placeTo: 4, amount: 80_000 },
+      { placeFrom: 5, placeTo: 8, amount: 45_000 },
+      { placeFrom: 9, placeTo: 11, amount: 20_000 },
+      { placeFrom: 12, placeTo: 14, amount: 20_000 },
+    ],
+    placements: [
+      { place: 1, teams: ["Falcons"] },
+      { place: 2, teams: ["FURIA"] },
+      { place: 3, teams: ["Spirit", "Aurora"] },
+      { place: 5, teams: ["G2", "Vitality", "BetBoom", "9z"] },
+      { place: 9, teams: ["Natus Vincere", "FUT", "The MongolZ"] },
+      { place: 12, teams: ["Monte", "Legacy", "MOUZ"] },
+    ],
+    matches: [
+      ["FURIA", 0, 3, "Falcons", 5],
+      ["Falcons", 2, 1, "Spirit", 3],
+      ["FURIA", 2, 0, "Aurora", 3],
+      ["Vitality", 1, 2, "Falcons", 3],
+      ["Spirit", 2, 1, "G2", 3],
+      ["FURIA", 2, 1, "9z", 3],
+      ["Aurora", 2, 0, "BetBoom", 3],
+      ["Natus Vincere", 1, 2, "G2", 3],
+    ],
+  },
+  {
+    name: "CS Asia Championships 2026",
+    prizePool: "$1 000 000",
+    daysAgo: 14,
+    prizes: [
+      { placeFrom: 1, placeTo: 1, amount: 150_000, label: "Winner" },
+      { placeFrom: 2, placeTo: 2, amount: 70_000 },
+      { placeFrom: 3, placeTo: 3, amount: 60_000 },
+      { placeFrom: 4, placeTo: 4, amount: 40_000 },
+      { placeFrom: 5, placeTo: 6, amount: 20_000 },
+      { placeFrom: 7, placeTo: 8, amount: 10_000 },
+      { placeFrom: 9, placeTo: 12, amount: 4_000 },
+    ],
+    placements: [
+      { place: 1, teams: ["Legacy"] },
+      { place: 2, teams: ["Falcons"] },
+      { place: 3, teams: ["MOUZ"] },
+      { place: 4, teams: ["MIBR"] },
+      { place: 5, teams: ["The MongolZ", "B8"] },
+      { place: 7, teams: ["PARIVISION", "paiN"] },
+      { place: 9, teams: ["TYLOO", "Lynn Vision", "Liquid", "M80"] },
+    ],
+    matches: [
+      ["Falcons", 1, 3, "Legacy", 5],
+      ["MOUZ", 2, 0, "MIBR", 3],
+      ["MIBR", 0, 2, "Legacy", 3],
+      ["Falcons", 2, 1, "MOUZ", 3],
+      ["Legacy", 2, 1, "The MongolZ", 3],
+      ["B8", 0, 2, "MOUZ", 3],
+      ["The MongolZ", 2, 0, "PARIVISION", 3],
+      ["MOUZ", 2, 0, "paiN", 3],
+    ],
+  },
+  {
+    name: "BLAST Bounty Summer 2026",
+    prizePool: "$740 000",
+    daysAgo: 3,
+    prizes: [
+      { placeFrom: 1, placeTo: 1, amount: 226_563, label: "Winner" },
+      { placeFrom: 2, placeTo: 2, amount: 57_188 },
+      { placeFrom: 3, placeTo: 4, amount: 28_125 },
+      { placeFrom: 5, placeTo: 8, amount: 41_250 },
+    ],
+    placements: [
+      { place: 1, teams: ["MOUZ"] },
+      { place: 2, teams: ["Spirit"] },
+      { place: 3, teams: ["FaZe", "Astralis"] },
+      { place: 5, teams: ["Liquid", "3DMAX", "paiN", "The MongolZ"] },
+    ],
+    matches: [
+      ["Spirit", 1, 3, "MOUZ", 5],
+      ["Astralis", 1, 2, "MOUZ", 3],
+      ["Spirit", 2, 1, "FaZe", 3],
+      ["paiN", 1, 2, "Astralis", 3],
+      ["FaZe", 2, 1, "The MongolZ", 3],
+      ["3DMAX", 1, 2, "MOUZ", 3],
+      ["Liquid", 0, 2, "Spirit", 3],
+    ],
+  },
 ];
 
 /**
@@ -272,6 +399,8 @@ async function main() {
           await prisma.teamMembership.create({ data: { teamId: team.id, playerId: player.id } });
         }
       }
+
+      await seedCs2Tournaments(game.id);
       continue;
     }
 
@@ -607,6 +736,80 @@ async function main() {
 
   console.log("Seed tamamlandı.");
   console.log(`Admin login: ${adminEmail} / ${adminPassword}`);
+}
+
+/**
+ * Real tournaments, results, prize breakdowns and finishing places.
+ *
+ * Series scores only: the source showed how many maps each side won but not the
+ * individual maps, so `Match.teamAScore/teamBScore/winnerId` are set directly
+ * and no MatchMap rows are created. The map columns on the stats page correctly
+ * stay empty rather than being filled with scores nobody recorded.
+ */
+async function seedCs2Tournaments(gameId: string) {
+  const teamByName = new Map(
+    (await prisma.team.findMany({ where: { gameId }, select: { id: true, name: true, slug: true } })).map((t) => [
+      t.name,
+      t,
+    ]),
+  );
+
+  for (const def of CS2_TOURNAMENTS) {
+    const start = daysFromNow(-def.daysAgo - 4);
+    const end = daysFromNow(-def.daysAgo);
+
+    const tournament = await prisma.tournament.create({
+      data: {
+        slug: slugify(def.name),
+        name: def.name,
+        gameId,
+        tier: "S",
+        startDate: start,
+        endDate: end,
+        prizePool: def.prizePool,
+        status: "FINISHED",
+      },
+    });
+
+    await prisma.tournamentPrize.createMany({
+      data: def.prizes.map((p) => ({ ...p, tournamentId: tournament.id })),
+    });
+
+    let seed = 1;
+    for (const row of def.placements) {
+      for (const name of row.teams) {
+        const team = teamByName.get(name);
+        if (!team) throw new Error(`Seed: komanda tapılmadı — ${name}`);
+        await prisma.tournamentParticipant.create({
+          data: { tournamentId: tournament.id, teamId: team.id, seed: seed++, placement: row.place },
+        });
+      }
+    }
+
+    let order = 0;
+    for (const [aName, aScore, bScore, bName, bestOf] of def.matches) {
+      const a = teamByName.get(aName);
+      const b = teamByName.get(bName);
+      if (!a || !b) throw new Error(`Seed: matç komandası tapılmadı — ${aName} / ${bName}`);
+      await prisma.match.create({
+        data: {
+          slug: `${a.slug}-vs-${b.slug}-${tournament.id.slice(-5)}-${order}`,
+          gameId,
+          tournamentId: tournament.id,
+          teamAId: a.id,
+          teamBId: b.id,
+          scheduledAt: daysFromNow(-def.daysAgo - 3, order),
+          status: "FINISHED",
+          bestOf,
+          starRating: 5,
+          teamAScore: aScore,
+          teamBScore: bScore,
+          winnerId: aScore > bScore ? a.id : b.id,
+        },
+      });
+      order++;
+    }
+  }
 }
 
 /** Same replay the app uses, sharing the formula from lib/elo.ts. */
