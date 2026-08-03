@@ -125,9 +125,7 @@ const ROLE_POOL: Record<string, string[]> = {
 const REAL_CS2_TEAMS: { name: string; country: string; players: string[] }[] = [
   { name: "Spirit", country: "RU", players: ["Sh1ro", "Magixx", "Zont1x", "TN1R", "Donk"] },
   { name: "Falcons", country: "SA", players: ["NiKo", "karrigan", "TeSeS", "m0NESY", "kyousuke"] },
-  // The screenshot truncated MOUZ's fourth player to "PR"; four confirmed names
-  // are better than one invented one. Add the fifth from the admin panel.
-  { name: "MOUZ", country: "DE", players: ["Spinx", "torzsi", "xertioN", "xelex"] },
+  { name: "MOUZ", country: "DE", players: ["Spinx", "torzsi", "xertioN", "PR", "xelex"] },
   { name: "9z", country: "AR", players: ["meyern", "max", "luchov", "dgt", "HUASOPEEK"] },
   { name: "Vitality", country: "FR", players: ["apEX", "ropz", "ZywOo", "flameZ", "mezii"] },
   { name: "Natus Vincere", country: "UA", players: ["Aleksib", "b1t", "iM", "w0nderful", "makazze"] },
