@@ -168,6 +168,7 @@ const CS2_PLAYER_STATS: Record<string, [number, number, number, number]> = {
   flameZ: [88, 0.74, 0.66, 79.03],
   xertioN: [109, 0.72, 0.66, 84.78],
   luchov: [65, 0.74, 0.69, 83.2],
+  KSCERATO: [97, 0.74, 0.61, 80.22],
 };
 
 function randomTeamStat(rating: number) {
