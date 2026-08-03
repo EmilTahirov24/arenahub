@@ -46,6 +46,16 @@ export default async function TeamsPage({
     },
   });
 
+  // A team with no finished match has no evidence behind its rating, so it is
+  // listed separately instead of sitting in the table on the default value —
+  // otherwise a team that never played outranks one that played and lost.
+  const withPlayed = teams.map((team) => ({
+    team,
+    played: team._count.homeMatches + team._count.awayMatches,
+  }));
+  const ranked = withPlayed.filter((t) => t.played > 0);
+  const unranked = withPlayed.filter((t) => t.played === 0);
+
   return (
     <PageShell>
       <h1 className="font-display mb-4 text-2xl font-bold">{t("nav.teams")}</h1>
@@ -70,8 +80,7 @@ export default async function TeamsPage({
       </div>
 
       <div className="overflow-hidden rounded-lg border border-border-subtle">
-        {teams.map((team, i) => {
-          const played = team._count.homeMatches + team._count.awayMatches;
+        {ranked.map(({ team, played }, i) => {
           const wins = team._count.wonMatches;
           const delta = ratingDelta(team);
           return (
@@ -86,12 +95,22 @@ export default async function TeamsPage({
                 <div className="flex items-center gap-1.5 truncate font-medium">
                   <CountryFlag code={team.country} />
                   {team.name}
+                  {played < 3 && (
+                    <span
+                      title={
+                        locale === "az"
+                          ? "Az matç oynanılıb — reytinq hələ dəqiq deyil"
+                          : "Few matches played — rating is not settled yet"
+                      }
+                      className="rounded-full border border-border-subtle px-1.5 text-[10px] font-normal text-foreground-muted"
+                    >
+                      {locale === "az" ? "təxmini" : "provisional"}
+                    </span>
+                  )}
                 </div>
-                {played > 0 && (
-                  <div className="text-xs text-foreground-muted tabular-nums">
-                    {wins}–{played - wins}
-                  </div>
-                )}
+                <div className="text-xs text-foreground-muted tabular-nums">
+                  {wins}–{played - wins}
+                </div>
               </div>
               <div className="shrink-0 text-right">
                 <div className="font-display font-bold tabular-nums">{Math.round(team.rating)}</div>
@@ -104,12 +123,42 @@ export default async function TeamsPage({
             </Link>
           );
         })}
-        {teams.length === 0 && (
+        {ranked.length === 0 && (
           <p className="p-6 text-center text-sm text-foreground-muted">
-            {locale === "az" ? "Komanda tapılmadı." : "No teams found."}
+            {locale === "az"
+              ? "Hələ heç bir matç oynanılmayıb — nəticələr əlavə olunduqca reytinq cədvəli buradan formalaşacaq."
+              : "No matches played yet — the ranking builds here as results are added."}
           </p>
         )}
       </div>
+
+      {unranked.length > 0 && (
+        <>
+          <h2 className="font-display mb-1 mt-8 text-lg font-bold">
+            {locale === "az" ? "Reytinqsiz komandalar" : "Unranked teams"}
+          </h2>
+          <p className="mb-3 text-sm text-foreground-muted">
+            {locale === "az"
+              ? "Hələ matçı olmayan komandalar. İlk nəticə yazılan kimi yuxarıdakı cədvələ qoşulurlar."
+              : "Teams with no matches yet. They join the table above as soon as a result is recorded."}
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {unranked.map(({ team }) => (
+              <Link
+                key={team.id}
+                href={`/teams/${team.slug}`}
+                className="flex items-center gap-3 rounded-lg border border-border-subtle bg-surface px-3 py-2 hover:bg-surface-raised"
+              >
+                <TeamAvatar name={team.name} logoUrl={team.logoUrl} color={team.primaryColor} size={28} />
+                <span className="flex min-w-0 items-center gap-1.5 truncate text-sm font-medium">
+                  <CountryFlag code={team.country} />
+                  {team.name}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
     </PageShell>
   );
 }

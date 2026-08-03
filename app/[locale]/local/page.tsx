@@ -6,6 +6,7 @@ import PlayerAvatar from "@/components/common/PlayerAvatar";
 import GameChip from "@/components/common/GameChip";
 import CountryFlag from "@/components/common/CountryFlag";
 import NewsCard from "@/components/news/NewsCard";
+import MatchCard from "@/components/matches/MatchCard";
 import { Link } from "@/i18n/navigation";
 import type { Metadata } from "next";
 
@@ -32,9 +33,11 @@ export default async function LocalScenePage({
   setRequestLocale(locale);
   const t = await getTranslations();
 
-  const [teams, players, news] = await Promise.all([
+  const localTeam = { country: LOCAL_COUNTRY, isActive: true };
+
+  const [teams, players, news, matches, tournaments] = await Promise.all([
     prisma.team.findMany({
-      where: { country: LOCAL_COUNTRY, isActive: true },
+      where: localTeam,
       include: { game: true },
       orderBy: { rating: "desc" },
     }),
@@ -53,6 +56,19 @@ export default async function LocalScenePage({
       },
       include: { game: true, translations: true },
       orderBy: { publishedAt: "desc" },
+      take: 6,
+    }),
+    // A match counts as local if either side is a local team.
+    prisma.match.findMany({
+      where: { OR: [{ teamA: localTeam }, { teamB: localTeam }] },
+      include: { teamA: true, teamB: true, tournament: true },
+      orderBy: { scheduledAt: "desc" },
+      take: 10,
+    }),
+    prisma.tournament.findMany({
+      where: { participants: { some: { team: localTeam } } },
+      include: { game: true },
+      orderBy: { startDate: "desc" },
       take: 6,
     }),
   ]);
@@ -115,6 +131,38 @@ export default async function LocalScenePage({
               </Link>
             );
           })}
+        </div>
+      ) : (
+        <p className="mb-8 text-sm text-foreground-muted">{t("local.empty")}</p>
+      )}
+
+      <h2 className="font-display mb-3 text-lg font-bold">{locale === "az" ? "Matçlar" : "Matches"}</h2>
+      {matches.length > 0 ? (
+        <div className="mb-8 space-y-2">
+          {matches.map((match) => (
+            <MatchCard key={match.id} match={match} />
+          ))}
+        </div>
+      ) : (
+        <p className="mb-8 text-sm text-foreground-muted">{t("local.empty")}</p>
+      )}
+
+      <h2 className="font-display mb-3 text-lg font-bold">{locale === "az" ? "Turnirlər" : "Tournaments"}</h2>
+      {tournaments.length > 0 ? (
+        <div className="mb-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {tournaments.map((tournament) => (
+            <Link
+              key={tournament.id}
+              href={`/events/${tournament.slug}`}
+              className="rounded-lg border border-border-subtle bg-surface p-3 hover:bg-surface-raised"
+            >
+              <div className="truncate font-medium">{tournament.name}</div>
+              <div className="mt-1 flex items-center gap-2 text-xs text-foreground-muted">
+                <GameChip name={tournament.game.shortName} color={tournament.game.accentColor} />
+                {tournament.location && <span className="truncate">{tournament.location}</span>}
+              </div>
+            </Link>
+          ))}
         </div>
       ) : (
         <p className="mb-8 text-sm text-foreground-muted">{t("local.empty")}</p>
