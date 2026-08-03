@@ -2,12 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { getAdminSession } from "@/lib/auth";
+import { requireAdmin } from "@/lib/adminAuth";
 
-async function requireAdmin() {
-  const session = await getAdminSession();
-  if (!session) throw new Error("Unauthorized");
-}
 
 export async function upsertPlayerStat(matchId: string, formData: FormData) {
   await requireAdmin();

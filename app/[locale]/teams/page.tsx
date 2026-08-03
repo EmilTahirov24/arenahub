@@ -1,9 +1,20 @@
-import { getTranslations, getLocale, setRequestLocale } from "next-intl/server";
+import type { Metadata } from "next";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { Link } from "@/i18n/navigation";
 import PageShell from "@/components/layout/PageShell";
 import TeamAvatar from "@/components/common/TeamAvatar";
 import CountryFlag from "@/components/common/CountryFlag";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale });
+  return { title: t("nav.teams") };
+}
 
 export default async function TeamsPage({
   params,

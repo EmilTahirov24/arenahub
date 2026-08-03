@@ -6,11 +6,7 @@ import type { AdminRole } from "@/app/generated/prisma/client";
 const COOKIE_NAME = "session";
 const secret = new TextEncoder().encode(process.env.AUTH_SECRET);
 
-export type SessionPayload =
-  | { kind: "admin"; id: string; role: AdminRole }
-  | { kind: "team"; id: string }
-  | { kind: "player"; id: string }
-  | { kind: "fan"; id: string };
+export type SessionPayload = { kind: "admin"; id: string; role: AdminRole } | { kind: "player"; id: string };
 
 export async function createSession(payload: SessionPayload) {
   const token = await new SignJWT({ ...payload })
@@ -43,14 +39,8 @@ export async function getSession(): Promise<SessionPayload | null> {
     if (payload.kind === "admin") {
       return { kind: "admin", id: payload.id as string, role: payload.role as AdminRole };
     }
-    if (payload.kind === "team") {
-      return { kind: "team", id: payload.id as string };
-    }
     if (payload.kind === "player") {
       return { kind: "player", id: payload.id as string };
-    }
-    if (payload.kind === "fan") {
-      return { kind: "fan", id: payload.id as string };
     }
     return null;
   } catch {
@@ -58,22 +48,30 @@ export async function getSession(): Promise<SessionPayload | null> {
   }
 }
 
+/**
+ * Re-reads the admin from the database on every check rather than trusting the
+ * 30-day cookie. Without this a deleted admin keeps full access until the token
+ * expires, and a demoted SUPER_ADMIN keeps the old role baked into their JWT.
+ * The role returned here is always the current one.
+ */
 export async function getAdminSession() {
   const session = await getSession();
-  return session?.kind === "admin" ? session : null;
-}
+  if (session?.kind !== "admin") return null;
 
-export async function getTeamSession() {
-  const session = await getSession();
-  return session?.kind === "team" ? session : null;
+  const { prisma } = await import("@/lib/prisma");
+  const admin = await prisma.adminUser.findUnique({ where: { id: session.id }, select: { id: true, role: true } });
+  if (!admin) return null;
+
+  return { kind: "admin" as const, id: admin.id, role: admin.role };
 }
 
 export async function getPlayerSession() {
   const session = await getSession();
-  return session?.kind === "player" ? session : null;
-}
+  if (session?.kind !== "player") return null;
 
-export async function getFanSession() {
-  const session = await getSession();
-  return session?.kind === "fan" ? session : null;
+  const { prisma } = await import("@/lib/prisma");
+  const player = await prisma.player.findUnique({ where: { id: session.id }, select: { id: true } });
+  if (!player) return null;
+
+  return session;
 }

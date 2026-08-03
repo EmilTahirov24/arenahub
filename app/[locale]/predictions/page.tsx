@@ -1,8 +1,20 @@
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import PageShell from "@/components/layout/PageShell";
+import CountryFlag from "@/components/common/CountryFlag";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale });
+  return { title: t("predictions.title") };
+}
 
 export default async function PredictionsLeaderboardPage({
   params,
@@ -13,11 +25,11 @@ export default async function PredictionsLeaderboardPage({
   setRequestLocale(locale);
   const t = await getTranslations();
 
-  const fans = await prisma.fan.findMany({
+  const players = await prisma.player.findMany({
     where: { points: { gt: 0 } },
     orderBy: { points: "desc" },
     take: 50,
-    select: { id: true, username: true, points: true },
+    select: { id: true, nickname: true, points: true, country: true },
   });
 
   return (
@@ -25,7 +37,7 @@ export default async function PredictionsLeaderboardPage({
       <h1 className="font-display mb-1 text-2xl font-bold">{t("predictions.title")}</h1>
       <p className="mb-6 text-sm text-foreground-muted">{t("predictions.subtitle")}</p>
 
-      {fans.length === 0 ? (
+      {players.length === 0 ? (
         <p className="text-sm text-foreground-muted">{t("predictions.empty")}</p>
       ) : (
         <div className="overflow-hidden rounded-lg border border-border-subtle">
@@ -38,11 +50,16 @@ export default async function PredictionsLeaderboardPage({
               </tr>
             </thead>
             <tbody>
-              {fans.map((fan, i) => (
-                <tr key={fan.id} className="border-t border-border-subtle bg-surface">
+              {players.map((player, i) => (
+                <tr key={player.id} className="border-t border-border-subtle bg-surface">
                   <td className="px-4 py-3 font-semibold text-foreground-muted">#{i + 1}</td>
-                  <td className="px-4 py-3 font-medium">{fan.username}</td>
-                  <td className="px-4 py-3 text-right font-display font-bold text-brand-via">{fan.points}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5 font-medium">
+                      <CountryFlag code={player.country} />
+                      {player.nickname}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-right font-display font-bold text-brand-via">{player.points}</td>
                 </tr>
               ))}
             </tbody>

@@ -17,15 +17,11 @@ type AuthConfig = {
 export default function MobileNav({
   navItems,
   localItem,
-  teamAuth,
   playerAuth,
-  fanAuth,
 }: {
   navItems: { href: string; label: string }[];
   localItem: { href: string; label: string };
-  teamAuth: AuthConfig;
   playerAuth: AuthConfig;
-  fanAuth: AuthConfig;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -37,7 +33,7 @@ export default function MobileNav({
   }, [open]);
 
   return (
-    <div className="md:hidden">
+    <div className="xl:hidden">
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -93,25 +89,23 @@ export default function MobileNav({
                 </Link>
               </nav>
 
-              {[teamAuth, playerAuth, fanAuth].map((auth) => (
-                <div key={auth.label} className="mb-3 rounded-lg border border-border-subtle p-3">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">{auth.label}</p>
-                  <div className="flex gap-2">
-                    <a
-                      href={auth.loginHref}
-                      className="flex-1 rounded-md border border-border-subtle px-3 py-2 text-center text-sm text-foreground hover:bg-surface-raised"
-                    >
-                      {auth.loginLabel}
-                    </a>
-                    <a
-                      href={auth.registerHref}
-                      className="brand-gradient-bg flex-1 rounded-md px-3 py-2 text-center text-sm font-semibold text-white"
-                    >
-                      {auth.registerLabel}
-                    </a>
-                  </div>
+              <div className="mb-3 rounded-lg border border-border-subtle p-3">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">{playerAuth.label}</p>
+                <div className="flex gap-2">
+                  <a
+                    href={playerAuth.loginHref}
+                    className="flex-1 rounded-md border border-border-subtle px-3 py-2 text-center text-sm text-foreground hover:bg-surface-raised"
+                  >
+                    {playerAuth.loginLabel}
+                  </a>
+                  <a
+                    href={playerAuth.registerHref}
+                    className="brand-gradient-bg flex-1 rounded-md px-3 py-2 text-center text-sm font-semibold text-white"
+                  >
+                    {playerAuth.registerLabel}
+                  </a>
                 </div>
-              ))}
+              </div>
             </div>
           </div>,
           document.body,

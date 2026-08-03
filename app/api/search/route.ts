@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { publiclyListedPlayer } from "@/lib/publicPlayers";
+import { rateLimit, clientIp } from "@/lib/rateLimit";
+
+const MAX_QUERY_LENGTH = 64;
 
 export type SearchResult = {
   type: "team" | "player" | "news" | "tournament";
@@ -13,18 +17,24 @@ export async function GET(request: Request) {
   const q = (searchParams.get("q") ?? "").trim();
   const locale = searchParams.get("locale") === "en" ? "en" : "az";
 
-  if (q.length < 2) {
+  if (q.length < 2 || q.length > MAX_QUERY_LENGTH) {
     return NextResponse.json({ results: [] });
+  }
+
+  // Unauthenticated endpoint that fans out into four ILIKE scans — throttle it.
+  const limit = rateLimit(`search:${clientIp(request.headers)}`, 60, 60 * 1000);
+  if (!limit.ok) {
+    return NextResponse.json({ results: [] }, { status: 429 });
   }
 
   const [teams, players, tournaments, articles] = await Promise.all([
     prisma.team.findMany({
-      where: { name: { contains: q, mode: "insensitive" } },
+      where: { isActive: true, name: { contains: q, mode: "insensitive" } },
       include: { game: true },
       take: 5,
     }),
     prisma.player.findMany({
-      where: { nickname: { contains: q, mode: "insensitive" } },
+      where: { AND: [publiclyListedPlayer, { nickname: { contains: q, mode: "insensitive" } }] },
       include: { game: true },
       take: 5,
     }),
@@ -34,7 +44,11 @@ export async function GET(request: Request) {
       take: 5,
     }),
     prisma.newsArticleTranslation.findMany({
-      where: { locale, title: { contains: q, mode: "insensitive" } },
+      where: {
+        locale,
+        title: { contains: q, mode: "insensitive" },
+        article: { publishedAt: { not: null } },
+      },
       include: { article: { include: { game: true } } },
       take: 5,
     }),

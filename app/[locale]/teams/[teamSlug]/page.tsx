@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getTranslations, getLocale, setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { Link } from "@/i18n/navigation";
 import PageShell from "@/components/layout/PageShell";
@@ -46,7 +46,7 @@ export default async function TeamProfilePage({
   });
   if (!team) notFound();
 
-  const [roster, matches, entries] = await Promise.all([
+  const [roster, matches, entries, finishedMatches] = await Promise.all([
     prisma.teamMembership.findMany({ where: { teamId: team.id, leftAt: null }, include: { player: true } }),
     prisma.match.findMany({
       where: { OR: [{ teamAId: team.id }, { teamBId: team.id }] },
@@ -59,24 +59,78 @@ export default async function TeamProfilePage({
       orderBy: { tournament: { endDate: "desc" } },
       include: { tournament: true },
     }),
+    prisma.match.findMany({
+      where: { status: "FINISHED", OR: [{ teamAId: team.id }, { teamBId: team.id }] },
+      orderBy: { scheduledAt: "desc" },
+      select: { winnerId: true },
+    }),
   ]);
+
+  const wins = finishedMatches.filter((m) => m.winnerId === team.id).length;
+  const losses = finishedMatches.length - wins;
+  const winRate = finishedMatches.length > 0 ? Math.round((wins / finishedMatches.length) * 100) : null;
+  // Most recent first, as a W/L streak strip.
+  const recentForm = finishedMatches.slice(0, 5).map((m) => m.winnerId === team.id);
 
   return (
     <PageShell>
-      <div className="mb-6 flex items-center gap-4 rounded-xl border border-border-subtle bg-surface p-6">
-        <TeamAvatar name={team.name} logoUrl={team.logoUrl} color={team.primaryColor} size={72} />
-        <div>
-          <div className="mb-1 flex items-center gap-2">
-            <GameChip name={team.game.shortName} color={team.game.accentColor} />
-            {team.worldRanking && (
-              <span className="text-xs text-foreground-muted">#{team.worldRanking} {locale === "az" ? "dünya" : "world"}</span>
-            )}
+      <div className="mb-6 rounded-xl border border-border-subtle bg-surface p-6">
+        <div className="flex flex-wrap items-center gap-4">
+          <TeamAvatar name={team.name} logoUrl={team.logoUrl} color={team.primaryColor} size={72} />
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex items-center gap-2">
+              <GameChip name={team.game.shortName} color={team.game.accentColor} />
+              {team.worldRanking && (
+                <span className="text-xs text-foreground-muted">#{team.worldRanking} {locale === "az" ? "dünya" : "world"}</span>
+              )}
+            </div>
+            <h1 className="flex items-center gap-2 font-display text-2xl font-bold">
+              <CountryFlag code={team.country} size={20} />
+              {team.name}
+            </h1>
           </div>
-          <h1 className="flex items-center gap-2 font-display text-2xl font-bold">
-            <CountryFlag code={team.country} size={20} />
-            {team.name}
-          </h1>
+
+          {finishedMatches.length > 0 && (
+            <div className="flex shrink-0 items-center gap-6">
+              <div className="text-center">
+                <div className="font-display text-2xl font-bold tabular-nums">
+                  <span className="text-emerald-400">{wins}</span>
+                  <span className="text-foreground-muted"> — </span>
+                  <span className="text-live">{losses}</span>
+                </div>
+                <div className="text-xs text-foreground-muted">
+                  {locale === "az" ? "qalib — məğlub" : "win — loss"}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="font-display text-2xl font-bold tabular-nums text-brand-via">{winRate}%</div>
+                <div className="text-xs text-foreground-muted">{locale === "az" ? "qazanma" : "win rate"}</div>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center gap-1">
+                  {recentForm.map((won, i) => (
+                    <span
+                      key={i}
+                      title={won ? (locale === "az" ? "Qalib" : "Win") : locale === "az" ? "Məğlub" : "Loss"}
+                      className={`flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold ${
+                        won ? "bg-emerald-400/15 text-emerald-400" : "bg-live/15 text-live"
+                      }`}
+                    >
+                      {won ? (locale === "az" ? "Q" : "W") : locale === "az" ? "M" : "L"}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-1 text-xs text-foreground-muted">{locale === "az" ? "son form" : "recent form"}</div>
+              </div>
+            </div>
+          )}
         </div>
+
+        {team.description && (
+          <p className="mt-4 max-w-3xl border-t border-border-subtle pt-4 text-sm leading-relaxed text-foreground-muted">
+            {team.description}
+          </p>
+        )}
       </div>
 
       <h2 className="font-display mb-2 text-lg font-bold">{locale === "az" ? "Tərkib" : "Roster"}</h2>

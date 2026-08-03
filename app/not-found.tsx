@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function RootNotFound() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
@@ -10,9 +12,9 @@ export default function RootNotFound() {
         <br />
         The page you&apos;re looking for doesn&apos;t exist or has moved.
       </p>
-      <a href="/" className="brand-gradient-bg mt-6 rounded-md px-5 py-2.5 text-sm font-semibold text-white">
+      <Link href="/" className="brand-gradient-bg mt-6 rounded-md px-5 py-2.5 text-sm font-semibold text-white">
         Ana səhifəyə qayıt · Back to home
-      </a>
+      </Link>
     </div>
   );
 }

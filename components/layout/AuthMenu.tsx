@@ -37,7 +37,7 @@ export default function AuthMenu({
         className="flex h-8 items-center gap-1.5 rounded-full border border-border-subtle bg-surface px-3 text-xs font-medium text-foreground-muted transition-colors hover:text-foreground"
       >
         {icon}
-        <span className="hidden 2xl:inline">{label}</span>
+        <span className="hidden sm:inline">{label}</span>
       </button>
 
       {open && (

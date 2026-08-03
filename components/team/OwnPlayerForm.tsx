@@ -1,19 +1,31 @@
+"use client";
+
+import { useActionState } from "react";
 import ImageUpload from "@/components/forms/ImageUpload";
 import CountrySelect from "@/components/forms/CountrySelect";
+import MembershipFields from "@/components/team/MembershipFields";
 import { inputClass, labelClass, primaryButtonClass } from "@/components/admin/formStyles";
-import type { Player } from "@/app/generated/prisma/client";
+import type { CreatePlayerState } from "@/app/player/(dashboard)/team/roster/actions";
+import type { Player, TeamMembership } from "@/app/generated/prisma/client";
 
 const STATUSES = ["ACTIVE", "BENCHED", "RETIRED"] as const;
 
 export default function OwnPlayerForm({
   player,
+  membership,
   action,
 }: {
   player?: Player;
-  action: (formData: FormData) => Promise<void>;
+  membership?: TeamMembership;
+  action: (prevState: CreatePlayerState, formData: FormData) => Promise<CreatePlayerState>;
 }) {
+  const [state, formAction, pending] = useActionState(action, undefined);
+
   return (
-    <form action={action} className="max-w-lg space-y-4">
+    <form action={formAction} className="max-w-lg space-y-4">
+      {state?.error && (
+        <p className="rounded-md border border-live/40 bg-live/10 px-3 py-2 text-sm text-live">{state.error}</p>
+      )}
       <div>
         <label className={labelClass}>Nickname</label>
         <input name="nickname" required defaultValue={player?.nickname} className={inputClass} />
@@ -49,8 +61,9 @@ export default function OwnPlayerForm({
         </div>
       )}
       <ImageUpload name="photoUrl" label="Şəkil" defaultValue={player?.photoUrl} />
-      <button type="submit" className={primaryButtonClass}>
-        Yadda saxla
+      {membership && <MembershipFields membership={membership} />}
+      <button type="submit" disabled={pending} className={primaryButtonClass}>
+        {pending ? "Yadda saxlanılır…" : "Yadda saxla"}
       </button>
     </form>
   );

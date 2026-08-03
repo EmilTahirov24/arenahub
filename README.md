@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ArenaHub
 
-## Getting Started
+HLTV tərzində, çoxoyunlu esports platforması — matç cədvəli və nəticələr, canlı matç izləmə, komanda/oyunçu profilləri, turnirlər, statistika, xəbərlər və matç proqnozları. İki dildə: Azərbaycan (`/az`) və İngilis (`/en`).
 
-First, run the development server:
+**Stack:** Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · Prisma 7 + PostgreSQL · next-intl · Resend · Vercel Blob
+
+---
+
+## Lokal qurulum
 
 ```bash
+npm install                 # postinstall avtomatik `prisma generate` işlədir
+cp .env.example .env        # sonra .env-i doldurun (aşağıya bax)
+npx prisma migrate deploy   # baza sxemini qurur
+npx prisma db seed          # demo data + ilk admin hesabı
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`http://localhost:3000` → avtomatik `/az`-ə yönləndirir. Admin paneli: `/admin/login`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Ətraf mühit dəyişənləri
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Dəyişən | Vacib? | İzah |
+|---|---|---|
+| `DATABASE_URL` | **bəli** | PostgreSQL bağlantı sətri |
+| `AUTH_SECRET` | **bəli** | Sessiya JWT-si üçün açar — `openssl rand -base64 32` |
+| `NEXT_PUBLIC_SITE_URL` | **bəli** | Saytın tam ünvanı, sonda `/` olmadan. Email linkləri və sitemap bundan qurulur |
+| `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | seed üçün | `prisma/seed.ts` ilk admini bununla yaradır |
+| `RESEND_API_KEY` | xeyr | Olmasa şifrə bərpası linkləri serverin konsoluna yazılır ([lib/email.ts](lib/email.ts)) |
+| `EMAIL_FROM` | xeyr | Domen təsdiqlənənə qədər `onboarding@resend.dev` qalmalıdır |
+| `BLOB_READ_WRITE_TOKEN` | prod-da **bəli** | Olmasa şəkillər lokal diskə yazılır; serverless-də disk read-only olduğu üçün production-da tələb olunur ([lib/storage.ts](lib/storage.ts)) |
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Deploy (Vercel + bulud Postgres)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Repo-nu GitHub-a göndər**, sonra Vercel-də "Import Project" et.
+2. **Baza yarat** — Neon, Supabase və ya Vercel Postgres. Bağlantı sətrini `DATABASE_URL` kimi Vercel-ə əlavə et.
+3. **Qalan dəyişənləri əlavə et** (yuxarıdakı cədvəl). `NEXT_PUBLIC_SITE_URL` real domen olmalıdır.
+4. **Blob store yarat** və layihəyə bağla → `BLOB_READ_WRITE_TOKEN` avtomatik gəlir. Kod dəyişikliyi lazım deyil, [lib/storage.ts](lib/storage.ts) tokeni görən kimi özü keçir.
+5. **Deploy et.** Vercel `vercel-build` skriptini işlədir: əvvəlcə `prisma migrate deploy` (bulud bazasında cədvəlləri qurur), sonra `next build`.
+6. **İlk admini yarat:** bir dəfə lokal olaraq `DATABASE_URL`-i bulud bazasına yönəldib `npx prisma db seed` işlət.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Emailləri real istifadəçilərə çatdırmaq
 
-## Deploy on Vercel
+Resend-in `onboarding@resend.dev` ünvanı **sandbox-dır** — məktublar yalnız sənin öz Resend hesabının poçtuna gedir. Şifrə bərpasının hamı üçün işləməsi üçün:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. resend.com → Domains → öz domenini əlavə et
+2. verilən DNS qeydlərini domen provayderində yaz
+3. təsdiqləndikdən sonra `EMAIL_FROM`-u `ArenaHub <noreply@səninDomenin.com>` et
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Layihə quruluşu
+
+```
+app/[locale]/          public səhifələr (matçlar, komandalar, oyunçular, xəbərlər...)
+app/admin/             admin paneli — bütün məzmun idarəetməsi
+app/player/            oyunçu hesabı: qeydiyyat, giriş, panel, komanda və tərkib
+app/api/               search və upload endpoint-ləri
+lib/                   auth, prisma, email, rate limit, sanitizasiya, biznes qaydaları
+messages/az.json|en.json   bütün tərcümələr (admin və oyunçu paneli istisna — onlar sabit AZ)
+prisma/schema.prisma   məlumat modeli · prisma/migrations/ əl ilə yazılmış SQL
+```
+
+### Bilməli olduğun bir neçə qayda
+
+- **Hesab modeli:** yalnız bir növ hesab var — `Player`. Komandanın öz girişi yoxdur, `Team.ownerId` bir Player-ə işarə edir.
+- **Kim public siyahıdadır:** [lib/publicPlayers.ts](lib/publicPlayers.ts) qərar verir (admin/seed profilləri + komandası olan qeydiyyatlılar). Bu şərti yenidən yazma, həmin faylı istifadə et.
+- **Tərkib razılıq tələb edir:** qeydiyyatlı oyunçu yalnız qəbul etdiyi dəvətlə tərkibə düşür. Komanda sahibi başqasının hesabının profilini redaktə edə bilməz — bax [lib/teamInvites.ts](lib/teamInvites.ts).
+- **Migration-lar əl ilə yazılır:** `prisma migrate dev` bu mühitdə interaktivdir və işləmir. SQL faylını özün yaz, sonra `prisma migrate deploy`.
+- **Rate limiter yaddaşdadır** ([lib/rateLimit.ts](lib/rateLimit.ts)) — çoxinstansiyalı deploy-da hər instansiyanın öz sayğacı olur. İndiki miqyas üçün kifayətdir; dəqiqlik lazım olsa Upstash/Redis.
+
+## Skriptlər
+
+| | |
+|---|---|
+| `npm run dev` | development server |
+| `npm run build` / `npm start` | production build və server |
+| `npm run lint` | eslint |
+| `npx prisma db seed` | demo data + admin hesabı |

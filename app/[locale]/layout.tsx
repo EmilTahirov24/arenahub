@@ -19,7 +19,7 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale });
   return {
-    title: t("site.name"),
+    title: { default: t("site.name"), template: `%s — ${t("site.name")}` },
     description: t("home.subtitle"),
   };
 }

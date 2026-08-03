@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import type { SearchResult } from "@/app/api/search/route";
@@ -21,34 +21,32 @@ export default function CommandPalette() {
   const locale = useLocale();
   const router = useRouter();
 
+  const close = useCallback(() => {
+    setOpen(false);
+    setQuery("");
+    setResults([]);
+  }, []);
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setOpen((prev) => !prev);
       }
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") close();
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [close]);
 
   useEffect(() => {
-    if (open) {
-      setTimeout(() => inputRef.current?.focus(), 50);
-    } else {
-      setQuery("");
-      setResults([]);
-    }
+    if (open) setTimeout(() => inputRef.current?.focus(), 50);
   }, [open]);
 
   useEffect(() => {
-    if (query.trim().length < 2) {
-      setResults([]);
-      return;
-    }
-    setLoading(true);
+    if (query.trim().length < 2) return;
     const id = setTimeout(async () => {
+      setLoading(true);
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&locale=${locale}`);
         const data = await res.json();
@@ -61,9 +59,13 @@ export default function CommandPalette() {
   }, [query, locale]);
 
   function go(href: string) {
-    setOpen(false);
+    close();
     router.push(href.replace(/^\/(az|en)/, ""));
   }
+
+  // Results are only meaningful for the query they were fetched for; while the
+  // user shortens the input below the threshold, don't show the stale list.
+  const visibleResults = query.trim().length < 2 ? [] : results;
 
   return (
     <>
@@ -81,7 +83,7 @@ export default function CommandPalette() {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/60 px-4 pt-24" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/60 px-4 pt-24" onClick={close}>
           <div
             className="w-full max-w-lg overflow-hidden rounded-xl border border-border-subtle bg-surface shadow-2xl"
             onClick={(e) => e.stopPropagation()}
@@ -95,12 +97,12 @@ export default function CommandPalette() {
             />
             <div className="max-h-80 overflow-y-auto">
               {loading && <p className="px-4 py-3 text-sm text-foreground-muted">...</p>}
-              {!loading && query.trim().length >= 2 && results.length === 0 && (
+              {!loading && query.trim().length >= 2 && visibleResults.length === 0 && (
                 <p className="px-4 py-3 text-sm text-foreground-muted">
                   {locale === "az" ? "Nəticə tapılmadı." : "No results."}
                 </p>
               )}
-              {results.map((r, i) => (
+              {visibleResults.map((r, i) => (
                 <button
                   key={`${r.type}-${i}`}
                   onClick={() => go(r.href)}

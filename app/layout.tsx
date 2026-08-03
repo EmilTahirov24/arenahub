@@ -12,8 +12,22 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
 });
 
+const DESCRIPTION = "CS2, Dota 2, Valorant və LoL üçün matçlar, komandalar, oyunçular, xəbərlər və canlı statistika bir yerdə.";
+
 export const metadata: Metadata = {
-  title: "ArenaHub",
+  title: { default: "ArenaHub", template: "%s — ArenaHub" },
+  description: DESCRIPTION,
+  openGraph: {
+    title: "ArenaHub",
+    description: DESCRIPTION,
+    type: "website",
+    siteName: "ArenaHub",
+  },
+  twitter: {
+    card: "summary",
+    title: "ArenaHub",
+    description: DESCRIPTION,
+  },
 };
 
 const themeInitScript = `

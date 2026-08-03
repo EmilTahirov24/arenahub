@@ -3,13 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getAdminSession } from "@/lib/auth";
+import { requireAdmin, requireSuperAdmin } from "@/lib/adminAuth";
 import type { MatchStatus } from "@/app/generated/prisma/client";
 
-async function requireAdmin() {
-  const session = await getAdminSession();
-  if (!session) throw new Error("Unauthorized");
-}
 
 function matchData(formData: FormData) {
   return {
@@ -53,7 +49,7 @@ export async function updateMatch(id: string, formData: FormData) {
 }
 
 export async function deleteMatch(id: string) {
-  await requireAdmin();
+  await requireSuperAdmin();
   await prisma.match.delete({ where: { id } });
   revalidatePath("/admin/matches");
   redirect("/admin/matches");

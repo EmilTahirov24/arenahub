@@ -3,14 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getAdminSession } from "@/lib/auth";
+import { requireAdmin, requireSuperAdmin } from "@/lib/adminAuth";
 import { socialsFromFormData } from "@/lib/socials";
 import type { PlayerStatus } from "@/app/generated/prisma/client";
 
-async function requireAdmin() {
-  const session = await getAdminSession();
-  if (!session) throw new Error("Unauthorized");
-}
 
 function slugify(s: string) {
   return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -76,7 +72,7 @@ export async function updatePlayer(id: string, formData: FormData) {
 }
 
 export async function deletePlayer(id: string) {
-  await requireAdmin();
+  await requireSuperAdmin();
   await prisma.teamMembership.deleteMany({ where: { playerId: id } });
   await prisma.playerMatchStat.deleteMany({ where: { playerId: id } });
   await prisma.player.delete({ where: { id } });

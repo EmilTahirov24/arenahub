@@ -7,10 +7,21 @@ import GameChip from "@/components/common/GameChip";
 import CountryFlag from "@/components/common/CountryFlag";
 import NewsCard from "@/components/news/NewsCard";
 import { Link } from "@/i18n/navigation";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
 const LOCAL_COUNTRY = "AZ";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale });
+  return { title: t("nav.local") };
+}
 
 export default async function LocalScenePage({
   params,

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getPlayerSession } from "@/lib/auth";
 import { resendAvailableInSeconds } from "@/lib/emailVerification";
+import { countPendingInvitesFor } from "@/lib/teamInvites";
 import VerifyEmailBanner from "@/components/auth/VerifyEmailBanner";
 import { playerLogout, resendPlayerVerificationEmail } from "./actions";
 
@@ -14,6 +15,7 @@ export default async function PlayerDashboardLayout({ children }: { children: Re
   if (!player) redirect("/player/login");
 
   const needsVerification = !!player.email && !player.emailVerified;
+  const pendingInvites = await countPendingInvitesFor(player.id);
 
   return (
     <div className="flex min-h-screen">
@@ -24,8 +26,16 @@ export default async function PlayerDashboardLayout({ children }: { children: Re
         </Link>
         <p className="mb-4 truncate text-sm text-foreground-muted">{player.nickname}</p>
         <nav className="space-y-1">
-          <Link href="/player" className="block rounded-md px-3 py-2 text-sm text-foreground-muted hover:bg-surface-raised hover:text-foreground">
+          <Link href="/player" className="flex items-center justify-between rounded-md px-3 py-2 text-sm text-foreground-muted hover:bg-surface-raised hover:text-foreground">
             Profil
+            {pendingInvites > 0 && (
+              <span className="brand-gradient-bg rounded-full px-1.5 text-[10px] font-bold text-white">
+                {pendingInvites}
+              </span>
+            )}
+          </Link>
+          <Link href="/player/team" className="block rounded-md px-3 py-2 text-sm text-foreground-muted hover:bg-surface-raised hover:text-foreground">
+            Komandam
           </Link>
         </nav>
         <form action={playerLogout} className="mt-6">

@@ -29,25 +29,30 @@ export default async function MatchCard({ match }: MatchCardProps) {
         isLive ? "border-live/50" : "border-border-subtle"
       }`}
     >
-      <div className="mb-2 flex items-center justify-between text-xs text-foreground-muted">
+      <div className="mb-2 flex items-center justify-between gap-2 text-xs text-foreground-muted">
         <span className="truncate">{match.tournament?.name ?? t("nav.matches")}</span>
-        {match.stage && <span className="ml-2 shrink-0">{match.stage}</span>}
+        <span className="flex shrink-0 items-center gap-2">
+          {match.stage && <span>{match.stage}</span>}
+          <StarRating value={match.starRating} />
+        </span>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="flex flex-1 items-center gap-2">
+      <div className="flex items-center gap-2">
+        <div className="flex flex-1 items-center gap-1.5 overflow-hidden">
           <TeamAvatar name={match.teamA.name} logoUrl={match.teamA.logoUrl} color={match.teamA.primaryColor} size={28} />
           <CountryFlag code={match.teamA.country} />
           <span
             className={`truncate text-sm ${
               isFinished && match.winnerId === match.teamAId ? "font-semibold text-foreground" : "text-foreground-muted"
-            } ${isFinished && match.winnerId === match.teamAId ? "" : ""}`}
+            }`}
           >
             {match.teamA.name}
           </span>
         </div>
 
-        <div className="flex shrink-0 flex-col items-center gap-1">
+        {/* Fixed width so the time/score column lands at the same x on every
+            card — otherwise varying team-name lengths make the list unscannable. */}
+        <div className="flex w-14 shrink-0 flex-col items-center gap-1">
           {isUpcoming ? (
             <span className="font-display tabular-nums text-sm font-semibold">{time}</span>
           ) : (
@@ -65,7 +70,7 @@ export default async function MatchCard({ match }: MatchCardProps) {
           )}
         </div>
 
-        <div className="flex flex-1 items-center justify-end gap-2">
+        <div className="flex flex-1 items-center justify-end gap-2 overflow-hidden">
           <span
             className={`truncate text-right text-sm ${
               isFinished && match.winnerId === match.teamBId ? "font-semibold text-foreground" : "text-foreground-muted"
@@ -76,10 +81,6 @@ export default async function MatchCard({ match }: MatchCardProps) {
           <CountryFlag code={match.teamB.country} />
           <TeamAvatar name={match.teamB.name} logoUrl={match.teamB.logoUrl} color={match.teamB.primaryColor} size={28} />
         </div>
-      </div>
-
-      <div className="mt-2 flex justify-end">
-        <StarRating value={match.starRating} />
       </div>
     </Link>
   );

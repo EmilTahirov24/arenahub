@@ -3,13 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getAdminSession } from "@/lib/auth";
+import { requireAdmin, requireSuperAdmin } from "@/lib/adminAuth";
 import type { AdPlacement } from "@/app/generated/prisma/client";
 
-async function requireAdmin() {
-  const session = await getAdminSession();
-  if (!session) throw new Error("Unauthorized");
-}
 
 function adData(formData: FormData) {
   const imageUrl = String(formData.get("imageUrl") ?? "");
@@ -45,7 +41,7 @@ export async function updateAd(id: string, formData: FormData) {
 }
 
 export async function deleteAd(id: string) {
-  await requireAdmin();
+  await requireSuperAdmin();
   await prisma.adBanner.delete({ where: { id } });
   revalidatePath("/admin/ads");
   revalidatePath("/[locale]", "layout");

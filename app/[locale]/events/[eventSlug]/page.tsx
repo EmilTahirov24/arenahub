@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { Link } from "@/i18n/navigation";
@@ -11,6 +12,17 @@ import Bracket from "@/components/events/Bracket";
 const BRACKET_STAGES = new Set(["round of 16", "quarterfinal", "semifinal", "3rd place decider", "final"]);
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ eventSlug: string }>;
+}): Promise<Metadata> {
+  const { eventSlug } = await params;
+  const tournament = await prisma.tournament.findUnique({ where: { slug: eventSlug }, include: { game: true } });
+  if (!tournament) return {};
+  return { title: `${tournament.name} — ${tournament.game.name}` };
+}
 
 export default async function EventDetailPage({
   params,

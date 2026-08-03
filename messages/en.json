@@ -33,15 +33,13 @@
     "mvp": "Match MVP"
   },
   "auth": {
-    "team": "Create Team",
     "player": "Create Player",
-    "fan": "Become a Fan",
     "login": "Login",
     "register": "Register"
   },
   "predictions": {
     "title": "Leaderboard",
-    "subtitle": "Fans with the sharpest match predictions",
+    "subtitle": "Players with the sharpest match predictions",
     "rank": "Rank",
     "username": "User",
     "points": "Points",

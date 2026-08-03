@@ -8,6 +8,7 @@ import { socialsFromFormData } from "@/lib/socials";
 import type { PlayerStatus } from "@/app/generated/prisma/client";
 import { generateVerifyToken, verifyTokenExpiry, resendAvailableInSeconds, RESEND_RATE_LIMIT_SECONDS } from "@/lib/emailVerification";
 import { sendVerificationEmail } from "@/lib/email";
+import { siteUrl } from "@/lib/siteUrl";
 
 export async function playerLogout() {
   await destroySession();
@@ -30,7 +31,7 @@ export async function resendPlayerVerificationEmail(_prevState: { waitSeconds: n
     data: { verifyToken, verifyTokenExpiry: verifyTokenExpiry() },
   });
 
-  const verifyUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/player/verify-email?token=${verifyToken}`;
+  const verifyUrl = `${siteUrl()}/player/verify-email?token=${verifyToken}`;
   await sendVerificationEmail(player.email, verifyUrl, "az");
   revalidatePath("/player");
   return { waitSeconds: RESEND_RATE_LIMIT_SECONDS };

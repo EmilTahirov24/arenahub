@@ -3,13 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getAdminSession } from "@/lib/auth";
-
-async function requireAdmin() {
-  const session = await getAdminSession();
-  if (!session) throw new Error("Unauthorized");
-  return session;
-}
+import { requireAdmin, requireSuperAdmin } from "@/lib/adminAuth";
+import { sanitizeArticleHtml } from "@/lib/sanitizeHtml";
 
 function slugify(s: string) {
   return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -35,7 +30,7 @@ function translationData(formData: FormData, locale: "az" | "en") {
   return {
     title: String(formData.get(`title_${locale}`) ?? ""),
     excerpt: String(formData.get(`excerpt_${locale}`) ?? "") || null,
-    bodyHtml: String(formData.get(`bodyHtml_${locale}`) ?? ""),
+    bodyHtml: sanitizeArticleHtml(String(formData.get(`bodyHtml_${locale}`) ?? "")),
   };
 }
 
@@ -96,7 +91,7 @@ export async function updateNews(id: string, formData: FormData) {
 }
 
 export async function deleteNews(id: string) {
-  await requireAdmin();
+  await requireSuperAdmin();
   await prisma.newsArticle.delete({ where: { id } });
   revalidatePath("/admin/news");
   revalidatePath("/[locale]", "layout");
