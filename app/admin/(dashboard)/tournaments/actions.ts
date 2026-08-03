@@ -3,13 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getAdminSession } from "@/lib/auth";
+import { requireAdmin, requireSuperAdmin } from "@/lib/adminAuth";
 import type { TournamentTier, TournamentStatus } from "@/app/generated/prisma/client";
 
-async function requireAdmin() {
-  const session = await getAdminSession();
-  if (!session) throw new Error("Unauthorized");
-}
 
 function slugify(s: string) {
   return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -49,7 +45,7 @@ export async function updateTournament(id: string, formData: FormData) {
 }
 
 export async function deleteTournament(id: string) {
-  await requireAdmin();
+  await requireSuperAdmin();
   await prisma.tournament.delete({ where: { id } });
   revalidatePath("/admin/tournaments");
   revalidatePath("/[locale]", "layout");

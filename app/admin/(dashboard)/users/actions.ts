@@ -4,20 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { getAdminSession } from "@/lib/auth";
+import { requireSuperAdmin } from "@/lib/adminAuth";
 import type { AdminRole } from "@/app/generated/prisma/client";
-
-async function requireAdmin() {
-  const session = await getAdminSession();
-  if (!session) throw new Error("Unauthorized");
-}
-
-async function requireSuperAdmin() {
-  await requireAdmin();
-  const session = await getAdminSession();
-  if (session!.role !== "SUPER_ADMIN") throw new Error("Forbidden");
-  return session!;
-}
 
 export async function createAdminUser(formData: FormData) {
   await requireSuperAdmin();

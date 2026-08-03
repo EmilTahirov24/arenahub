@@ -3,12 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getAdminSession } from "@/lib/auth";
+import { requireAdmin, requireSuperAdmin } from "@/lib/adminAuth";
 
-async function requireAdmin() {
-  const session = await getAdminSession();
-  if (!session) throw new Error("Unauthorized");
-}
 
 function slugify(s: string) {
   return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -52,7 +48,7 @@ export async function updateGame(id: string, formData: FormData) {
 }
 
 export async function deleteGame(id: string) {
-  await requireAdmin();
+  await requireSuperAdmin();
   await prisma.game.delete({ where: { id } });
   revalidatePath("/admin/games");
   revalidatePath("/[locale]", "layout");

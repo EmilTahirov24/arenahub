@@ -11,7 +11,7 @@ export default function PredictionWidget({
   teamA,
   teamB,
   winnerId,
-  isFanLoggedIn,
+  isLoggedIn,
   myPick,
   teamACount,
   teamBCount,
@@ -23,7 +23,7 @@ export default function PredictionWidget({
   teamA: Team;
   teamB: Team;
   winnerId: string | null;
-  isFanLoggedIn: boolean;
+  isLoggedIn: boolean;
   myPick: string | null;
   teamACount: number;
   teamBCount: number;
@@ -36,11 +36,11 @@ export default function PredictionWidget({
   const canPick = status === "UPCOMING";
 
   if (canPick) {
-    if (!isFanLoggedIn) {
+    if (!isLoggedIn) {
       return (
         <div className="mt-6 rounded-lg border border-border-subtle bg-surface p-4 text-center text-sm text-foreground-muted">
           {isAz ? "Matç proqnozu vermək üçün " : "To predict this match, "}
-          <Link href="/fan/login" className="text-brand-via hover:underline">
+          <Link href="/player/login" className="text-brand-via hover:underline">
             {isAz ? "daxil olun" : "log in"}
           </Link>
           .
@@ -100,15 +100,15 @@ export default function PredictionWidget({
           </div>
         </>
       )}
-      {!isFanLoggedIn && (
+      {!isLoggedIn && (
         <p className="mt-3 text-center text-xs text-foreground-muted">
-          <Link href="/fan/login" className="text-brand-via hover:underline">
+          <Link href="/player/login" className="text-brand-via hover:underline">
             {isAz ? "Daxil olun" : "Log in"}
           </Link>{" "}
           {isAz ? "və öz proqnozunuzu izləyin." : "to track your own picks."}
         </p>
       )}
-      {isFanLoggedIn && myPick && status === "FINISHED" && (
+      {isLoggedIn && myPick && status === "FINISHED" && (
         <p
           className={`mt-3 text-center text-xs font-semibold ${
             myPick === winnerId ? "text-emerald-400" : "text-live"

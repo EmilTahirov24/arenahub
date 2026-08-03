@@ -17,9 +17,14 @@ export default function VerifyEmailBanner({ action, initialWaitSeconds }: { acti
   const [state, formAction, pending] = useActionState(action, { waitSeconds: initialWaitSeconds });
   const [secondsLeft, setSecondsLeft] = useState(state.waitSeconds);
 
-  useEffect(() => {
+  // Restart the countdown whenever the action reports a new wait window.
+  // Adjusting state during render is React's documented alternative to a
+  // sync-me effect: https://react.dev/learn/you-might-not-need-an-effect
+  const [lastWaitSeconds, setLastWaitSeconds] = useState(state.waitSeconds);
+  if (lastWaitSeconds !== state.waitSeconds) {
+    setLastWaitSeconds(state.waitSeconds);
     setSecondsLeft(state.waitSeconds);
-  }, [state.waitSeconds]);
+  }
 
   useEffect(() => {
     if (secondsLeft <= 0) return;

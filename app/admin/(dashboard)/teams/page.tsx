@@ -6,7 +6,7 @@ import CountryFlag from "@/components/common/CountryFlag";
 export const dynamic = "force-dynamic";
 
 export default async function AdminTeamsPage() {
-  const teams = await prisma.team.findMany({ orderBy: { name: "asc" }, include: { game: true } });
+  const teams = await prisma.team.findMany({ orderBy: { name: "asc" }, include: { game: true, owner: true } });
 
   return (
     <div>
@@ -27,7 +27,7 @@ export default async function AdminTeamsPage() {
             <CountryFlag code={team.country} />
             <span className="flex-1 font-medium">{team.name}</span>
             <span className="text-xs text-foreground-muted">{team.game.shortName}</span>
-            {team.isClaimed && <span className="text-xs text-brand-via">self-service</span>}
+            {team.owner && <span className="text-xs text-brand-via">sahib: {team.owner.nickname}</span>}
             {!team.isActive && <span className="text-xs text-live">deaktiv</span>}
           </Link>
         ))}

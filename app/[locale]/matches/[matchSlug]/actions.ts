@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { getFanSession } from "@/lib/auth";
+import { getPlayerSession } from "@/lib/auth";
 
 export async function submitPrediction(matchId: string, teamId: string, matchSlug: string) {
-  const session = await getFanSession();
+  const session = await getPlayerSession();
   if (!session) throw new Error("Unauthorized");
 
   const match = await prisma.match.findUniqueOrThrow({ where: { id: matchId } });
@@ -17,9 +17,9 @@ export async function submitPrediction(matchId: string, teamId: string, matchSlu
   }
 
   await prisma.matchPrediction.upsert({
-    where: { matchId_fanId: { matchId, fanId: session.id } },
+    where: { matchId_playerId: { matchId, playerId: session.id } },
     update: { predictedWinnerId: teamId },
-    create: { matchId, fanId: session.id, predictedWinnerId: teamId },
+    create: { matchId, playerId: session.id, predictedWinnerId: teamId },
   });
 
   revalidatePath(`/[locale]/matches/${matchSlug}`, "page");

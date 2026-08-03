@@ -1,13 +1,14 @@
-import { getTranslations, getLocale } from "next-intl/server";
+import { getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { prisma } from "@/lib/prisma";
 import TeamAvatar from "@/components/common/TeamAvatar";
+import { publiclyListedPlayer } from "@/lib/publicPlayers";
 
 export default async function TopTransfers() {
-  const t = await getTranslations();
   const locale = await getLocale();
 
   const memberships = await prisma.teamMembership.findMany({
+    where: { player: publiclyListedPlayer, team: { isActive: true } },
     orderBy: { joinedAt: "desc" },
     take: 6,
     include: { team: true, player: true },
@@ -28,8 +29,9 @@ export default async function TopTransfers() {
             <Link href={`/teams/${m.team.slug}`} className="group flex items-center gap-2">
               <TeamAvatar name={m.team.name} logoUrl={m.team.logoUrl} color={m.team.primaryColor} size={22} />
               <span className="flex-1 truncate text-xs text-foreground-muted group-hover:text-foreground">
-                <span className="font-medium text-foreground">{m.player.nickname}</span>{" "}
-                {t("nav.teams")} {m.team.name}
+                <span className="font-medium text-foreground">{m.player.nickname}</span>
+                <span className="mx-1 text-brand-via">→</span>
+                {m.team.name}
               </span>
               <span className="shrink-0 text-[10px] text-foreground-muted">{dateFmt.format(m.joinedAt)}</span>
             </Link>

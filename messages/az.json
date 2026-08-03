@@ -33,15 +33,13 @@
     "mvp": "Matçın MVP-si"
   },
   "auth": {
-    "team": "Komanda yarat",
     "player": "Oyunçu yarat",
-    "fan": "İzləyici ol",
     "login": "Giriş",
     "register": "Qeydiyyat"
   },
   "predictions": {
     "title": "Lider Cədvəli",
-    "subtitle": "Ən dəqiq matç proqnozları verən izləyicilər",
+    "subtitle": "Ən dəqiq matç proqnozları verən oyunçular",
     "rank": "Sıra",
     "username": "İstifadəçi",
     "points": "Xal",

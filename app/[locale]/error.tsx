@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { Link } from "@/i18n/navigation";
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
@@ -26,9 +27,9 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
         >
           Yenidən cəhd et · Try again
         </button>
-        <a href="/" className="rounded-md border border-border-subtle px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-surface">
+        <Link href="/" className="rounded-md border border-border-subtle px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-surface">
           Ana səhifə · Home
-        </a>
+        </Link>
       </div>
     </div>
   );

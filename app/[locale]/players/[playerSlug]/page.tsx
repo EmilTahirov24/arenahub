@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { Link } from "@/i18n/navigation";
@@ -15,6 +16,17 @@ export const dynamic = "force-dynamic";
 function average(values: number[]) {
   if (values.length === 0) return null;
   return values.reduce((sum, v) => sum + v, 0) / values.length;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ playerSlug: string }>;
+}): Promise<Metadata> {
+  const { playerSlug } = await params;
+  const player = await prisma.player.findUnique({ where: { slug: playerSlug }, include: { game: true } });
+  if (!player) return {};
+  return { title: `${player.nickname} — ${player.game.name}` };
 }
 
 export default async function PlayerProfilePage({

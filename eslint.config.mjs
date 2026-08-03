@@ -12,7 +12,16 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Prisma-generated client.
+    "app/generated/**",
   ]),
+  {
+    rules: {
+      // Leading underscore marks an argument that an external signature forces
+      // on us but we don't use — e.g. `_prevState` in useActionState actions.
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+    },
+  },
 ]);
 
 export default eslintConfig;

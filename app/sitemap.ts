@@ -1,16 +1,35 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { routing } from "@/i18n/routing";
+import { publiclyListedPlayer } from "@/lib/publicPlayers";
+import { siteUrl } from "@/lib/siteUrl";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+// Without this Next prerenders the sitemap at build time, so every match, news
+// article and player added after a deploy stays invisible to crawlers until the
+// next build. Only crawlers fetch this route, so querying per request is cheap.
+export const dynamic = "force-dynamic";
 
-const STATIC_PATHS = ["", "/matches", "/results", "/live", "/teams", "/players", "/news", "/events", "/stats"];
+const STATIC_PATHS = [
+  "",
+  "/matches",
+  "/results",
+  "/live",
+  "/teams",
+  "/players",
+  "/news",
+  "/events",
+  "/stats",
+  "/predictions",
+  "/local",
+];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const SITE_URL = siteUrl();
+
   const [matches, teams, players, articles, tournaments] = await Promise.all([
     prisma.match.findMany({ select: { slug: true, updatedAt: true }, take: 500, orderBy: { scheduledAt: "desc" } }),
     prisma.team.findMany({ select: { slug: true, updatedAt: true }, where: { isActive: true } }),
-    prisma.player.findMany({ select: { slug: true, updatedAt: true } }),
+    prisma.player.findMany({ select: { slug: true, updatedAt: true }, where: publiclyListedPlayer }),
     prisma.newsArticle.findMany({ select: { slug: true, updatedAt: true }, where: { publishedAt: { not: null } } }),
     prisma.tournament.findMany({ select: { slug: true, updatedAt: true } }),
   ]);

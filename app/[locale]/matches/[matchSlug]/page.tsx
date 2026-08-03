@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getTranslations, getLocale, setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
-import { getFanSession } from "@/lib/auth";
+import { getMyPrediction } from "@/lib/predictions";
+import { getPlayerSession } from "@/lib/auth";
 import PageShell from "@/components/layout/PageShell";
 import AdSlot from "@/components/ads/AdSlot";
 import TeamAvatar from "@/components/common/TeamAvatar";
@@ -68,7 +69,7 @@ export default async function MatchDetailPage({
 
   if (!match) notFound();
 
-  const fanSession = await getFanSession();
+  const predictor = await getPlayerSession();
 
   const [rosterA, rosterB, headToHead, predictionCounts, myPrediction] = await Promise.all([
     prisma.teamMembership.findMany({ where: { teamId: match.teamAId, leftAt: null }, include: { player: true } }),
@@ -84,9 +85,7 @@ export default async function MatchDetailPage({
       },
     }),
     prisma.matchPrediction.groupBy({ by: ["predictedWinnerId"], where: { matchId: match.id }, _count: true }),
-    fanSession
-      ? prisma.matchPrediction.findUnique({ where: { matchId_fanId: { matchId: match.id, fanId: fanSession.id } } })
-      : null,
+    getMyPrediction(match.id),
   ]);
 
   const teamACount = predictionCounts.find((p) => p.predictedWinnerId === match.teamAId)?._count ?? 0;
@@ -219,7 +218,7 @@ export default async function MatchDetailPage({
         teamA={match.teamA}
         teamB={match.teamB}
         winnerId={match.winnerId}
-        isFanLoggedIn={!!fanSession}
+        isLoggedIn={!!predictor}
         myPick={myPrediction?.predictedWinnerId ?? null}
         teamACount={teamACount}
         teamBCount={teamBCount}

@@ -5,8 +5,13 @@ import { useEffect, useState } from "react";
 export default function ThemeToggle() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
+  // The real theme is applied pre-hydration by the inline script in the root
+  // layout, so it can only be read from the DOM after mount. Seeding this from
+  // `document` in a useState initializer would render "light" on a server that
+  // rendered "dark" and break hydration — the post-mount sync is deliberate.
   useEffect(() => {
     const current = document.documentElement.getAttribute("data-theme");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(current === "light" ? "light" : "dark");
   }, []);
 

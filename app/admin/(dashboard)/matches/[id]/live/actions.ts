@@ -2,14 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { getAdminSession } from "@/lib/auth";
+import { requireAdmin } from "@/lib/adminAuth";
 import { awardPredictionPoints } from "@/lib/predictions";
 import type { MatchStatus, MapStatus, VetoAction } from "@/app/generated/prisma/client";
 
-async function requireAdmin() {
-  const session = await getAdminSession();
-  if (!session) throw new Error("Unauthorized");
-}
 
 async function recomputeMatchScore(matchId: string) {
   const match = await prisma.match.findUniqueOrThrow({ where: { id: matchId } });

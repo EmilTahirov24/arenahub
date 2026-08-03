@@ -1,5 +1,6 @@
 import ImageUpload from "@/components/forms/ImageUpload";
 import CountrySelect from "@/components/forms/CountrySelect";
+import SocialInputs from "@/components/players/SocialInputs";
 import { inputClass, labelClass, primaryButtonClass } from "@/components/admin/formStyles";
 import { parseSocials } from "@/lib/socials";
 import type { Player, Team, Game } from "@/app/generated/prisma/client";
@@ -79,15 +80,7 @@ export default function PlayerForm({
       </div>
       <ImageUpload name="photoUrl" label="Şəkil" defaultValue={player?.photoUrl} />
 
-      <div>
-        <p className={labelClass}>Sosial linklər</p>
-        <div className="space-y-2">
-          <input name="social_instagram" defaultValue={socials.instagram ?? ""} placeholder="Instagram URL" className={inputClass} />
-          <input name="social_twitter" defaultValue={socials.twitter ?? ""} placeholder="X / Twitter URL" className={inputClass} />
-          <input name="social_faceit" defaultValue={socials.faceit ?? ""} placeholder="Faceit URL" className={inputClass} />
-          <input name="social_twitch" defaultValue={socials.twitch ?? ""} placeholder="Twitch URL" className={inputClass} />
-        </div>
-      </div>
+      <SocialInputs socials={socials} />
 
       <button type="submit" className={primaryButtonClass}>
         Yadda saxla

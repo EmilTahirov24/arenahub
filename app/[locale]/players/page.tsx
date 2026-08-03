@@ -1,9 +1,21 @@
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { Link } from "@/i18n/navigation";
 import PageShell from "@/components/layout/PageShell";
 import PlayerAvatar from "@/components/common/PlayerAvatar";
 import CountryFlag from "@/components/common/CountryFlag";
+import { publiclyListedPlayer } from "@/lib/publicPlayers";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale });
+  return { title: t("nav.players") };
+}
 
 export default async function PlayersPage({
   params,
@@ -21,7 +33,7 @@ export default async function PlayersPage({
   const activeGame = gameSlug ?? games[0]?.slug;
 
   const players = await prisma.player.findMany({
-    where: { status: "ACTIVE", game: { slug: activeGame } },
+    where: { AND: [publiclyListedPlayer, { status: "ACTIVE", game: { slug: activeGame } }] },
     orderBy: { nickname: "asc" },
     include: {
       memberships: { where: { leftAt: null }, include: { team: true }, take: 1 },

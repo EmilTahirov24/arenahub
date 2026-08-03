@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { dayRange } from "@/lib/dates";
@@ -6,6 +7,16 @@ import PageShell from "@/components/layout/PageShell";
 import MatchFilters from "@/components/matches/MatchFilters";
 import MatchGroup from "@/components/matches/MatchGroup";
 import type { Prisma } from "@/app/generated/prisma/client";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale });
+  return { title: t("nav.results") };
+}
 
 export default async function ResultsPage({
   params,
