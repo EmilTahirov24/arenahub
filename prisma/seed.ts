@@ -143,14 +143,17 @@ const REAL_CS2_TEAMS: { name: string; country: string | null; earnings?: number;
   { name: "MIBR", country: "BR", players: ["nqz", "LNZ", "brnz4n", "venomzera", "insani"] },
   { name: "Alliance", country: "SE", players: ["twist", "eraa", "bobeksde", "upE", "Avid"] },
   { name: "TYLOO", country: "CN", players: ["JamYoung", "Jee", "Mercury", "Moseyuh", "Zero"] },
-  // Teams that appear in the recorded results below but not in the ranking the
-  // owner supplied. Country and roster are left blank rather than guessed —
-  // both are one edit away in the admin panel.
-  { name: "paiN", country: null, players: [] },
-  { name: "Liquid", country: null, players: [] },
-  { name: "Lynn Vision", country: null, players: [] },
-  { name: "M80", country: null, players: [] },
-  { name: "Monte", country: null, players: [] },
+  // Teams that appear in the recorded results but not in the ranking the owner
+  // supplied. Countries here come from general knowledge of the organisations
+  // rather than from the source screenshots — an organisation's home country is
+  // stable and well documented, so it is worth stating and easy to correct.
+  // Rosters are deliberately left empty: line-ups change constantly and a stale
+  // guess would put a real player on a team they do not play for.
+  { name: "paiN", country: "BR", players: [] },
+  { name: "Liquid", country: "NL", players: [] },
+  { name: "Lynn Vision", country: "CN", players: [] },
+  { name: "M80", country: "US", players: [] },
+  { name: "Monte", country: "UA", players: [] },
 ];
 
 /**
