@@ -3,13 +3,11 @@ import { inputClass, labelClass, primaryButtonClass } from "@/components/admin/f
 import type { AdBanner, AdPlacement } from "@/app/generated/prisma/client";
 
 const PLACEMENTS: { value: AdPlacement; label: string }[] = [
-  { value: "HEADER", label: "Header" },
   { value: "SIDEBAR_LEFT", label: "Sol sidebar" },
   { value: "SIDEBAR_RIGHT_TOP", label: "Sağ sidebar (yuxarı)" },
   { value: "SIDEBAR_RIGHT_BOTTOM", label: "Sağ sidebar (aşağı)" },
   { value: "IN_CONTENT", label: "Kontent içi" },
   { value: "MATCH_PAGE_TOP", label: "Matç səhifəsi yuxarı" },
-  { value: "FOOTER", label: "Footer" },
 ];
 
 function toDateInputValue(date?: Date | null) {
@@ -32,7 +30,7 @@ export default function AdForm({
       </div>
       <div>
         <label className={labelClass}>Yer</label>
-        <select name="placement" defaultValue={ad?.placement ?? "HEADER"} className={inputClass}>
+        <select name="placement" defaultValue={ad?.placement ?? "SIDEBAR_RIGHT_TOP"} className={inputClass}>
           {PLACEMENTS.map((p) => (
             <option key={p.value} value={p.value}>
               {p.label}

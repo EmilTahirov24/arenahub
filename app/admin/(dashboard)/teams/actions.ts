@@ -18,6 +18,7 @@ function teamData(formData: FormData) {
     gameId: String(formData.get("gameId") ?? ""),
     country: String(formData.get("country") ?? "") || null,
     ownerId: String(formData.get("ownerId") ?? "") || null,
+    earnings: formData.get("earnings") ? Number(formData.get("earnings")) : null,
     primaryColor: String(formData.get("primaryColor") ?? "") || null,
     secondaryColor: String(formData.get("secondaryColor") ?? "") || null,
     logoUrl: String(formData.get("logoUrl") ?? "") || null,

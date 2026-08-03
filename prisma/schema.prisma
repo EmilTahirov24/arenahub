@@ -110,6 +110,9 @@ model Team {
   // recent result, so the ranking table can show the movement.
   rating         Float     @default(1000)
   previousRating Float     @default(1000)
+  /// Career prize money, entered by an admin from a public source. Unrelated to
+  /// TournamentPrize, which only covers tournaments recorded on this site.
+  earnings       Int?
   primaryColor   String?
   secondaryColor String?
   description    String?
@@ -160,6 +163,15 @@ model Player {
   isClaimed     Boolean  @default(false)
   emailVerified Boolean  @default(false)
   points        Int      @default(0)
+
+  /// Period averages entered by an admin from a public source, for players whose
+  /// individual matches are not recorded here. Left null when unknown — never
+  /// filled with placeholder numbers, since these describe real people.
+  /// PlayerMatchStat still takes precedence where real matches exist.
+  statMaps           Int?
+  statKillsPerRound  Float?
+  statDeathsPerRound Float?
+  statDamagePerRound Float?
 
   failedLoginAttempts Int       @default(0)
   lockUntil           DateTime?
@@ -274,8 +286,27 @@ model Tournament {
 
   participants TournamentParticipant[]
   matches      Match[]
+  prizes       TournamentPrize[]
 
   @@index([gameId])
+}
+
+/// One row of a tournament's prize breakdown. The amount belongs to a PLACE
+/// RANGE, not to a team — "5-8th places — $60,000" is a single row. A team's
+/// prize follows from where its `placement` falls, so it is never stored twice
+/// and cannot drift out of sync with the published breakdown.
+model TournamentPrize {
+  id        String @id @default(cuid())
+  placeFrom Int
+  placeTo   Int
+  amount    Int
+  label     String?
+
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, placeFrom])
+  @@index([tournamentId])
 }
 
 model TournamentParticipant {

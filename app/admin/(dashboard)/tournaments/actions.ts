@@ -62,6 +62,44 @@ export async function addParticipant(tournamentId: string, formData: FormData) {
   revalidatePath("/[locale]", "layout");
 }
 
+/** Placement decides which prize range a team falls into on the public page. */
+export async function setParticipantPlacement(tournamentId: string, participantId: string, formData: FormData) {
+  await requireAdmin();
+  const raw = String(formData.get("placement") ?? "").trim();
+  await prisma.tournamentParticipant.update({
+    where: { id: participantId },
+    data: { placement: raw === "" ? null : Number(raw) },
+  });
+  revalidatePath(`/admin/tournaments/${tournamentId}`);
+  revalidatePath("/[locale]", "layout");
+}
+
+export async function addPrize(tournamentId: string, formData: FormData) {
+  await requireAdmin();
+  const placeFrom = Number(formData.get("placeFrom"));
+  const placeTo = Number(formData.get("placeTo"));
+  const amount = Number(formData.get("amount"));
+  if (!placeFrom || !placeTo || placeTo < placeFrom) {
+    throw new Error("Yer aralığı düzgün deyil");
+  }
+
+  await prisma.tournamentPrize.upsert({
+    where: { tournamentId_placeFrom: { tournamentId, placeFrom } },
+    create: { tournamentId, placeFrom, placeTo, amount, label: String(formData.get("label") ?? "") || null },
+    update: { placeTo, amount, label: String(formData.get("label") ?? "") || null },
+  });
+
+  revalidatePath(`/admin/tournaments/${tournamentId}`);
+  revalidatePath("/[locale]", "layout");
+}
+
+export async function removePrize(tournamentId: string, prizeId: string) {
+  await requireAdmin();
+  await prisma.tournamentPrize.delete({ where: { id: prizeId } });
+  revalidatePath(`/admin/tournaments/${tournamentId}`);
+  revalidatePath("/[locale]", "layout");
+}
+
 export async function removeParticipant(tournamentId: string, participantId: string) {
   await requireAdmin();
   await prisma.tournamentParticipant.delete({ where: { id: participantId } });

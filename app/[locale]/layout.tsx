@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import AdSlot from "@/components/ads/AdSlot";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -41,7 +40,6 @@ export default async function LocaleLayout({
     <NextIntlClientProvider>
       <Header />
       <div className="mx-auto flex max-w-[1400px] justify-center px-4 pt-3">
-        <AdSlot placement="HEADER" />
       </div>
       <main className="flex-1">{children}</main>
       <Footer />

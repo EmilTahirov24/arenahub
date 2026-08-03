@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import PageShell from "@/components/layout/PageShell";
 import TeamAvatar from "@/components/common/TeamAvatar";
 import CountryFlag from "@/components/common/CountryFlag";
+import { countryName } from "@/lib/countries";
 import { ratingDelta } from "@/lib/elo";
 
 export async function generateMetadata({
@@ -15,6 +16,11 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale });
   return { title: t("nav.teams") };
+}
+
+function formatEarnings(amount: number | null) {
+  if (amount == null) return null;
+  return "$" + amount.toLocaleString("en-US").replace(/,/g, " ");
 }
 
 export default async function TeamsPage({
@@ -28,6 +34,7 @@ export default async function TeamsPage({
   setRequestLocale(locale);
   const { game: gameSlug } = await searchParams;
   const t = await getTranslations();
+  const az = locale === "az";
 
   const games = await prisma.game.findMany({ where: { isActive: true } });
   const activeGame = gameSlug ?? games[0]?.slug;
@@ -36,6 +43,11 @@ export default async function TeamsPage({
     where: { isActive: true, game: { slug: activeGame } },
     orderBy: [{ rating: "desc" }, { name: "asc" }],
     include: {
+      memberships: {
+        where: { leftAt: null },
+        orderBy: { joinedAt: "asc" },
+        include: { player: { select: { nickname: true, slug: true } } },
+      },
       _count: {
         select: {
           wonMatches: true,
@@ -53,8 +65,79 @@ export default async function TeamsPage({
     team,
     played: team._count.homeMatches + team._count.awayMatches,
   }));
-  const ranked = withPlayed.filter((t) => t.played > 0);
-  const unranked = withPlayed.filter((t) => t.played === 0);
+  const ranked = withPlayed.filter((r) => r.played > 0);
+  // Every unplayed team sits on the same default rating, so ordering them by it
+  // would fall through to alphabetical and bury the biggest names at the bottom.
+  // Earnings is the only signal we have for them until they play.
+  const unranked = withPlayed
+    .filter((r) => r.played === 0)
+    .sort((a, b) => (b.team.earnings ?? -1) - (a.team.earnings ?? -1) || a.team.name.localeCompare(b.team.name));
+
+  const headCell = "px-3 py-2 text-left text-[11px] font-normal uppercase tracking-wide text-foreground-muted";
+
+  const row = ({ team, played }: (typeof withPlayed)[number], place: number | null) => {
+    const wins = team._count.wonMatches;
+    const delta = ratingDelta(team);
+    const earnings = formatEarnings(team.earnings);
+
+    return (
+      <tr key={team.id} className="border-t border-border-subtle hover:bg-surface-raised">
+        <td className="w-12 px-3 py-2.5 text-center text-sm font-semibold text-foreground-muted tabular-nums">
+          {place ?? "—"}
+        </td>
+        <td className="px-3 py-2.5">
+          <Link href={`/teams/${team.slug}`} className="flex items-center gap-2.5 group">
+            <TeamAvatar name={team.name} logoUrl={team.logoUrl} color={team.primaryColor} size={32} />
+            <span className="min-w-0">
+              <span className="flex items-center gap-1.5 truncate font-semibold group-hover:underline">
+                <CountryFlag code={team.country} />
+                {team.name}
+              </span>
+              <span className="block truncate text-xs text-foreground-muted">
+                {countryName(team.country) ?? "—"}
+              </span>
+            </span>
+          </Link>
+        </td>
+        <td className="hidden px-3 py-2.5 text-sm tabular-nums sm:table-cell">
+          {earnings ? <span className="text-emerald-400">{earnings}</span> : <span className="text-foreground-muted">—</span>}
+        </td>
+        <td className="px-3 py-2.5 text-right">
+          {played > 0 ? (
+            <>
+              <span className="font-display font-bold tabular-nums">{Math.round(team.rating)}</span>
+              {delta !== 0 && (
+                <span className={`ml-1.5 text-xs tabular-nums ${delta > 0 ? "text-emerald-400" : "text-live"}`}>
+                  {delta > 0 ? "▲" : "▼"}
+                  {Math.abs(delta)}
+                </span>
+              )}
+              <span className="block text-xs text-foreground-muted tabular-nums">
+                {wins}–{played - wins}
+                {played < 3 && <span className="ml-1">· {az ? "təxmini" : "prov."}</span>}
+              </span>
+            </>
+          ) : (
+            <span className="text-sm text-foreground-muted">—</span>
+          )}
+        </td>
+        <td className="hidden px-3 py-2.5 lg:table-cell">
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {team.memberships.map((m) => (
+              <Link
+                key={m.id}
+                href={`/players/${m.player.slug}`}
+                className="text-xs text-foreground-muted hover:text-foreground hover:underline"
+              >
+                {m.player.nickname}
+              </Link>
+            ))}
+            {team.memberships.length === 0 && <span className="text-xs text-foreground-muted">—</span>}
+          </span>
+        </td>
+      </tr>
+    );
+  };
 
   return (
     <PageShell>
@@ -79,86 +162,49 @@ export default async function TeamsPage({
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border-subtle">
-        {ranked.map(({ team, played }, i) => {
-          const wins = team._count.wonMatches;
-          const delta = ratingDelta(team);
-          return (
-            <Link
-              key={team.id}
-              href={`/teams/${team.slug}`}
-              className="flex items-center gap-3 border-b border-border-subtle bg-surface px-4 py-3 last:border-b-0 hover:bg-surface-raised"
-            >
-              <span className="w-6 shrink-0 text-sm font-semibold text-foreground-muted">#{i + 1}</span>
-              <TeamAvatar name={team.name} logoUrl={team.logoUrl} color={team.primaryColor} size={36} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 truncate font-medium">
-                  <CountryFlag code={team.country} />
-                  {team.name}
-                  {played < 3 && (
-                    <span
-                      title={
-                        locale === "az"
-                          ? "Az matç oynanılıb — reytinq hələ dəqiq deyil"
-                          : "Few matches played — rating is not settled yet"
-                      }
-                      className="rounded-full border border-border-subtle px-1.5 text-[10px] font-normal text-foreground-muted"
-                    >
-                      {locale === "az" ? "təxmini" : "provisional"}
-                    </span>
-                  )}
-                </div>
-                <div className="text-xs text-foreground-muted tabular-nums">
-                  {wins}–{played - wins}
-                </div>
-              </div>
-              <div className="shrink-0 text-right">
-                <div className="font-display font-bold tabular-nums">{Math.round(team.rating)}</div>
-                {delta !== 0 && (
-                  <div className={`text-xs tabular-nums ${delta > 0 ? "text-emerald-400" : "text-live"}`}>
-                    {delta > 0 ? "▲" : "▼"} {Math.abs(delta)}
-                  </div>
-                )}
-              </div>
-            </Link>
-          );
-        })}
-        {ranked.length === 0 && (
-          <p className="p-6 text-center text-sm text-foreground-muted">
-            {locale === "az"
-              ? "Hələ heç bir matç oynanılmayıb — nəticələr əlavə olunduqca reytinq cədvəli buradan formalaşacaq."
-              : "No matches played yet — the ranking builds here as results are added."}
-          </p>
-        )}
-      </div>
+      <div className="overflow-x-auto rounded-lg border border-border-subtle bg-surface">
+        <table className="w-full min-w-[520px]">
+          <thead>
+            <tr className="bg-surface-raised">
+              <th className={`${headCell} text-center`}>{az ? "Yer" : "Place"}</th>
+              <th className={headCell}>{az ? "Komanda" : "Team"}</th>
+              <th className={`${headCell} hidden sm:table-cell`}>{az ? "Qazanc" : "Earnings"}</th>
+              <th className={`${headCell} text-right`}>{az ? "Reytinq" : "Rating"}</th>
+              <th className={`${headCell} hidden lg:table-cell`}>{az ? "Oyunçular" : "Players"}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ranked.map((entry, i) => row(entry, i + 1))}
+            {ranked.length === 0 && (
+              <tr className="border-t border-border-subtle">
+                <td colSpan={5} className="p-6 text-center text-sm text-foreground-muted">
+                  {az
+                    ? "Hələ heç bir matç oynanılmayıb — nəticələr əlavə olunduqca reytinq cədvəli buradan formalaşacaq."
+                    : "No matches played yet — the ranking builds here as results are added."}
+                </td>
+              </tr>
+            )}
 
-      {unranked.length > 0 && (
-        <>
-          <h2 className="font-display mb-1 mt-8 text-lg font-bold">
-            {locale === "az" ? "Reytinqsiz komandalar" : "Unranked teams"}
-          </h2>
-          <p className="mb-3 text-sm text-foreground-muted">
-            {locale === "az"
-              ? "Hələ matçı olmayan komandalar. İlk nəticə yazılan kimi yuxarıdakı cədvələ qoşulurlar."
-              : "Teams with no matches yet. They join the table above as soon as a result is recorded."}
-          </p>
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-            {unranked.map(({ team }) => (
-              <Link
-                key={team.id}
-                href={`/teams/${team.slug}`}
-                className="flex items-center gap-3 rounded-lg border border-border-subtle bg-surface px-3 py-2 hover:bg-surface-raised"
-              >
-                <TeamAvatar name={team.name} logoUrl={team.logoUrl} color={team.primaryColor} size={28} />
-                <span className="flex min-w-0 items-center gap-1.5 truncate text-sm font-medium">
-                  <CountryFlag code={team.country} />
-                  {team.name}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </>
-      )}
+            {unranked.length > 0 && (
+              <>
+                <tr className="border-t border-border-subtle bg-surface-raised">
+                  <td colSpan={5} className="px-3 py-2">
+                    <span className="font-display text-sm font-bold">
+                      {az ? "Reytinqsiz komandalar" : "Unranked teams"}
+                    </span>
+                    <span className="ml-2 text-xs text-foreground-muted">
+                      {az
+                        ? "hələ matçı yoxdur — ilk nəticə ilə yuxarı qalxırlar"
+                        : "no matches yet — they move up on their first result"}
+                    </span>
+                  </td>
+                </tr>
+                {unranked.map((entry) => row(entry, null))}
+              </>
+            )}
+          </tbody>
+        </table>
+      </div>
     </PageShell>
   );
 }
