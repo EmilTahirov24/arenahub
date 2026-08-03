@@ -41,6 +41,11 @@ export default function TeamForm({
         <CountrySelect defaultValue={team?.country} className={inputClass} />
       </div>
       <div>
+        <label className={labelClass}>Qazanc ($, tam ədəd)</label>
+        <input name="earnings" type="number" min="0" defaultValue={team?.earnings ?? ""} className={inputClass} />
+        <p className="mt-1 text-xs text-foreground-muted">Ümumi karyera mükafat qazancı. Boş buraxsanız cədvəldə “—” görünür.</p>
+      </div>
+      <div>
         <label className={labelClass}>Sahib (qeydiyyatlı oyunçu)</label>
         <select name="ownerId" defaultValue={team?.ownerId ?? ""} className={inputClass}>
           <option value="">Sahibsiz</option>

@@ -103,11 +103,6 @@ const ROLE_POOL: Record<string, string[]> = {
 };
 
 /**
- * Real, well-known CS2 organizations and widely-recognized player handles/roles.
- * Best-effort snapshot, not a live feed — rosters shift often; edit via the admin panel
- * if something has moved on since. Names/roles are public facts, not reproduced media.
- */
-/**
  * Real CS2 organisations, countries and rosters, supplied by the site owner.
  *
  * Two rules apply to everything in this list, because these are real companies
@@ -122,28 +117,58 @@ const ROLE_POOL: Record<string, string[]> = {
  * Roles are left empty rather than guessed. Rosters are a snapshot and go stale
  * as players transfer — they are maintained from the admin panel.
  */
-const REAL_CS2_TEAMS: { name: string; country: string; players: string[] }[] = [
-  { name: "Spirit", country: "RU", players: ["Sh1ro", "Magixx", "Zont1x", "TN1R", "Donk"] },
-  { name: "Falcons", country: "SA", players: ["NiKo", "karrigan", "TeSeS", "m0NESY", "kyousuke"] },
-  { name: "MOUZ", country: "DE", players: ["Spinx", "torzsi", "xertioN", "PR", "xelex"] },
-  { name: "9z", country: "AR", players: ["meyern", "max", "luchov", "dgt", "HUASOPEEK"] },
-  { name: "Vitality", country: "FR", players: ["apEX", "ropz", "ZywOo", "flameZ", "mezii"] },
-  { name: "Natus Vincere", country: "UA", players: ["Aleksib", "b1t", "iM", "w0nderful", "makazze"] },
-  { name: "FURIA", country: "BR", players: ["FalleN", "YEKINDAR", "yuurih", "KSCERATO", "molodoy"] },
-  { name: "Legacy", country: "BR", players: ["arT", "latto", "dumau", "n1ssim", "saadzin"] },
-  { name: "BetBoom", country: "RU", players: ["Boombl4", "zorte", "d1Ledez", "s1ren", "Magnojez"] },
-  { name: "Aurora", country: "RU", players: ["XANTARES", "woxic", "Jimpphat", "kyxsan", "Wicadia"] },
-  { name: "PARIVISION", country: "RU", players: ["HObbit", "Jame", "xiELO", "zweih", "slaxejezzz"] },
-  { name: "G2", country: "DE", players: ["huNter-", "Nertz", "HeavyGod", "r1nkle", "MATYS"] },
-  { name: "FaZe", country: "US", players: ["Twistzz", "frozen", "Neityu", "jcobbb", "JBOEN"] },
-  { name: "FUT", country: "TR", players: ["xfl0ud", "dem0n", "Krabeni", "cmtry", "dziugss"] },
-  { name: "The MongolZ", country: "MN", players: ["Techno4K", "bLitz", "910", "tikuak", "DarkMeister"] },
+const REAL_CS2_TEAMS: { name: string; country: string; earnings?: number; players: string[] }[] = [
+  { name: "Vitality", country: "FR", earnings: 1_082_500, players: ["apEX", "ropz", "ZywOo", "flameZ", "mezii"] },
+  { name: "Falcons", country: "SA", earnings: 789_000, players: ["NiKo", "karrigan", "TeSeS", "m0NESY", "kyousuke"] },
+  { name: "Spirit", country: "RU", earnings: 568_188, players: ["sh1ro", "magixx", "zont1x", "tN1R", "donk"] },
+  { name: "MOUZ", country: "DE", earnings: 563_813, players: ["Spinx", "torzsi", "xertioN", "PR", "xelex"] },
+  { name: "FURIA", country: "BR", earnings: 467_500, players: ["FalleN", "YEKINDAR", "yuurih", "KSCERATO", "molodoy"] },
+  { name: "Natus Vincere", country: "UA", earnings: 433_500, players: ["Aleksib", "b1t", "iM", "w0nderful", "makazze"] },
+  { name: "9z", country: "AR", earnings: 363_442, players: ["meyern", "max", "luchov", "dgt", "HUASOPEEK"] },
+  { name: "PARIVISION", country: "RU", earnings: 309_750, players: ["HObbit", "Jame", "xiELO", "zweih", "slaxejezzz"] },
+  { name: "FUT", country: "TR", earnings: 289_125, players: ["xfl0ud", "dem0n", "Krabeni", "cmtry", "dziugss"] },
+  { name: "Aurora", country: "RU", earnings: 287_000, players: ["XANTARES", "woxic", "Jimpphat", "kyxsan", "Wicadia"] },
+  { name: "Legacy", country: "BR", earnings: 270_253, players: ["arT", "latto", "dumau", "try", "n1ssim"] },
+  { name: "Astralis", country: "DK", earnings: 236_000, players: ["HooXi", "jabbi", "ryu", "Staehr", "phzy"] },
+  { name: "The MongolZ", country: "MN", earnings: 235_000, players: ["Techno4K", "bLitz", "910", "tikuak", "DarkMeister"] },
+  { name: "G2", country: "DE", earnings: 215_115, players: ["huNter-", "Nertz", "HeavyGod", "r1nkle", "MATYS"] },
+  { name: "FaZe", country: "US", earnings: 171_750, players: ["Twistzz", "frozen", "Neityu", "jcobbb", "JBOEN"] },
+  { name: "3DMAX", country: "FR", earnings: 137_231, players: ["Maka", "Lucky", "misutaaa", "Kursy", "Graviti"] },
+  { name: "Nemesis", country: "RU", earnings: 135_500, players: ["SELLTER", "r3salt", "Sdaim", "tex1y", "mag1k3Y"] },
+  { name: "BetBoom", country: "RU", earnings: 125_078, players: ["Boombl4", "zorte", "d1Ledez", "s1ren", "Magnojez"] },
+  { name: "B8", country: "UA", earnings: 123_894, players: ["alex666", "npl", "kensizor", "esenthial", "s1zzi"] },
+  { name: "GamerLegion", country: "DE", earnings: 122_930, players: ["Snax", "REZ", "Tauson", "FL4MUS", "hypex"] },
+  // Present in the ranking the owner supplied, absent from the earnings list —
+  // kept without an earnings figure rather than guessing one.
   { name: "MIBR", country: "BR", players: ["nqz", "LNZ", "brnz4n", "venomzera", "insani"] },
   { name: "Alliance", country: "SE", players: ["twist", "eraa", "bobeksde", "upE", "Avid"] },
   { name: "TYLOO", country: "CN", players: ["JamYoung", "Jee", "Mercury", "Moseyuh", "Zero"] },
-  { name: "B8", country: "UA", players: ["alex666", "npl", "kensizor", "esenthial", "s1zzi"] },
-  { name: "Astralis", country: "DK", players: ["HooXi", "jabbi", "ryu", "Staehr", "phzy"] },
 ];
+
+/**
+ * Period averages for the players the owner supplied figures for.
+ *
+ * Only these are filled in. Every other player is left null — inventing numbers
+ * for a named professional would publish a false claim about a real person, and
+ * an empty cell is the honest representation of "we have no data yet".
+ * [maps, kills/round, deaths/round, damage/round]
+ */
+const CS2_PLAYER_STATS: Record<string, [number, number, number, number]> = {
+  ZywOo: [88, 0.88, 0.55, 88.06],
+  donk: [88, 0.9, 0.68, 94.57],
+  m0NESY: [92, 0.81, 0.59, 81.19],
+  Magnojez: [60, 0.76, 0.66, 86.03],
+  sh1ro: [88, 0.78, 0.54, 77.82],
+  w0nderful: [102, 0.75, 0.58, 73.11],
+  kyousuke: [90, 0.76, 0.69, 83.29],
+  dumau: [78, 0.74, 0.66, 83.6],
+  makazze: [102, 0.74, 0.7, 82.73],
+  molodoy: [97, 0.75, 0.6, 76.79],
+  latto: [78, 0.73, 0.62, 79.11],
+  flameZ: [88, 0.74, 0.66, 79.03],
+  xertioN: [109, 0.72, 0.66, 84.78],
+  luchov: [65, 0.74, 0.69, 83.2],
+};
 
 function randomTeamStat(rating: number) {
   const kills = Math.max(0, Math.round(rating * (12 + Math.random() * 10)));
@@ -224,17 +249,23 @@ async function main() {
             slug: `${gameDef.slug}-${slugify(def.name)}`,
             name: def.name,
             country: def.country,
+            earnings: def.earnings ?? null,
             primaryColor: gameDef.accentColor,
             secondaryColor: "#0a0b10",
             gameId: game.id,
           },
         });
         for (const nickname of def.players) {
+          const stats = CS2_PLAYER_STATS[nickname];
           const player = await prisma.player.create({
             data: {
               slug: slugify(nickname) + "-" + team.id.slice(-4),
               nickname,
               gameId: game.id,
+              statMaps: stats?.[0] ?? null,
+              statKillsPerRound: stats?.[1] ?? null,
+              statDeathsPerRound: stats?.[2] ?? null,
+              statDamagePerRound: stats?.[3] ?? null,
             },
           });
           await prisma.teamMembership.create({ data: { teamId: team.id, playerId: player.id } });
@@ -331,6 +362,19 @@ async function main() {
         status: "ONGOING",
       },
     });
+
+    // Prize breakdown, by place range — the shape real tournaments publish.
+    for (const t of [finishedTournament, ongoingTournament]) {
+      const pot = t.id === finishedTournament.id ? 1 : 2;
+      await prisma.tournamentPrize.createMany({
+        data: [
+          { tournamentId: t.id, placeFrom: 1, placeTo: 1, amount: 100_000 * pot, label: "Winner" },
+          { tournamentId: t.id, placeFrom: 2, placeTo: 2, amount: 50_000 * pot },
+          { tournamentId: t.id, placeFrom: 3, placeTo: 4, amount: 25_000 * pot },
+          { tournamentId: t.id, placeFrom: 5, placeTo: 8, amount: 12_500 * pot },
+        ],
+      });
+    }
 
     for (let i = 0; i < teams.length; i++) {
       await prisma.tournamentParticipant.create({
@@ -533,14 +577,14 @@ async function main() {
   }
 
   console.log("Seeding ad banners...");
-  const adDefs: { name: string; placement: "HEADER" | "SIDEBAR_LEFT" | "SIDEBAR_RIGHT_TOP" | "SIDEBAR_RIGHT_BOTTOM" | "IN_CONTENT" | "MATCH_PAGE_TOP" | "FOOTER"; w: number; h: number }[] = [
-    { name: "Header Leaderboard", placement: "HEADER", w: 728, h: 90 },
+  // HEADER and FOOTER are intentionally absent: those slots were removed from
+  // the site, so seeding banners for them would create invisible rows.
+  const adDefs: { name: string; placement: "SIDEBAR_LEFT" | "SIDEBAR_RIGHT_TOP" | "SIDEBAR_RIGHT_BOTTOM" | "IN_CONTENT" | "MATCH_PAGE_TOP"; w: number; h: number }[] = [
     { name: "Left Skyscraper", placement: "SIDEBAR_LEFT", w: 160, h: 600 },
     { name: "Right Rail Top", placement: "SIDEBAR_RIGHT_TOP", w: 300, h: 250 },
     { name: "Right Rail Bottom", placement: "SIDEBAR_RIGHT_BOTTOM", w: 300, h: 250 },
     { name: "In-Content Banner", placement: "IN_CONTENT", w: 468, h: 60 },
     { name: "Match Page Top", placement: "MATCH_PAGE_TOP", w: 728, h: 90 },
-    { name: "Footer Banner", placement: "FOOTER", w: 728, h: 90 },
   ];
   for (const ad of adDefs) {
     await prisma.adBanner.create({

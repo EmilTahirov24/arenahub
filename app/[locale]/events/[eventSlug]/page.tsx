@@ -8,6 +8,7 @@ import TeamAvatar from "@/components/common/TeamAvatar";
 import GameChip from "@/components/common/GameChip";
 import MatchCard from "@/components/matches/MatchCard";
 import Bracket from "@/components/events/Bracket";
+import { placeRangeLabel, formatMoney, prizeForPlacement } from "@/lib/prizes";
 
 const BRACKET_STAGES = new Set(["round of 16", "quarterfinal", "semifinal", "3rd place decider", "final"]);
 
@@ -39,7 +40,7 @@ export default async function EventDetailPage({
   });
   if (!tournament) notFound();
 
-  const [participants, matches] = await Promise.all([
+  const [participants, matches, prizes] = await Promise.all([
     prisma.tournamentParticipant.findMany({
       where: { tournamentId: tournament.id },
       orderBy: [{ placement: "asc" }, { seed: "asc" }],
@@ -49,6 +50,10 @@ export default async function EventDetailPage({
       where: { tournamentId: tournament.id },
       orderBy: { scheduledAt: "asc" },
       include: { teamA: true, teamB: true, tournament: true },
+    }),
+    prisma.tournamentPrize.findMany({
+      where: { tournamentId: tournament.id },
+      orderBy: { placeFrom: "asc" },
     }),
   ]);
 
@@ -69,21 +74,53 @@ export default async function EventDetailPage({
         </p>
       </div>
 
+      {prizes.length > 0 && (
+        <>
+          <h2 className="font-display mb-2 text-lg font-bold">
+            {locale === "az" ? "Nəticələr və mükafat bölgüsü" : "Results and prize distribution"}
+          </h2>
+          <div className="mb-6 overflow-hidden rounded-lg border border-border-subtle bg-surface">
+            {prizes.map((prize) => (
+              <div
+                key={prize.id}
+                className="flex items-center justify-between gap-3 border-b border-border-subtle px-4 py-2.5 last:border-b-0"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold">{placeRangeLabel(prize, locale)}</span>
+                  {prize.label && <span className="block truncate text-xs text-foreground-muted">{prize.label}</span>}
+                </span>
+                <span className="shrink-0 font-display font-bold tabular-nums text-emerald-400">
+                  {formatMoney(prize.amount)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       <h2 className="font-display mb-2 text-lg font-bold">{t("nav.teams")}</h2>
       <div className="mb-6 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        {participants.map((p) => (
-          <Link
-            key={p.id}
-            href={`/teams/${p.team.slug}`}
-            className="flex items-center gap-2 rounded-lg border border-border-subtle bg-surface p-2 hover:bg-surface-raised"
-          >
-            {p.placement && (
-              <span className="w-6 text-center text-xs font-semibold text-brand-via">#{p.placement}</span>
-            )}
-            <TeamAvatar name={p.team.name} logoUrl={p.team.logoUrl} color={p.team.primaryColor} size={28} />
-            <span className="truncate text-sm">{p.team.name}</span>
-          </Link>
-        ))}
+        {participants.map((p) => {
+          // Derived from the breakdown above rather than stored per team, so the
+          // two can never disagree.
+          const prize = prizeForPlacement(prizes, p.placement);
+          return (
+            <Link
+              key={p.id}
+              href={`/teams/${p.team.slug}`}
+              className="flex items-center gap-2 rounded-lg border border-border-subtle bg-surface p-2 hover:bg-surface-raised"
+            >
+              {p.placement && (
+                <span className="w-6 text-center text-xs font-semibold text-brand-via">#{p.placement}</span>
+              )}
+              <TeamAvatar name={p.team.name} logoUrl={p.team.logoUrl} color={p.team.primaryColor} size={28} />
+              <span className="min-w-0 flex-1 truncate text-sm">{p.team.name}</span>
+              {prize != null && (
+                <span className="shrink-0 text-xs tabular-nums text-emerald-400">{formatMoney(prize)}</span>
+              )}
+            </Link>
+          );
+        })}
       </div>
 
       {(() => {

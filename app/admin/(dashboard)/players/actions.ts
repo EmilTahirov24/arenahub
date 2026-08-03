@@ -12,6 +12,12 @@ function slugify(s: string) {
   return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
+/** Empty input stays unknown rather than becoming a misleading 0. */
+function numberOrNull(value: FormDataEntryValue | null) {
+  const s = String(value ?? "").trim();
+  return s === "" ? null : Number(s);
+}
+
 async function playerData(formData: FormData) {
   const nickname = String(formData.get("nickname") ?? "");
   const teamId = String(formData.get("teamId") ?? "") || null;
@@ -32,6 +38,10 @@ async function playerData(formData: FormData) {
       status: String(formData.get("status") ?? "ACTIVE") as PlayerStatus,
       photoUrl: String(formData.get("photoUrl") ?? "") || null,
       socials: socialsFromFormData(formData),
+      statMaps: numberOrNull(formData.get("statMaps")),
+      statKillsPerRound: numberOrNull(formData.get("statKillsPerRound")),
+      statDeathsPerRound: numberOrNull(formData.get("statDeathsPerRound")),
+      statDamagePerRound: numberOrNull(formData.get("statDamagePerRound")),
       gameId,
     },
     teamId,

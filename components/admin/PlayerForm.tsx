@@ -78,6 +78,34 @@ export default function PlayerForm({
           ))}
         </select>
       </div>
+      <fieldset className="rounded-md border border-border-subtle p-3">
+        <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
+          Dövr üzrə statistika
+        </legend>
+        <p className="mb-2 text-xs text-foreground-muted">
+          Matçları ayrıca yazılmayan oyunçular üçün. Bilmirsinizsə boş buraxın — cədvəldə “—” görünür.
+          Uydurma rəqəm yazmayın, bu göstəricilər real şəxsə aiddir.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelClass}>Xəritə sayı</label>
+            <input name="statMaps" type="number" min="0" defaultValue={player?.statMaps ?? ""} className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Öldürmə / raund</label>
+            <input name="statKillsPerRound" type="number" step="0.01" min="0" defaultValue={player?.statKillsPerRound ?? ""} className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Ölüm / raund</label>
+            <input name="statDeathsPerRound" type="number" step="0.01" min="0" defaultValue={player?.statDeathsPerRound ?? ""} className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Zərər / raund (ADR)</label>
+            <input name="statDamagePerRound" type="number" step="0.01" min="0" defaultValue={player?.statDamagePerRound ?? ""} className={inputClass} />
+          </div>
+        </div>
+      </fieldset>
+
       <ImageUpload name="photoUrl" label="Şəkil" defaultValue={player?.photoUrl} />
 
       <SocialInputs socials={socials} />
