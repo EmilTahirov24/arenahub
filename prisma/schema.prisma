@@ -73,6 +73,12 @@ enum TeamInviteStatus {
   CANCELLED
 }
 
+enum ProfileClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 // ---------- Core entities ----------
 
 model Game {
@@ -99,7 +105,11 @@ model Team {
   name           String
   logoUrl        String?
   country        String?
-  worldRanking   Int?
+  // Elo-style rating, computed from finished matches by lib/rating.ts — never
+  // typed in by hand. `previousRating` is the value before this team's most
+  // recent result, so the ranking table can show the movement.
+  rating         Float     @default(1000)
+  previousRating Float     @default(1000)
   primaryColor   String?
   secondaryColor String?
   description    String?
@@ -169,8 +179,36 @@ model Player {
   ownedTeams  Team[]            @relation("TeamOwner")
   invites     TeamInvite[]      @relation("PlayerInvites")
   sentInvites TeamInvite[]      @relation("SentInvites")
+  claimsOnMe  ProfileClaim[]    @relation("ClaimedProfile")
+  claimsMade  ProfileClaim[]    @relation("Claimant")
 
   @@index([gameId])
+}
+
+/// Someone who registered an account asking to take over a shell profile that
+/// was created for them (by an admin, the seed, or a team owner) before they
+/// signed up. Always reviewed by an admin: a shell profile carries public match
+/// stats and a stable URL, so auto-approving on a name match would let anyone
+/// register as a well-known nickname and inherit that player's history.
+model ProfileClaim {
+  id         String             @id @default(cuid())
+  status     ProfileClaimStatus @default(PENDING)
+  message    String
+  createdAt  DateTime           @default(now())
+  reviewedAt DateTime?
+  reviewNote String?
+
+  playerId String
+  player   Player @relation("ClaimedProfile", fields: [playerId], references: [id], onDelete: Cascade)
+
+  claimantId String
+  claimant   Player @relation("Claimant", fields: [claimantId], references: [id], onDelete: Cascade)
+
+  reviewedById String?
+  reviewedBy   AdminUser? @relation(fields: [reviewedById], references: [id])
+
+  @@unique([playerId, claimantId])
+  @@index([status])
 }
 
 /// A team owner asking an existing, registered player to join their roster.
@@ -447,5 +485,6 @@ model AdminUser {
   failedLoginAttempts Int       @default(0)
   lockUntil           DateTime?
 
-  newsArticles NewsArticle[]
+  newsArticles  NewsArticle[]
+  reviewedClaims ProfileClaim[]
 }

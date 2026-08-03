@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, requireSuperAdmin } from "@/lib/adminAuth";
+import { recomputeTeamRatings } from "@/lib/rating";
 import type { MatchStatus } from "@/app/generated/prisma/client";
 
 
@@ -37,20 +38,26 @@ export async function createMatch(formData: FormData) {
   const match = await prisma.match.create({
     data: { ...data, slug: matchSlug(teamA.slug, teamB.slug) },
   });
+  await recomputeTeamRatings();
   revalidatePath("/admin/matches");
+  revalidatePath("/[locale]", "layout");
   redirect(`/admin/matches/${match.id}`);
 }
 
 export async function updateMatch(id: string, formData: FormData) {
   await requireAdmin();
   await prisma.match.update({ where: { id }, data: matchData(formData) });
+  await recomputeTeamRatings();
   revalidatePath("/admin/matches");
+  revalidatePath("/[locale]", "layout");
   redirect("/admin/matches");
 }
 
 export async function deleteMatch(id: string) {
   await requireSuperAdmin();
   await prisma.match.delete({ where: { id } });
+  await recomputeTeamRatings();
   revalidatePath("/admin/matches");
+  revalidatePath("/[locale]", "layout");
   redirect("/admin/matches");
 }

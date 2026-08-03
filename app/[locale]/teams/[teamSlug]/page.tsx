@@ -9,6 +9,7 @@ import PlayerAvatar from "@/components/common/PlayerAvatar";
 import GameChip from "@/components/common/GameChip";
 import CountryFlag from "@/components/common/CountryFlag";
 import MatchCard from "@/components/matches/MatchCard";
+import { ratingDelta } from "@/lib/elo";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +47,7 @@ export default async function TeamProfilePage({
   });
   if (!team) notFound();
 
-  const [roster, matches, entries, finishedMatches] = await Promise.all([
+  const [roster, matches, entries, finishedMatches, teamsAbove] = await Promise.all([
     prisma.teamMembership.findMany({ where: { teamId: team.id, leftAt: null }, include: { player: true } }),
     prisma.match.findMany({
       where: { OR: [{ teamAId: team.id }, { teamBId: team.id }] },
@@ -64,8 +65,15 @@ export default async function TeamProfilePage({
       orderBy: { scheduledAt: "desc" },
       select: { winnerId: true },
     }),
+    // Rank is derived from the rating rather than stored, so it can never drift
+    // out of sync with the ranking table on /teams.
+    prisma.team.count({
+      where: { isActive: true, gameId: team.gameId, rating: { gt: team.rating } },
+    }),
   ]);
 
+  const rank = teamsAbove + 1;
+  const delta = ratingDelta(team);
   const wins = finishedMatches.filter((m) => m.winnerId === team.id).length;
   const losses = finishedMatches.length - wins;
   const winRate = finishedMatches.length > 0 ? Math.round((wins / finishedMatches.length) * 100) : null;
@@ -80,8 +88,17 @@ export default async function TeamProfilePage({
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex items-center gap-2">
               <GameChip name={team.game.shortName} color={team.game.accentColor} />
-              {team.worldRanking && (
-                <span className="text-xs text-foreground-muted">#{team.worldRanking} {locale === "az" ? "dünya" : "world"}</span>
+              {team.isActive && (
+                <span className="flex items-center gap-1.5 text-xs text-foreground-muted">
+                  <span>
+                    #{rank} · {Math.round(team.rating)} {locale === "az" ? "reytinq" : "rating"}
+                  </span>
+                  {delta !== 0 && (
+                    <span className={delta > 0 ? "text-emerald-400" : "text-live"}>
+                      {delta > 0 ? "▲" : "▼"} {Math.abs(delta)}
+                    </span>
+                  )}
+                </span>
               )}
             </div>
             <h1 className="flex items-center gap-2 font-display text-2xl font-bold">

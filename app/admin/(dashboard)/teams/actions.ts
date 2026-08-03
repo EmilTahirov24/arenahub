@@ -17,7 +17,7 @@ function teamData(formData: FormData) {
     slug: slugify(String(formData.get("slug") || name)),
     gameId: String(formData.get("gameId") ?? ""),
     country: String(formData.get("country") ?? "") || null,
-    worldRanking: formData.get("worldRanking") ? Number(formData.get("worldRanking")) : null,
+    ownerId: String(formData.get("ownerId") ?? "") || null,
     primaryColor: String(formData.get("primaryColor") ?? "") || null,
     secondaryColor: String(formData.get("secondaryColor") ?? "") || null,
     logoUrl: String(formData.get("logoUrl") ?? "") || null,
@@ -26,9 +26,28 @@ function teamData(formData: FormData) {
   };
 }
 
+/**
+ * A Player may own at most one team — the player-side create flow enforces it,
+ * so the admin form must too, otherwise one account would end up with two
+ * "Komandam" pages and no way to reach the second.
+ */
+async function assertOwnerFree(ownerId: string | null, exceptTeamId?: string) {
+  if (!ownerId) return;
+  const owner = await prisma.player.findUnique({ where: { id: ownerId }, select: { isClaimed: true } });
+  if (!owner?.isClaimed) throw new Error("Sahib yalnız qeydiyyatlı hesab ola bilər");
+
+  const other = await prisma.team.findFirst({
+    where: { ownerId, ...(exceptTeamId ? { id: { not: exceptTeamId } } : {}) },
+    select: { name: true },
+  });
+  if (other) throw new Error(`Bu oyunçu artıq "${other.name}" komandasının sahibidir`);
+}
+
 export async function createTeam(formData: FormData) {
   await requireAdmin();
-  await prisma.team.create({ data: teamData(formData) });
+  const data = teamData(formData);
+  await assertOwnerFree(data.ownerId);
+  await prisma.team.create({ data });
   revalidatePath("/admin/teams");
   revalidatePath("/[locale]", "layout");
   redirect("/admin/teams");
@@ -36,10 +55,28 @@ export async function createTeam(formData: FormData) {
 
 export async function updateTeam(id: string, formData: FormData) {
   await requireAdmin();
-  await prisma.team.update({ where: { id }, data: teamData(formData) });
+  const data = teamData(formData);
+  await assertOwnerFree(data.ownerId, id);
+  await prisma.team.update({ where: { id }, data });
   revalidatePath("/admin/teams");
   revalidatePath("/[locale]", "layout");
   redirect("/admin/teams");
+}
+
+/** Accounts the admin form may offer as owner: registered, and not already
+ *  owning a different team. */
+export async function loadTeamOwnerOptions(currentTeamId?: string) {
+  // Everything exported from a "use server" file is a callable endpoint, and
+  // this one returns account emails — it must check the caller itself.
+  await requireAdmin();
+  return prisma.player.findMany({
+    where: {
+      isClaimed: true,
+      OR: [{ ownedTeams: { none: {} } }, ...(currentTeamId ? [{ ownedTeams: { some: { id: currentTeamId } } }] : [])],
+    },
+    select: { id: true, nickname: true, email: true },
+    orderBy: { nickname: "asc" },
+  });
 }
 
 export async function deleteTeam(id: string) {

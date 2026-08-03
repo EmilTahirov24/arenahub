@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import PageShell from "@/components/layout/PageShell";
 import TeamAvatar from "@/components/common/TeamAvatar";
 import CountryFlag from "@/components/common/CountryFlag";
+import { ratingDelta } from "@/lib/elo";
 
 export async function generateMetadata({
   params,
@@ -33,7 +34,16 @@ export default async function TeamsPage({
 
   const teams = await prisma.team.findMany({
     where: { isActive: true, game: { slug: activeGame } },
-    orderBy: { worldRanking: "asc" },
+    orderBy: [{ rating: "desc" }, { name: "asc" }],
+    include: {
+      _count: {
+        select: {
+          wonMatches: true,
+          homeMatches: { where: { status: "FINISHED" } },
+          awayMatches: { where: { status: "FINISHED" } },
+        },
+      },
+    },
   });
 
   return (
@@ -60,22 +70,40 @@ export default async function TeamsPage({
       </div>
 
       <div className="overflow-hidden rounded-lg border border-border-subtle">
-        {teams.map((team, i) => (
-          <Link
-            key={team.id}
-            href={`/teams/${team.slug}`}
-            className="flex items-center gap-3 border-b border-border-subtle bg-surface px-4 py-3 last:border-b-0 hover:bg-surface-raised"
-          >
-            <span className="w-6 text-sm font-semibold text-foreground-muted">#{i + 1}</span>
-            <TeamAvatar name={team.name} logoUrl={team.logoUrl} color={team.primaryColor} size={36} />
-            <div className="flex-1">
-              <div className="flex items-center gap-1.5 font-medium">
-                <CountryFlag code={team.country} />
-                {team.name}
+        {teams.map((team, i) => {
+          const played = team._count.homeMatches + team._count.awayMatches;
+          const wins = team._count.wonMatches;
+          const delta = ratingDelta(team);
+          return (
+            <Link
+              key={team.id}
+              href={`/teams/${team.slug}`}
+              className="flex items-center gap-3 border-b border-border-subtle bg-surface px-4 py-3 last:border-b-0 hover:bg-surface-raised"
+            >
+              <span className="w-6 shrink-0 text-sm font-semibold text-foreground-muted">#{i + 1}</span>
+              <TeamAvatar name={team.name} logoUrl={team.logoUrl} color={team.primaryColor} size={36} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 truncate font-medium">
+                  <CountryFlag code={team.country} />
+                  {team.name}
+                </div>
+                {played > 0 && (
+                  <div className="text-xs text-foreground-muted tabular-nums">
+                    {wins}–{played - wins}
+                  </div>
+                )}
               </div>
-            </div>
-          </Link>
-        ))}
+              <div className="shrink-0 text-right">
+                <div className="font-display font-bold tabular-nums">{Math.round(team.rating)}</div>
+                {delta !== 0 && (
+                  <div className={`text-xs tabular-nums ${delta > 0 ? "text-emerald-400" : "text-live"}`}>
+                    {delta > 0 ? "▲" : "▼"} {Math.abs(delta)}
+                  </div>
+                )}
+              </div>
+            </Link>
+          );
+        })}
         {teams.length === 0 && (
           <p className="p-6 text-center text-sm text-foreground-muted">
             {locale === "az" ? "Komanda tapılmadı." : "No teams found."}

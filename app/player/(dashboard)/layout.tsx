@@ -37,6 +37,9 @@ export default async function PlayerDashboardLayout({ children }: { children: Re
           <Link href="/player/team" className="block rounded-md px-3 py-2 text-sm text-foreground-muted hover:bg-surface-raised hover:text-foreground">
             Komandam
           </Link>
+          <Link href="/player/claim" className="block rounded-md px-3 py-2 text-sm text-foreground-muted hover:bg-surface-raised hover:text-foreground">
+            Profilimi tap
+          </Link>
         </nav>
         <form action={playerLogout} className="mt-6">
           <button type="submit" className="w-full rounded-md border border-border-subtle px-3 py-2 text-left text-sm text-foreground-muted hover:bg-surface-raised">

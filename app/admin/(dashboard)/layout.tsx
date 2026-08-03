@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getAdminSession } from "@/lib/auth";
+import { pendingClaimCount } from "@/lib/profileClaims";
 import { adminLogout } from "./actions";
 
 const NAV = [
@@ -11,6 +12,7 @@ const NAV = [
   { href: "/admin/tournaments", label: "Turnirlər" },
   { href: "/admin/matches", label: "Matçlar" },
   { href: "/admin/news", label: "Xəbərlər" },
+  { href: "/admin/claims", label: "Profil müraciətləri", badge: "claims" as const },
   { href: "/admin/ads", label: "Reklamlar" },
   { href: "/admin/users", label: "İstifadəçilər" },
 ];
@@ -18,6 +20,8 @@ const NAV = [
 export default async function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
+
+  const pendingClaims = await pendingClaimCount();
 
   return (
     <div className="flex min-h-screen">
@@ -31,9 +35,14 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
             <Link
               key={item.href}
               href={item.href}
-              className="block rounded-md px-3 py-2 text-sm text-foreground-muted hover:bg-surface-raised hover:text-foreground"
+              className="flex items-center justify-between rounded-md px-3 py-2 text-sm text-foreground-muted hover:bg-surface-raised hover:text-foreground"
             >
               {item.label}
+              {item.badge === "claims" && pendingClaims > 0 && (
+                <span className="brand-gradient-bg rounded-full px-1.5 text-[10px] font-bold text-white">
+                  {pendingClaims}
+                </span>
+              )}
             </Link>
           ))}
         </nav>

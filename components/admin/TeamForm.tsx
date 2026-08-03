@@ -1,15 +1,18 @@
 import ImageUpload from "@/components/forms/ImageUpload";
 import CountrySelect from "@/components/forms/CountrySelect";
 import { inputClass, labelClass, primaryButtonClass } from "@/components/admin/formStyles";
-import type { Team, Game } from "@/app/generated/prisma/client";
+import type { Team, Game, Player } from "@/app/generated/prisma/client";
 
 export default function TeamForm({
   team,
   games,
+  owners,
   action,
 }: {
   team?: Team;
   games: Game[];
+  /** Registered accounts eligible to own a team — see loadTeamOwnerOptions. */
+  owners: Pick<Player, "id" | "nickname" | "email">[];
   action: (formData: FormData) => Promise<void>;
 }) {
   return (
@@ -38,8 +41,18 @@ export default function TeamForm({
         <CountrySelect defaultValue={team?.country} className={inputClass} />
       </div>
       <div>
-        <label className={labelClass}>Dünya reytinqi</label>
-        <input name="worldRanking" type="number" defaultValue={team?.worldRanking ?? ""} className={inputClass} />
+        <label className={labelClass}>Sahib (qeydiyyatlı oyunçu)</label>
+        <select name="ownerId" defaultValue={team?.ownerId ?? ""} className={inputClass}>
+          <option value="">Sahibsiz</option>
+          {owners.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.nickname} — {o.email}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-xs text-foreground-muted">
+          Sahib komandanı öz panelindən idarə edə bilir. Siyahıda yalnız başqa komandası olmayan hesablar var.
+        </p>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>

@@ -36,7 +36,7 @@ export default async function LocalScenePage({
     prisma.team.findMany({
       where: { country: LOCAL_COUNTRY, isActive: true },
       include: { game: true },
-      orderBy: { worldRanking: "asc" },
+      orderBy: { rating: "desc" },
     }),
     prisma.player.findMany({
       where: { country: LOCAL_COUNTRY },
