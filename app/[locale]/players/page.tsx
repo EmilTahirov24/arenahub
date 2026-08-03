@@ -6,8 +6,8 @@ import PageShell from "@/components/layout/PageShell";
 import PlayerAvatar from "@/components/common/PlayerAvatar";
 import TeamAvatar from "@/components/common/TeamAvatar";
 import CountryFlag from "@/components/common/CountryFlag";
-import { publiclyListedPlayer } from "@/lib/publicPlayers";
-import { playerScore, scoreBarFraction } from "@/lib/playerScore";
+import { scoreBarFraction } from "@/lib/playerScore";
+import { playerStatRows } from "@/lib/playerStats";
 
 export async function generateMetadata({
   params,
@@ -35,48 +35,10 @@ export default async function PlayersPage({
   const games = await prisma.game.findMany({ where: { isActive: true } });
   const activeGame = gameSlug ?? games[0]?.slug;
 
-  const players = await prisma.player.findMany({
-    where: { AND: [publiclyListedPlayer, { status: "ACTIVE", game: { slug: activeGame } }] },
-    orderBy: { nickname: "asc" },
-    include: {
-      memberships: { where: { leftAt: null }, include: { team: true }, take: 1 },
-    },
-  });
-
-  // Two sources of numbers, in priority order: period averages entered by an
-  // admin, then whatever the recorded matches add up to. Games with real match
-  // data keep working; players with neither stay empty rather than showing zeros.
-  const aggregates = await prisma.playerMatchStat.groupBy({
-    by: ["playerId"],
-    where: { mapId: null, playerId: { in: players.map((p) => p.id) } },
-    _avg: { rating: true },
-    _sum: { kills: true, deaths: true },
-    _count: { _all: true },
-  });
-  const byPlayer = new Map(aggregates.map((a) => [a.playerId, a]));
-
-  const rows = players.map((player) => {
-    const agg = byPlayer.get(player.id);
-    const hasPeriod = player.statKillsPerRound != null || player.statDamagePerRound != null;
-
-    const maps = player.statMaps ?? agg?._count._all ?? null;
-    const kills = player.statKillsPerRound ?? (agg?._sum.kills != null && agg._count._all ? agg._sum.kills / agg._count._all : null);
-    const deaths = player.statDeathsPerRound ?? (agg?._sum.deaths != null && agg._count._all ? agg._sum.deaths / agg._count._all : null);
-    const damage = player.statDamagePerRound ?? null;
-
-    const score = hasPeriod
-      ? playerScore({ killsPerRound: kills, deathsPerRound: deaths, damagePerRound: damage })
-      : (agg?._avg.rating ?? null);
-
-    return { player, team: player.memberships[0]?.team, maps, kills, deaths, damage, score };
-  });
-
-  rows.sort((a, b) => {
-    if (a.score == null && b.score == null) return a.player.nickname.localeCompare(b.player.nickname);
-    if (a.score == null) return 1;
-    if (b.score == null) return -1;
-    return b.score - a.score;
-  });
+  // Shared with the stats leaderboard so a player never shows a different
+  // score depending on which page you look at — see lib/playerStats.ts.
+  const game = games.find((g) => g.slug === activeGame);
+  const rows = game ? await playerStatRows(game.id) : [];
 
   const bestScore = Math.max(0, ...rows.map((r) => r.score ?? 0));
   const headCell = "px-3 py-2 text-[11px] font-normal uppercase tracking-wide text-foreground-muted";
