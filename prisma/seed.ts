@@ -1,6 +1,7 @@
 import { PrismaClient, type Team } from "../app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
+import { BASE_RATING, replayRatings, roundRating } from "../lib/elo";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -106,22 +107,44 @@ const ROLE_POOL: Record<string, string[]> = {
  * Best-effort snapshot, not a live feed — rosters shift often; edit via the admin panel
  * if something has moved on since. Names/roles are public facts, not reproduced media.
  */
-const REAL_CS2_TEAMS: { name: string; players: { nickname: string; role: string }[] }[] = [
-  { name: "Vitality", players: [{ nickname: "apEX", role: "IGL" }, { nickname: "ZywOo", role: "AWPer" }, { nickname: "flameZ", role: "Entry" }, { nickname: "mezii", role: "Support" }, { nickname: "ropz", role: "Lurker" }] },
-  { name: "Natus Vincere", players: [{ nickname: "Aleksib", role: "IGL" }, { nickname: "w0nderful", role: "AWPer" }, { nickname: "b1t", role: "Entry" }, { nickname: "iM", role: "Support" }, { nickname: "jL", role: "Lurker" }] },
-  { name: "Spirit", players: [{ nickname: "chopper", role: "IGL" }, { nickname: "sh1ro", role: "AWPer" }, { nickname: "donk", role: "Entry" }, { nickname: "magixx", role: "Support" }, { nickname: "zont1x", role: "Lurker" }] },
-  { name: "G2 Esports", players: [{ nickname: "nexa", role: "IGL" }, { nickname: "NiKo", role: "AWPer" }, { nickname: "huNter-", role: "Entry" }, { nickname: "malbsMd", role: "Support" }, { nickname: "HooXi", role: "Lurker" }] },
-  { name: "FaZe Clan", players: [{ nickname: "karrigan", role: "IGL" }, { nickname: "broky", role: "AWPer" }, { nickname: "frozen", role: "Entry" }, { nickname: "rain", role: "Support" }, { nickname: "EliGE", role: "Lurker" }] },
-  { name: "MOUZ", players: [{ nickname: "Jimpphat", role: "IGL" }, { nickname: "Spinx", role: "AWPer" }, { nickname: "torzsi", role: "Entry" }, { nickname: "xertioN", role: "Support" }, { nickname: "Brollan", role: "Lurker" }] },
-  { name: "Astralis", players: [{ nickname: "staehr", role: "IGL" }, { nickname: "device", role: "AWPer" }, { nickname: "jabbi", role: "Entry" }, { nickname: "k0nfig", role: "Support" }, { nickname: "Farlig", role: "Lurker" }] },
-  { name: "Team Liquid", players: [{ nickname: "Grim", role: "IGL" }, { nickname: "NAF", role: "AWPer" }, { nickname: "YEKINDAR", role: "Entry" }, { nickname: "oSee", role: "Support" }, { nickname: "poizon", role: "Lurker" }] },
-  { name: "Complexity", players: [{ nickname: "floppy", role: "IGL" }, { nickname: "JT", role: "AWPer" }, { nickname: "FaNg", role: "Entry" }, { nickname: "radiance", role: "Support" }, { nickname: "Junior", role: "Lurker" }] },
-  { name: "Heroic", players: [{ nickname: "cadiaN", role: "IGL" }, { nickname: "stavn", role: "AWPer" }, { nickname: "TeSeS", role: "Entry" }, { nickname: "sjuush", role: "Support" }, { nickname: "Tim", role: "Lurker" }] },
-  { name: "ENCE", players: [{ nickname: "aizy", role: "IGL" }, { nickname: "dycha", role: "AWPer" }, { nickname: "mezbah", role: "Entry" }, { nickname: "Aurora", role: "Support" }, { nickname: "PGrigsson", role: "Lurker" }] },
-  { name: "BIG", players: [{ nickname: "tabseN", role: "IGL" }, { nickname: "k1to", role: "AWPer" }, { nickname: "Krimbo", role: "Entry" }, { nickname: "Bymas", role: "Support" }, { nickname: "Denis", role: "Lurker" }] },
-  { name: "Ninjas in Pyjamas", players: [{ nickname: "hampus", role: "IGL" }, { nickname: "headtr1ck", role: "AWPer" }, { nickname: "Plopski", role: "Entry" }, { nickname: "mopoz", role: "Support" }, { nickname: "tenzki", role: "Lurker" }] },
-  { name: "FURIA", players: [{ nickname: "chelo", role: "IGL" }, { nickname: "yuurih", role: "AWPer" }, { nickname: "KSCERATO", role: "Entry" }, { nickname: "skullz", role: "Support" }, { nickname: "FalleN", role: "Lurker" }] },
-  { name: "Virtus.pro", players: [{ nickname: "n0rb3r7", role: "IGL" }, { nickname: "FL1T", role: "AWPer" }, { nickname: "ICY", role: "Entry" }, { nickname: "Jame", role: "Support" }, { nickname: "mir", role: "Lurker" }] },
+/**
+ * Real CS2 organisations, countries and rosters, supplied by the site owner.
+ *
+ * Two rules apply to everything in this list, because these are real companies
+ * and real people:
+ *  - the country is the team's ACTUAL country and is never taken from the
+ *    round-robin `nextCountry()` pool, which is what previously produced
+ *    nonsense like "MOUZ — Azerbaijan" and "Astralis — Poland";
+ *  - no invented matches, results or player statistics are ever generated for
+ *    them. The site would otherwise publish match reports that never happened.
+ *    Real results are entered through the admin panel.
+ *
+ * Roles are left empty rather than guessed. Rosters are a snapshot and go stale
+ * as players transfer — they are maintained from the admin panel.
+ */
+const REAL_CS2_TEAMS: { name: string; country: string; players: string[] }[] = [
+  { name: "Spirit", country: "RU", players: ["Sh1ro", "Magixx", "Zont1x", "TN1R", "Donk"] },
+  { name: "Falcons", country: "SA", players: ["NiKo", "karrigan", "TeSeS", "m0NESY", "kyousuke"] },
+  // The screenshot truncated MOUZ's fourth player to "PR"; four confirmed names
+  // are better than one invented one. Add the fifth from the admin panel.
+  { name: "MOUZ", country: "DE", players: ["Spinx", "torzsi", "xertioN", "xelex"] },
+  { name: "9z", country: "AR", players: ["meyern", "max", "luchov", "dgt", "HUASOPEEK"] },
+  { name: "Vitality", country: "FR", players: ["apEX", "ropz", "ZywOo", "flameZ", "mezii"] },
+  { name: "Natus Vincere", country: "UA", players: ["Aleksib", "b1t", "iM", "w0nderful", "makazze"] },
+  { name: "FURIA", country: "BR", players: ["FalleN", "YEKINDAR", "yuurih", "KSCERATO", "molodoy"] },
+  { name: "Legacy", country: "BR", players: ["arT", "latto", "dumau", "n1ssim", "saadzin"] },
+  { name: "BetBoom", country: "RU", players: ["Boombl4", "zorte", "d1Ledez", "s1ren", "Magnojez"] },
+  { name: "Aurora", country: "RU", players: ["XANTARES", "woxic", "Jimpphat", "kyxsan", "Wicadia"] },
+  { name: "PARIVISION", country: "RU", players: ["HObbit", "Jame", "xiELO", "zweih", "slaxejezzz"] },
+  { name: "G2", country: "DE", players: ["huNter-", "Nertz", "HeavyGod", "r1nkle", "MATYS"] },
+  { name: "FaZe", country: "US", players: ["Twistzz", "frozen", "Neityu", "jcobbb", "JBOEN"] },
+  { name: "FUT", country: "TR", players: ["xfl0ud", "dem0n", "Krabeni", "cmtry", "dziugss"] },
+  { name: "The MongolZ", country: "MN", players: ["Techno4K", "bLitz", "910", "tikuak", "DarkMeister"] },
+  { name: "MIBR", country: "BR", players: ["nqz", "LNZ", "brnz4n", "venomzera", "insani"] },
+  { name: "Alliance", country: "SE", players: ["twist", "eraa", "bobeksde", "upE", "Avid"] },
+  { name: "TYLOO", country: "CN", players: ["JamYoung", "Jee", "Mercury", "Moseyuh", "Zero"] },
+  { name: "B8", country: "UA", players: ["alex666", "npl", "kensizor", "esenthial", "s1zzi"] },
+  { name: "Astralis", country: "DK", players: ["HooXi", "jabbi", "ryu", "Staehr", "phzy"] },
 ];
 
 function randomTeamStat(rating: number) {
@@ -132,20 +155,34 @@ function randomTeamStat(rating: number) {
 }
 
 async function main() {
-  console.log("Cleaning existing data...");
+  // Demo data (fictional teams, invented matches, sample ads) is for local
+  // development. Set SEED_DEMO=false in production: games, the admin user and
+  // the real CS2 teams are still created, but nothing is invented.
+  const seedDemo = process.env.SEED_DEMO !== "false";
+
+  console.log(`Cleaning existing data... (demo data: ${seedDemo ? "yes" : "no"})`);
   await prisma.playerMatchStat.deleteMany();
   await prisma.matchVetoStep.deleteMany();
   await prisma.matchMap.deleteMany();
   await prisma.newsArticleTranslation.deleteMany();
   await prisma.newsArticle.deleteMany();
+  await prisma.matchPrediction.deleteMany();
   await prisma.match.deleteMany();
   await prisma.tournamentParticipant.deleteMany();
   await prisma.tournament.deleteMany();
+  await prisma.teamInvite.deleteMany();
+  await prisma.profileClaim.deleteMany();
   await prisma.teamMembership.deleteMany();
-  await prisma.player.deleteMany();
+  // Registered accounts survive a re-seed — wiping them would delete real
+  // people's logins. Their links to the demo world are cut instead: teams they
+  // own are released (the FK would otherwise block the delete below) and their
+  // memberships went with the deleteMany above.
+  await prisma.team.updateMany({ data: { ownerId: null } });
+  await prisma.player.deleteMany({ where: { isClaimed: false } });
   await prisma.team.deleteMany();
   await prisma.adBanner.deleteMany();
-  await prisma.game.deleteMany();
+  // Games are upserted rather than recreated: surviving accounts point at a
+  // gameId, so dropping the rows would fail on the foreign key.
   await prisma.adminUser.deleteMany();
 
   console.log("Creating admin user...");
@@ -164,25 +201,58 @@ async function main() {
 
   for (const gameDef of GAME_DEFS) {
     console.log(`Seeding ${gameDef.name}...`);
-    const game = await prisma.game.create({
-      data: {
+    const game = await prisma.game.upsert({
+      where: { slug: gameDef.slug },
+      create: {
         slug: gameDef.slug,
+        name: gameDef.name,
+        shortName: gameDef.shortName,
+        accentColor: gameDef.accentColor,
+      },
+      update: {
         name: gameDef.name,
         shortName: gameDef.shortName,
         accentColor: gameDef.accentColor,
       },
     });
 
-    // ---------- Teams & players ----------
-    const isRealCs2 = gameDef.slug === "cs2";
-    const teamCount = isRealCs2 ? REAL_CS2_TEAMS.length : 6;
-    const teamDefs = isRealCs2
-      ? REAL_CS2_TEAMS.map((t) => t.name)
-      : Array.from({ length: teamCount }).map((_, i) => {
-          const adj = TEAM_ADJ[(GAME_DEFS.indexOf(gameDef) * 6 + i) % TEAM_ADJ.length];
-          const noun = TEAM_NOUN[(GAME_DEFS.indexOf(gameDef) * 6 + i + 3) % TEAM_NOUN.length];
-          return `${adj} ${noun}`;
+    // ---------- Real CS2 teams ----------
+    // Created in every environment, demo or not — this is real data. They are
+    // deliberately left without matches; results come from the admin panel.
+    if (gameDef.slug === "cs2") {
+      for (const def of REAL_CS2_TEAMS) {
+        const team = await prisma.team.create({
+          data: {
+            slug: `${gameDef.slug}-${slugify(def.name)}`,
+            name: def.name,
+            country: def.country,
+            primaryColor: gameDef.accentColor,
+            secondaryColor: "#0a0b10",
+            gameId: game.id,
+          },
         });
+        for (const nickname of def.players) {
+          const player = await prisma.player.create({
+            data: {
+              slug: slugify(nickname) + "-" + team.id.slice(-4),
+              nickname,
+              gameId: game.id,
+            },
+          });
+          await prisma.teamMembership.create({ data: { teamId: team.id, playerId: player.id } });
+        }
+      }
+      continue;
+    }
+
+    if (!seedDemo) continue;
+
+    // ---------- Demo teams & players (fictional names only) ----------
+    const teamDefs = Array.from({ length: 6 }).map((_, i) => {
+      const adj = TEAM_ADJ[(GAME_DEFS.indexOf(gameDef) * 6 + i) % TEAM_ADJ.length];
+      const noun = TEAM_NOUN[(GAME_DEFS.indexOf(gameDef) * 6 + i + 3) % TEAM_NOUN.length];
+      return `${adj} ${noun}`;
+    });
 
     const teams: Team[] = [];
     for (let i = 0; i < teamDefs.length; i++) {
@@ -200,16 +270,14 @@ async function main() {
       teams.push(team);
 
       const roles = ROLE_POOL[gameDef.slug];
-      const realRoster = isRealCs2 ? REAL_CS2_TEAMS[i].players : null;
       for (let p = 0; p < 5; p++) {
-        const nickname = realRoster ? realRoster[p].nickname : nextNickname();
-        const role = realRoster ? realRoster[p].role : roles[p];
+        const nickname = nextNickname();
         const player = await prisma.player.create({
           data: {
             slug: slugify(nickname) + "-" + team.id.slice(-4),
             nickname,
             country: nextCountry(),
-            role,
+            role: roles[p],
             gameId: game.id,
           },
         });
@@ -460,6 +528,12 @@ async function main() {
     });
   }
 
+  if (!seedDemo) {
+    console.log(`Seed tamamlandı (yalnız real data).`);
+    console.log(`Admin login: ${adminEmail} / ${adminPassword}`);
+    return;
+  }
+
   console.log("Seeding ad banners...");
   const adDefs: { name: string; placement: "HEADER" | "SIDEBAR_LEFT" | "SIDEBAR_RIGHT_TOP" | "SIDEBAR_RIGHT_BOTTOM" | "IN_CONTENT" | "MATCH_PAGE_TOP" | "FOOTER"; w: number; h: number }[] = [
     { name: "Header Leaderboard", placement: "HEADER", w: 728, h: 90 },
@@ -484,8 +558,32 @@ async function main() {
     });
   }
 
+  // Matches are written straight to the database here, so the admin actions
+  // that normally trigger a recompute never run — do it once at the end.
+  await recomputeRatings();
+
   console.log("Seed tamamlandı.");
   console.log(`Admin login: ${adminEmail} / ${adminPassword}`);
+}
+
+/** Same replay the app uses, sharing the formula from lib/elo.ts. */
+async function recomputeRatings() {
+  console.log("Reytinqlər hesablanır...");
+  const matches = await prisma.match.findMany({
+    where: { status: "FINISHED", winnerId: { not: null } },
+    orderBy: [{ scheduledAt: "asc" }, { id: "asc" }],
+    select: { teamAId: true, teamBId: true, winnerId: true, tournament: { select: { tier: true } } },
+  });
+  const { rating, previous } = replayRatings(matches);
+  for (const team of await prisma.team.findMany({ select: { id: true } })) {
+    await prisma.team.update({
+      where: { id: team.id },
+      data: {
+        rating: roundRating(rating.get(team.id) ?? BASE_RATING),
+        previousRating: roundRating(previous.get(team.id) ?? BASE_RATING),
+      },
+    });
+  }
 }
 
 main()

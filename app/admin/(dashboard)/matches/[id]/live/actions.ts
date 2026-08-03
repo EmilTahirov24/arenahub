@@ -15,15 +15,21 @@ async function recomputeMatchScore(matchId: string) {
   const teamBScore = maps.filter((m) => m.winnerId === match.teamBId).length;
   const majority = Math.ceil(match.bestOf / 2);
 
-  const data: { teamAScore: number; teamBScore: number; status?: MatchStatus; winnerId?: string } = {
+  const data: { teamAScore: number; teamBScore: number; status?: MatchStatus; winnerId?: string | null } = {
     teamAScore,
     teamBScore,
   };
-  const justFinished = match.status !== "FINISHED" && (teamAScore >= majority || teamBScore >= majority);
-  if (justFinished) {
-    data.status = "FINISHED";
-    data.winnerId = teamAScore >= majority ? match.teamAId : match.teamBId;
-  }
+  // The winner is derived from the maps every time, not only on the transition
+  // to FINISHED. Entering a match that already happened means creating it with
+  // status FINISHED and then filling in the maps — in that order the status
+  // never changes, so a transition-only rule left `winnerId` null forever and
+  // the result never reached the ranking.
+  const decided = teamAScore >= majority || teamBScore >= majority;
+  data.winnerId = decided ? (teamAScore >= majority ? match.teamAId : match.teamBId) : null;
+  if (decided) data.status = "FINISHED";
+
+  // Prediction points are still awarded once, on the transition only.
+  const justFinished = match.status !== "FINISHED" && decided;
   await prisma.match.update({ where: { id: matchId }, data });
   // Ratings are replayed from every finished match, so this also corrects the
   // table when a map edit un-finishes or flips an earlier result.

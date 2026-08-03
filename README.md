@@ -29,6 +29,7 @@ npm run dev
 | `RESEND_API_KEY` | xeyr | Olmasa şifrə bərpası linkləri serverin konsoluna yazılır ([lib/email.ts](lib/email.ts)) |
 | `EMAIL_FROM` | xeyr | Domen təsdiqlənənə qədər `onboarding@resend.dev` qalmalıdır |
 | `BLOB_READ_WRITE_TOKEN` | prod-da **bəli** | Olmasa şəkillər lokal diskə yazılır; serverless-də disk read-only olduğu üçün production-da tələb olunur ([lib/storage.ts](lib/storage.ts)) |
+| `SEED_DEMO` | xeyr | `false` olanda seed uydurma komanda/matç yaratmır — yalnız oyunlar, admin və real CS2 komandaları. **Production-da `false` olmalıdır** |
 
 ---
 
@@ -68,6 +69,8 @@ prisma/schema.prisma   məlumat modeli · prisma/migrations/ əl ilə yazılmı�
 - **Hesab modeli:** yalnız bir növ hesab var — `Player`. Komandanın öz girişi yoxdur, `Team.ownerId` bir Player-ə işarə edir.
 - **Kim public siyahıdadır:** [lib/publicPlayers.ts](lib/publicPlayers.ts) qərar verir (admin/seed profilləri + komandası olan qeydiyyatlılar). Bu şərti yenidən yazma, həmin faylı istifadə et.
 - **Tərkib razılıq tələb edir:** qeydiyyatlı oyunçu yalnız qəbul etdiyi dəvətlə tərkibə düşür. Komanda sahibi başqasının hesabının profilini redaktə edə bilməz — bax [lib/teamInvites.ts](lib/teamInvites.ts).
+- **Real ada uydurma nəticə yazılmır.** Seed-dəki CS2 komandaları real təşkilatlardır — onlara heç bir uydurma matç və ya statistika yaradılmır, çünki sayt real şirkət və insanlar haqqında olmayan matçları dərc etmiş olardı. Real nəticələr admin panelindən daxil edilir. Digər üç oyunun komandaları isə uydurmadır (`TEAM_ADJ` × `TEAM_NOUN`), ona görə onlarda demo matçlar var.
+- **Matç necə daxil edilir:** admin paneldə turnir yarat → matç yarat (oyun seçiləndən sonra turnir siyahısı aktivləşir) → matç səhifəsində **Canlı** bölməsindən xəritə hesabını yaz. Qalib xəritələrdən avtomatik çıxarılır və reytinq elə həmin anda yenidən hesablanır.
 - **Komanda reytinqi əllə yazılmır:** matç nəticələrindən hesablanır. Saf riyaziyyat [lib/elo.ts](lib/elo.ts)-dədir, bazaya yazan hissə [lib/rating.ts](lib/rating.ts)-də. Nəticə dəyişəndə **bütün tarixçə yenidən oynadılır** — çünki Elo ardıcıllıqdan asılıdır və köhnə nəticə düzəldiləndə artımlı hesablama həmişəlik səhv qalardı.
 - **Profil sahiblənməsi (claim) admin təsdiqi ilədir:** sahibsiz profildə matç statistikası və sabit link var, ona görə ada görə avtomatik təsdiq olsaydı, istənilən adam məşhur nickname ilə qeydiyyatdan keçib həmin tarixçəni mənimsəyə bilərdi — bax [lib/profileClaims.ts](lib/profileClaims.ts).
 - **Migration-lar əl ilə yazılır:** `prisma migrate dev` bu mühitdə interaktivdir və işləmir. SQL faylını özün yaz, sonra `prisma migrate deploy`.
