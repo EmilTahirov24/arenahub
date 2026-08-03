@@ -2,15 +2,16 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import TeamForm from "@/components/admin/TeamForm";
-import { updateTeam, deleteTeam, removeFromRoster } from "../actions";
+import { updateTeam, deleteTeam, removeFromRoster, loadTeamOwnerOptions } from "../actions";
 import { dangerButtonClass, secondaryButtonClass } from "@/components/admin/formStyles";
 
 export default async function EditTeamPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [team, games, roster] = await Promise.all([
+  const [team, games, roster, owners] = await Promise.all([
     prisma.team.findUnique({ where: { id } }),
     prisma.game.findMany({ orderBy: { name: "asc" } }),
     prisma.teamMembership.findMany({ where: { teamId: id, leftAt: null }, include: { player: true } }),
+    loadTeamOwnerOptions(id),
   ]);
   if (!team) notFound();
 
@@ -20,7 +21,7 @@ export default async function EditTeamPage({ params }: { params: Promise<{ id: s
   return (
     <div>
       <h1 className="font-display mb-6 text-2xl font-bold">{team.name}</h1>
-      <TeamForm team={team} games={games} action={updateWithId} />
+      <TeamForm team={team} games={games} owners={owners} action={updateWithId} />
 
       <div className="mt-10 max-w-lg">
         <div className="mb-3 flex items-center justify-between">

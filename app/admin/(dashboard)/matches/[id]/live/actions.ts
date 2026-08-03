@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/adminAuth";
 import { awardPredictionPoints } from "@/lib/predictions";
+import { recomputeTeamRatings } from "@/lib/rating";
 import type { MatchStatus, MapStatus, VetoAction } from "@/app/generated/prisma/client";
 
 
@@ -24,6 +25,9 @@ async function recomputeMatchScore(matchId: string) {
     data.winnerId = teamAScore >= majority ? match.teamAId : match.teamBId;
   }
   await prisma.match.update({ where: { id: matchId }, data });
+  // Ratings are replayed from every finished match, so this also corrects the
+  // table when a map edit un-finishes or flips an earlier result.
+  await recomputeTeamRatings();
   if (justFinished && data.winnerId) {
     await awardPredictionPoints(matchId, data.winnerId);
   }
@@ -49,6 +53,7 @@ export async function setMatchStatus(matchId: string, formData: FormData) {
   }
   const wasFinished = match.status === "FINISHED";
   await prisma.match.update({ where: { id: matchId }, data });
+  await recomputeTeamRatings();
   revalidateMatch(matchId);
 
   if (!wasFinished && status === "FINISHED") {

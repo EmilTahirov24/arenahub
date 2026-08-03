@@ -192,7 +192,6 @@ async function main() {
           slug: `${gameDef.slug}-${slugify(name)}`,
           name,
           country: nextCountry(),
-          worldRanking: i + 1,
           primaryColor: gameDef.accentColor,
           secondaryColor: "#0a0b10",
           gameId: game.id,
