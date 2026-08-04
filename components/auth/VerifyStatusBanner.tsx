@@ -14,7 +14,7 @@ export default function VerifyStatusBanner() {
 
   if (params.get("reset") === "success") {
     return (
-      <p className="mb-4 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-400">
+      <p className="mb-4 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-positive">
         Şifrəniz dəyişdirildi. Yeni şifrə ilə daxil olun.
       </p>
     );
@@ -22,7 +22,7 @@ export default function VerifyStatusBanner() {
 
   if (verify === "success") {
     return (
-      <p className="mb-4 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-400">
+      <p className="mb-4 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-positive">
         Email təsdiqləndi. İndi daxil ola bilərsiniz.
       </p>
     );

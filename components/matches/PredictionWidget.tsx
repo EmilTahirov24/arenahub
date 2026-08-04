@@ -111,7 +111,7 @@ export default function PredictionWidget({
       {isLoggedIn && myPick && status === "FINISHED" && (
         <p
           className={`mt-3 text-center text-xs font-semibold ${
-            myPick === winnerId ? "text-emerald-400" : "text-live"
+            myPick === winnerId ? "text-positive" : "text-live"
           }`}
         >
           {myPick === winnerId

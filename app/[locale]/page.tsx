@@ -189,7 +189,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
                         <td className="px-3 py-2 text-right tabular-nums">
                           <span className="font-display font-bold">{Math.round(team.rating)}</span>
                           {delta !== 0 && (
-                            <span className={`ml-1.5 text-xs ${delta > 0 ? "text-emerald-400" : "text-live"}`}>
+                            <span className={`ml-1.5 text-xs ${delta > 0 ? "text-positive" : "text-live"}`}>
                               {delta > 0 ? `+${delta}` : delta}
                             </span>
                           )}

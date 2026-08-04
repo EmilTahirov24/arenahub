@@ -101,14 +101,14 @@ export default async function TeamsPage({
           </Link>
         </td>
         <td className="hidden px-3 py-2.5 text-sm tabular-nums sm:table-cell">
-          {earnings ? <span className="text-emerald-400">{earnings}</span> : <span className="text-foreground-muted">—</span>}
+          {earnings ? <span className="text-positive">{earnings}</span> : <span className="text-foreground-muted">—</span>}
         </td>
         <td className="px-3 py-2.5 text-right">
           {played > 0 ? (
             <>
               <span className="font-display font-bold tabular-nums">{Math.round(team.rating)}</span>
               {delta !== 0 && (
-                <span className={`ml-1.5 text-xs tabular-nums ${delta > 0 ? "text-emerald-400" : "text-live"}`}>
+                <span className={`ml-1.5 text-xs tabular-nums ${delta > 0 ? "text-positive" : "text-live"}`}>
                   {delta > 0 ? "▲" : "▼"}
                   {Math.abs(delta)}
                 </span>

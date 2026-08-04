@@ -30,7 +30,7 @@ export default function ProfileForm({ children }: { children: React.ReactNode })
         {/* aria-live so the confirmation is announced, not just painted: the
             button gives no other sign that anything happened. */}
         <span aria-live="polite" className="text-sm">
-          {!pending && state?.ok && <span className="text-emerald-400">Yadda saxlanıldı ✓</span>}
+          {!pending && state?.ok && <span className="text-positive">Yadda saxlanıldı ✓</span>}
           {!pending && state?.error && <span className="text-live">{state.error}</span>}
         </span>
       </div>

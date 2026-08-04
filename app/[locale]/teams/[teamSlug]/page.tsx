@@ -94,7 +94,7 @@ export default async function TeamProfilePage({
                     #{rank} · {Math.round(team.rating)} {locale === "az" ? "reytinq" : "rating"}
                   </span>
                   {delta !== 0 && (
-                    <span className={delta > 0 ? "text-emerald-400" : "text-live"}>
+                    <span className={delta > 0 ? "text-positive" : "text-live"}>
                       {delta > 0 ? "▲" : "▼"} {Math.abs(delta)}
                     </span>
                   )}
@@ -111,7 +111,7 @@ export default async function TeamProfilePage({
             <div className="flex shrink-0 items-center gap-6">
               <div className="text-center">
                 <div className="font-display text-2xl font-bold tabular-nums">
-                  <span className="text-emerald-400">{wins}</span>
+                  <span className="text-positive">{wins}</span>
                   <span className="text-foreground-muted"> — </span>
                   <span className="text-live">{losses}</span>
                 </div>
@@ -130,7 +130,7 @@ export default async function TeamProfilePage({
                       key={i}
                       title={won ? (locale === "az" ? "Qalib" : "Win") : locale === "az" ? "Məğlub" : "Loss"}
                       className={`flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold ${
-                        won ? "bg-emerald-400/15 text-emerald-400" : "bg-live/15 text-live"
+                        won ? "bg-positive/15 text-positive" : "bg-live/15 text-live"
                       }`}
                     >
                       {won ? (locale === "az" ? "Q" : "W") : locale === "az" ? "M" : "L"}

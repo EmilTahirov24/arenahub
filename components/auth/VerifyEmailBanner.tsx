@@ -44,7 +44,7 @@ export default function VerifyEmailBanner({ action, initialWaitSeconds }: { acti
   return (
     <div
       className={`mb-6 flex flex-wrap items-center justify-between gap-2 rounded-md border px-4 py-3 text-sm ${
-        failed ? "border-live/30 bg-live/10 text-live" : "border-amber-500/30 bg-amber-500/10 text-amber-400"
+        failed ? "border-live/30 bg-live/10 text-live" : "border-warning/30 bg-warning/10 text-warning"
       }`}
     >
       <span>
@@ -57,7 +57,7 @@ export default function VerifyEmailBanner({ action, initialWaitSeconds }: { acti
           type="submit"
           disabled={disabled}
           className={`rounded-md border px-3 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
-            failed ? "border-live/40 hover:bg-live/20" : "border-amber-500/40 hover:bg-amber-500/20"
+            failed ? "border-live/40 hover:bg-live/20" : "border-warning/40 hover:bg-warning/20"
           }`}
         >
           {pending

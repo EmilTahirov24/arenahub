@@ -8,7 +8,7 @@ const STATUS_COLOR: Record<string, string> = {
   LIVE: "text-live",
   UPCOMING: "text-foreground-muted",
   FINISHED: "text-brand-via",
-  POSTPONED: "text-yellow-500",
+  POSTPONED: "text-warning",
   CANCELLED: "text-foreground-muted",
 };
 

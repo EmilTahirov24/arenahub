@@ -110,7 +110,7 @@ export default async function EditTournamentPage({ params }: { params: Promise<{
                 {prize.label && <span className="text-foreground-muted"> · {prize.label}</span>}
               </span>
               <span className="flex items-center gap-3">
-                <span className="text-sm tabular-nums text-emerald-400">{formatMoney(prize.amount)}</span>
+                <span className="text-sm tabular-nums text-positive">{formatMoney(prize.amount)}</span>
                 <form action={removePrizeWithId.bind(null, prize.id)}>
                   <button type="submit" className="text-xs text-live hover:underline">
                     sil
