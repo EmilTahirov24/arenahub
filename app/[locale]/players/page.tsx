@@ -41,12 +41,22 @@ export default async function PlayersPage({
   const rows = game ? await playerStatRows(game.id) : [];
 
   const bestScore = Math.max(0, ...rows.map((r) => r.score ?? 0));
+  const scored = rows.filter((r) => r.score != null).length;
   const headCell = "px-3 py-2 text-[11px] font-normal uppercase tracking-wide text-foreground-muted";
   const num = (v: number | null, digits = 2) => (v == null ? "—" : v.toFixed(digits));
 
   return (
     <PageShell>
-      <h1 className="font-display mb-4 text-2xl font-bold">{t("nav.players")}</h1>
+      <h1 className="font-display mb-1 text-2xl font-bold">{t("nav.players")}</h1>
+      {/* States the coverage outright, so an empty cell reads as "not recorded"
+          rather than as a broken table. */}
+      {rows.length > 0 && scored < rows.length && (
+        <p className="mb-4 text-sm text-foreground-muted">
+          {az
+            ? `${rows.length} oyunçudan ${scored}-nin statistikası qeydə alınıb. Qalanları üçün hələ məlumat yoxdur — uydurma rəqəm yazılmır.`
+            : `Statistics recorded for ${scored} of ${rows.length} players. The rest have none yet — no placeholder numbers are shown.`}
+        </p>
+      )}
 
       <div className="mb-6 flex flex-wrap gap-2">
         {games.map((game) => (
