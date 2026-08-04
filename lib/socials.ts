@@ -43,19 +43,42 @@ export function parseSocials(value: unknown): PlayerSocials {
   };
 }
 
-export function socialsFromFormData(formData: FormData): PlayerSocials {
+/**
+ * Also reports what it threw away.
+ *
+ * A link that fails the pattern used to vanish without a word: the form said
+ * nothing, the field came back empty on the next load, and the only way to find
+ * out was to notice the absence. Callers that can show a message should use
+ * this and tell the person which link was not accepted.
+ */
+export function socialsFromFormDataChecked(formData: FormData): {
+  socials: PlayerSocials;
+  rejected: string[];
+} {
+  const rejected: string[] = [];
+
   const clean = (key: keyof PlayerSocials) => {
     const raw = formData.get(`social_${key}`);
     if (typeof raw !== "string") return undefined;
     const trimmed = raw.trim();
     if (!trimmed) return undefined;
     const pattern = new RegExp(`^${SOCIAL_META[key].patternSource}$`, "i");
-    return pattern.test(trimmed) ? trimmed : undefined;
+    if (pattern.test(trimmed)) return trimmed;
+    rejected.push(SOCIAL_META[key].label);
+    return undefined;
   };
+
   return {
-    instagram: clean("instagram"),
-    twitter: clean("twitter"),
-    faceit: clean("faceit"),
-    twitch: clean("twitch"),
+    socials: {
+      instagram: clean("instagram"),
+      twitter: clean("twitter"),
+      faceit: clean("faceit"),
+      twitch: clean("twitch"),
+    },
+    rejected,
   };
+}
+
+export function socialsFromFormData(formData: FormData): PlayerSocials {
+  return socialsFromFormDataChecked(formData).socials;
 }

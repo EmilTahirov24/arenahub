@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { destroySession, getPlayerSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { socialsFromFormData } from "@/lib/socials";
+import { socialsFromFormDataChecked } from "@/lib/socials";
 import type { PlayerStatus } from "@/app/generated/prisma/client";
 import { createVerifyToken, resendAvailableInSeconds, RESEND_RATE_LIMIT_SECONDS } from "@/lib/emailVerification";
 import { sendVerificationEmail } from "@/lib/email";
@@ -44,22 +44,54 @@ export async function resendPlayerVerificationEmail(
   return { waitSeconds: RESEND_RATE_LIMIT_SECONDS };
 }
 
-export async function updateOwnPlayer(formData: FormData) {
-  const session = await getPlayerSession();
-  if (!session) throw new Error("Unauthorized");
+export type SaveProfileState = { ok?: true; error?: string; warning?: string };
 
-  await prisma.player.update({
-    where: { id: session.id },
-    data: {
-      firstName: String(formData.get("firstName") ?? "") || null,
-      lastName: String(formData.get("lastName") ?? "") || null,
-      country: String(formData.get("country") ?? "") || null,
-      role: String(formData.get("role") ?? "") || null,
-      status: String(formData.get("status") ?? "ACTIVE") as PlayerStatus,
-      photoUrl: String(formData.get("photoUrl") ?? "") || null,
-      socials: socialsFromFormData(formData),
-    },
-  });
+/**
+ * Returns a state rather than nothing.
+ *
+ * The form used to call this as a bare action, so a successful save changed
+ * nothing on screen — same URL, same values, no message — and the button read
+ * as broken. It was saving all along; there was simply no way to tell.
+ */
+export async function updateOwnPlayer(
+  _prevState: SaveProfileState | undefined,
+  formData: FormData,
+): Promise<SaveProfileState> {
+  const session = await getPlayerSession();
+  // Sessions expire and are invalidated on password change, so this is a state
+  // an ordinary person can reach — not an assertion failure.
+  if (!session) return { error: "Sessiyanız bitib. Yenidən daxil olun." };
+
+  const { socials, rejected } = socialsFromFormDataChecked(formData);
+
+  try {
+    await prisma.player.update({
+      where: { id: session.id },
+      data: {
+        firstName: String(formData.get("firstName") ?? "") || null,
+        lastName: String(formData.get("lastName") ?? "") || null,
+        country: String(formData.get("country") ?? "") || null,
+        role: String(formData.get("role") ?? "") || null,
+        status: String(formData.get("status") ?? "ACTIVE") as PlayerStatus,
+        photoUrl: String(formData.get("photoUrl") ?? "") || null,
+        socials,
+      },
+    });
+  } catch (e) {
+    console.error("Profile save failed:", e);
+    return { error: "Yadda saxlamaq alınmadı. Bir azdan yenidən yoxlayın." };
+  }
+
   revalidatePath("/player");
   revalidatePath("/[locale]", "layout");
+
+  // Saved, but not everything the person typed survived — say which.
+  if (rejected.length) {
+    return {
+      ok: true,
+      warning: `${rejected.join(", ")} linki düzgün formatda olmadığı üçün yadda saxlanılmadı.`,
+    };
+  }
+
+  return { ok: true };
 }
