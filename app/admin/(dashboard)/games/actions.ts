@@ -52,4 +52,8 @@ export async function deleteGame(id: string) {
   await prisma.game.delete({ where: { id } });
   revalidatePath("/admin/games");
   revalidatePath("/[locale]", "layout");
+  // Every other delete in the admin sends you back to the list; this one did
+  // not, leaving the browser on the detail page of a game that no longer
+  // exists. Deleting looked like nothing happening, then broke on reload.
+  redirect("/admin/games");
 }

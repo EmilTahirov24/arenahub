@@ -19,21 +19,40 @@ export default function AuthMenu({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
+
+    // Clicking away closed the menu but Escape did not, which leaves anyone
+    // navigating by keyboard with no way out of it.
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "Escape" || !open) return;
+      setOpen(false);
+      // Focus goes back to the control that opened it, not to the top of the
+      // page — otherwise the next Tab starts over from the beginning.
+      buttonRef.current?.focus();
+    }
+
     document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, []);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   return (
     <div ref={ref} className="relative">
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         title={label}
+        aria-expanded={open}
+        aria-haspopup="menu"
         className="flex h-8 items-center gap-1.5 rounded-full border border-border-subtle bg-surface px-3 text-xs font-medium text-foreground-muted transition-colors hover:text-foreground"
       >
         {icon}
