@@ -49,10 +49,16 @@
 
   /* Darker counterparts of the status colours. The dark-theme values are
      chosen to glow against near-black and simply disappear on white, so they
-     are replaced rather than dimmed — each of these clears 4.5:1 on --surface. */
-  --live: #dc2626;
-  --positive: #047857;
-  --warning: #a16207;
+     are replaced rather than dimmed.
+
+     These are set one step darker than a plain white ground needs, because the
+     ground is often not white: the LIVE pill, the win/loss badge and the error
+     banner all print the colour on a 10–15% wash of itself. On that wash the
+     first attempt measured 4.34:1, under the 4.5:1 floor, while the same text
+     on --surface passed — so the tint is what these values are chosen against. */
+  --live: #b91c1c;
+  --positive: #065f46;
+  --warning: #854d0e;
 }
 
 @theme inline {
