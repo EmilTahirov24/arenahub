@@ -22,9 +22,14 @@ export async function GET(request: Request) {
   }
 
   // Unauthenticated endpoint that fans out into four ILIKE scans — throttle it.
-  const limit = rateLimit(`search:${clientIp(request.headers)}`, 60, 60 * 1000);
-  if (!limit.ok) {
-    return NextResponse.json({ results: [] }, { status: 429 });
+  // Skipped when the address is unknown, so one shared bucket cannot lock out
+  // every visitor at once.
+  const ip = clientIp(request.headers);
+  if (ip) {
+    const limit = rateLimit(`search:${ip}`, 60, 60 * 1000);
+    if (!limit.ok) {
+      return NextResponse.json({ results: [] }, { status: 429 });
+    }
   }
 
   const [teams, players, tournaments, articles] = await Promise.all([

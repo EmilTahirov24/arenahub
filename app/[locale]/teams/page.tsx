@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import PageShell from "@/components/layout/PageShell";
 import TeamAvatar from "@/components/common/TeamAvatar";
 import CountryFlag from "@/components/common/CountryFlag";
+import GameAccent from "@/components/common/GameAccent";
 import { countryName } from "@/lib/countries";
 import { ratingDelta } from "@/lib/elo";
 
@@ -139,9 +140,12 @@ export default async function TeamsPage({
     );
   };
 
+  const accent = games.find((g) => g.slug === activeGame)?.accentColor;
+
   return (
     <PageShell>
-      <h1 className="font-display mb-4 text-2xl font-bold">{t("nav.teams")}</h1>
+      <GameAccent color={accent}>
+      <h1 className="game-rule font-display mb-4 inline-block pb-1 text-2xl font-bold">{t("nav.teams")}</h1>
 
       <div className="mb-6 flex flex-wrap gap-2">
         {games.map((game) => (
@@ -162,7 +166,7 @@ export default async function TeamsPage({
         ))}
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border-subtle bg-surface">
+      <div className="game-edge overflow-x-auto rounded-lg border border-border-subtle bg-surface">
         <table className="w-full min-w-[520px]">
           <thead>
             <tr className="bg-surface-raised">
@@ -205,6 +209,7 @@ export default async function TeamsPage({
           </tbody>
         </table>
       </div>
+      </GameAccent>
     </PageShell>
   );
 }

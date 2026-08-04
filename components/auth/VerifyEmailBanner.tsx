@@ -1,8 +1,9 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
-type ResendState = { waitSeconds: number };
+type ResendState = { waitSeconds: number; failed?: boolean };
 type ResendAction = (prevState: ResendState | undefined, formData: FormData) => Promise<ResendState>;
 
 function formatWait(seconds: number) {
@@ -14,6 +15,10 @@ function formatWait(seconds: number) {
 }
 
 export default function VerifyEmailBanner({ action, initialWaitSeconds }: { action: ResendAction; initialWaitSeconds: number }) {
+  // Registration redirects to /player?mail=failed when the verification email
+  // was rejected. A layout cannot read searchParams, but this banner is a
+  // client component and already sits inside one, so it reads the flag itself.
+  const sendFailed = useSearchParams().get("mail") === "failed";
   const [state, formAction, pending] = useActionState(action, { waitSeconds: initialWaitSeconds });
   const [secondsLeft, setSecondsLeft] = useState(state.waitSeconds);
 
@@ -33,15 +38,27 @@ export default function VerifyEmailBanner({ action, initialWaitSeconds }: { acti
   }, [secondsLeft]);
 
   const disabled = pending || secondsLeft > 0;
+  // Either the signup send failed, or the last resend did.
+  const failed = sendFailed || state.failed === true;
 
   return (
-    <div className="mb-6 flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
-      <span>Emailiniz hələ təsdiqlənməyib. Poçt qutunuzu yoxlayın.</span>
+    <div
+      className={`mb-6 flex flex-wrap items-center justify-between gap-2 rounded-md border px-4 py-3 text-sm ${
+        failed ? "border-live/30 bg-live/10 text-live" : "border-amber-500/30 bg-amber-500/10 text-amber-400"
+      }`}
+    >
+      <span>
+        {failed
+          ? "Təsdiq məktubu göndərilə bilmədi. Bir az sonra yenidən cəhd edin — problem davam edərsə bizə yazın."
+          : "Emailiniz hələ təsdiqlənməyib. Poçt qutunuzu yoxlayın."}
+      </span>
       <form action={formAction}>
         <button
           type="submit"
           disabled={disabled}
-          className="rounded-md border border-amber-500/40 px-3 py-1 text-xs font-semibold hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+          className={`rounded-md border px-3 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
+            failed ? "border-live/40 hover:bg-live/20" : "border-amber-500/40 hover:bg-amber-500/20"
+          }`}
         >
           {pending
             ? "Göndərilir..."

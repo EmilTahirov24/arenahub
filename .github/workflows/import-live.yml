@@ -1,0 +1,53 @@
+# Keeps upcoming, live and just-finished matches current.
+#
+# Runs here rather than on Vercel because Vercel's free plan allows one cron a
+# day, which is useless for a live page. GitHub's scheduler is not punctual —
+# runs are queued and can drift by several minutes under load — but for a match
+# list that is fine.
+#
+# Needs one secret: DATABASE_URL. Liquipedia requires no key, only the
+# descriptive User-Agent the client already sends.
+#
+# Note: GitHub disables scheduled workflows on repositories with no activity for
+# 60 days. If matches stop updating, check that first.
+name: Import live matches
+
+on:
+  schedule:
+    - cron: "*/20 * * * *"
+  workflow_dispatch:
+
+# A slow run must not overlap the next tick: two importers writing the same
+# matches at once would race on the create-or-update check.
+concurrency:
+  group: import-live
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    # One pass makes four action=parse calls, each throttled to one per 30s by
+    # Liquipedia's terms, plus the database writes.
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # The Prisma client is generated into app/generated and not committed.
+      - run: npx prisma generate
+
+      - run: npx tsx scripts/import-live.ts --apply
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      # Ratings are a full replay of every finished match, so they have to be
+      # rebuilt after new results land — see lib/elo.ts.
+      - run: npx tsx scripts/recompute-ratings.ts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

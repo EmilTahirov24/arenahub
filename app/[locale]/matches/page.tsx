@@ -6,6 +6,7 @@ import { groupBy } from "@/lib/group";
 import PageShell from "@/components/layout/PageShell";
 import MatchFilters from "@/components/matches/MatchFilters";
 import MatchGroup from "@/components/matches/MatchGroup";
+import NextUp from "@/components/matches/NextUp";
 import type { Prisma } from "@/app/generated/prisma/client";
 
 export async function generateMetadata({
@@ -54,11 +55,17 @@ export default async function MatchesPage({
       <h1 className="font-display mb-4 text-2xl font-bold">{t("nav.matches")}</h1>
       <MatchFilters games={games} basePath="/matches" activeGame={gameSlug} activeDate={date} />
 
-      {matches.length === 0 && (
-        <p className="rounded-lg border border-border-subtle bg-surface p-6 text-center text-sm text-foreground-muted">
-          {locale === "az" ? "Bu filtrə uyğun matç tapılmadı." : "No matches found for this filter."}
-        </p>
-      )}
+      {/* With a filter on, "nothing matched" is the honest answer. With no
+          filter, the list is empty because no schedule has been published —
+          a different thing, and worth saying properly. */}
+      {matches.length === 0 &&
+        (gameSlug || date ? (
+          <p className="rounded-lg border border-border-subtle bg-surface p-6 text-center text-sm text-foreground-muted">
+            {locale === "az" ? "Bu filtrə uyğun matç tapılmadı." : "No matches found for this filter."}
+          </p>
+        ) : (
+          <NextUp reason="matches" />
+        ))}
 
       {Array.from(groups.entries()).map(([key, groupMatches]) => (
         <MatchGroup key={key} tournament={groupMatches[0].tournament} matches={groupMatches} />

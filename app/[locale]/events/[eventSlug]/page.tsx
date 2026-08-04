@@ -151,7 +151,13 @@ export default async function EventDetailPage({
               {otherMatches.map((match) => (
                 <MatchCard key={match.id} match={match} />
               ))}
-              {matches.length === 0 && <p className="text-sm text-foreground-muted">—</p>}
+              {matches.length === 0 && (
+                <p className="text-sm text-foreground-muted">
+                  {locale === "az"
+                    ? "Bu turnirin matçları hələ qeydə alınmayıb."
+                    : "No matches recorded for this tournament yet."}
+                </p>
+              )}
             </div>
           </>
         );

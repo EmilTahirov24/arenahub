@@ -33,9 +33,20 @@ function pruneExpired(now: number) {
   }
 }
 
-/** Best-effort client IP; behind a proxy Next populates x-forwarded-for. */
-export function clientIp(headers: Headers): string {
+/**
+ * Best-effort client IP; behind a proxy Next populates x-forwarded-for.
+ *
+ * Returns null when no address can be determined. Callers must not fall back to
+ * a constant: the previous `"unknown"` string meant that on any host which sets
+ * neither header, every visitor on earth shared one bucket — a global cap of
+ * five registrations per hour, and the sixth honest person was turned away.
+ * Better to skip the limit than to apply it to the wrong person.
+ */
+export function clientIp(headers: Headers): string | null {
   const forwarded = headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-  return headers.get("x-real-ip") ?? "unknown";
+  if (forwarded) {
+    const first = forwarded.split(",")[0].trim();
+    if (first) return first;
+  }
+  return headers.get("x-real-ip")?.trim() || null;
 }

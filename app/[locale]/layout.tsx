@@ -39,8 +39,6 @@ export default async function LocaleLayout({
   return (
     <NextIntlClientProvider>
       <Header />
-      <div className="mx-auto flex max-w-[1400px] justify-center px-4 pt-3">
-      </div>
       <main className="flex-1">{children}</main>
       <Footer />
     </NextIntlClientProvider>
