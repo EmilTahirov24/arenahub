@@ -38,6 +38,24 @@ export default async function LocaleLayout({
 
   return (
     <NextIntlClientProvider>
+      {/*
+        The root layout hard-codes lang="az" because it sits above [locale] and
+        cannot see which language was asked for — so every English page claimed
+        to be Azerbaijani, and a screen reader read it aloud with the wrong
+        pronunciation.
+
+        Corrected here rather than by restructuring the app: moving <html> into
+        this layout means giving /player and /admin a second root layout, which
+        is a forty-file move through the routes that carry authentication. This
+        script runs before paint, so assistive technology and any crawler that
+        executes JavaScript see the right value. The served HTML still says "az"
+        until that restructure happens.
+      */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `document.documentElement.lang=${JSON.stringify(locale)}`,
+        }}
+      />
       <Header />
       <main className="flex-1">{children}</main>
       <Footer />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "@/i18n/navigation";
 import ThemeToggle from "./ThemeToggle";
@@ -24,6 +24,16 @@ export default function MobileNav({
   playerAuth: AuthConfig;
 }) {
   const [open, setOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const openerRef = useRef<HTMLButtonElement>(null);
+
+  // Closing always hands focus back to the button that opened the drawer.
+  // Without this the focus ring lands back at the top of the document and the
+  // next Tab restarts from the beginning of the page.
+  const close = useCallback(() => {
+    setOpen(false);
+    openerRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -32,12 +42,55 @@ export default function MobileNav({
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    // The drawer covers the page, but nothing stopped Tab from walking into the
+    // links underneath it — so a keyboard or screen-reader user could be
+    // "inside" a menu while operating things they cannot see. Focus starts in
+    // the panel and cycles within it until the drawer is dismissed.
+    panelRef.current?.querySelector<HTMLElement>("button, a")?.focus();
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        close();
+        return;
+      }
+      if (e.key !== "Tab" || !panelRef.current) return;
+
+      const focusable = panelRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+
+      // Only the two ends need handling; everything between them is the
+      // browser's own tab order and is left alone.
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, close]);
+
   return (
     <div className="xl:hidden">
       <button
+        ref={openerRef}
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Menu"
+        aria-expanded={open}
+        aria-haspopup="dialog"
         className="flex h-9 w-9 items-center justify-center rounded-md border border-border-subtle bg-surface text-foreground-muted"
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
@@ -47,8 +100,12 @@ export default function MobileNav({
 
       {open &&
         createPortal(
-          <div className="fixed inset-0 z-[200] flex justify-end bg-black/60" onClick={() => setOpen(false)}>
+          <div className="fixed inset-0 z-[200] flex justify-end bg-black/60" onClick={close}>
             <div
+              ref={panelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label={playerAuth.label}
               className="flex h-full w-72 max-w-[85vw] flex-col overflow-y-auto bg-surface p-4"
               onClick={(e) => e.stopPropagation()}
             >
@@ -59,7 +116,7 @@ export default function MobileNav({
                 </div>
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
+                  onClick={close}
                   aria-label="Close"
                   className="flex h-9 w-9 items-center justify-center rounded-md border border-border-subtle text-foreground-muted"
                 >
