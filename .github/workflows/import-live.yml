@@ -72,6 +72,13 @@ jobs:
 
       - run: npx tsx scripts/import-live.ts --apply
 
+      # The match list carries a series score and no map breakdown, so the maps
+      # come from the tournament pages afterwards. Capped per run: an event whose
+      # games are held in Liquipedia's match database can only be read from the
+      # rendered page, and that endpoint allows one request every 31s. Six pages
+      # is about three minutes, and the backlog shrinks every hour.
+      - run: npx tsx scripts/import-maps.ts --apply --limit 6
+
       # Ratings are a full replay of every finished match, so they have to be
       # rebuilt after new results land — see lib/elo.ts.
       - run: npx tsx scripts/recompute-ratings.ts

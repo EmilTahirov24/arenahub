@@ -21,6 +21,7 @@ import { PrismaClient } from "../app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { fetchMatchTicker, type LiquipediaOptions, type ParsedMatch } from "../lib/liquipedia";
 import { indexByOrg, orgKey } from "../lib/orgNames";
+import { syncMaps } from "../lib/matchMaps";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -86,6 +87,7 @@ async function main() {
 
   const now = new Date();
   let written = 0;
+  let mapRows = 0;
   let swept = 0;
   let newTeams = 0;
   let newTournaments = 0;
@@ -132,6 +134,7 @@ async function main() {
 
     if (!apply) {
       written += usable.length;
+      for (const u of usable) if (u.status === "FINISHED") mapRows += u.match.maps.length;
       continue;
     }
 
@@ -212,14 +215,33 @@ async function main() {
         select: { id: true },
       });
 
+      let matchId: string;
       if (existing) {
         await prisma.match.update({ where: { id: existing.id }, data });
+        matchId = existing.id;
       } else {
-        await prisma.match.create({
+        const created = await prisma.match.create({
           data: { slug: await freeSlug("match", `${def.slug}-${a.name}-vs-${b.name}-${m.date!.slice(0, 10)}`), ...data },
+          select: { id: true },
         });
+        matchId = created.id;
       }
       written++;
+
+      // The wiki-wide list gives a series score and no map breakdown, so this
+      // is almost always skipped — scripts/import-maps.ts reads the tournament
+      // pages, which do carry them. It stays because the parser fills `maps`
+      // whenever a block happens to include them, and dropping data we already
+      // hold on the floor is how the map list came to be empty in the first
+      // place.
+      //
+      // Finished series only. A live one changes between passes and the wiki
+      // lags the real score, so a half-written map list would be wrong more
+      // often than absent — and the sweep below spares any match carrying maps,
+      // so writing them mid-series would make an abandoned match permanent.
+      if (status === "FINISHED" && m.maps.length > 0) {
+        mapRows += await syncMaps(prisma, matchId, m.maps, a.id, b.id);
+      }
     }
   }
 
@@ -265,6 +287,7 @@ async function main() {
     `\n${written} matç` +
       (apply ? ` yazıldı, ${newTeams} yeni komanda, ${newTournaments} yeni turnir.` : " tapıldı."),
   );
+  if (mapRows) console.log(`${mapRows} xəritə ${apply ? "yazıldı" : "tapıldı"}.`);
   if (swept) console.log(`${swept} tərk edilmiş matç ${apply ? "silindi" : "silinəcək"}.`);
   if (problems.length) console.log(`\nProblemlər:\n  ` + problems.join("\n  "));
   if (!apply) console.log("\nTətbiq etmək üçün: --apply");
