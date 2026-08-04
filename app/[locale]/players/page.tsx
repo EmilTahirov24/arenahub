@@ -7,8 +7,18 @@ import GameAccent from "@/components/common/GameAccent";
 import PlayerAvatar from "@/components/common/PlayerAvatar";
 import TeamAvatar from "@/components/common/TeamAvatar";
 import CountryFlag from "@/components/common/CountryFlag";
+import PlayerSearch from "@/components/players/PlayerSearch";
+import SortableHeader from "@/components/common/SortableHeader";
+import Pagination from "@/components/common/Pagination";
 import { scoreBarFraction } from "@/lib/playerScore";
 import { playerStatRows } from "@/lib/playerStats";
+import {
+  PLAYERS_PER_PAGE,
+  defaultDirection,
+  filterPlayerRows,
+  isPlayerSortKey,
+  sortPlayerRows,
+} from "@/lib/playerTable";
 
 export async function generateMetadata({
   params,
@@ -25,11 +35,11 @@ export default async function PlayersPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ game?: string }>;
+  searchParams: Promise<{ game?: string; q?: string; sort?: string; dir?: string; page?: string }>;
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const { game: gameSlug } = await searchParams;
+  const { game: gameSlug, q, sort, dir, page: pageParam } = await searchParams;
   const t = await getTranslations();
   const az = locale === "az";
 
@@ -39,10 +49,39 @@ export default async function PlayersPage({
   // Shared with the stats leaderboard so a player never shows a different
   // score depending on which page you look at — see lib/playerStats.ts.
   const game = games.find((g) => g.slug === activeGame);
-  const rows = game ? await playerStatRows(game.id) : [];
+  const allRows = game ? await playerStatRows(game.id) : [];
 
-  const bestScore = Math.max(0, ...rows.map((r) => r.score ?? 0));
-  const scored = rows.filter((r) => r.score != null).length;
+  // The score bar and the coverage note describe the whole roster, not the
+  // current page: a bar that rescaled itself as you paged through would make
+  // the same player look stronger on page 4 than on page 1.
+  const bestScore = Math.max(0, ...allRows.map((r) => r.score ?? 0));
+  const scored = allRows.filter((r) => r.score != null).length;
+
+  const search = (q ?? "").trim();
+  const sortKey = isPlayerSortKey(sort) ? sort : "score";
+  const sortDir = dir === "asc" || dir === "desc" ? dir : defaultDirection(sortKey);
+
+  const matched = sortPlayerRows(filterPlayerRows(allRows, search), sortKey, sortDir);
+
+  const totalPages = Math.max(1, Math.ceil(matched.length / PLAYERS_PER_PAGE));
+  // Clamped rather than 404'd: landing on page 7 of a list that shrank to three
+  // should show the last page, not an error.
+  const page = Math.min(Math.max(1, Number(pageParam) || 1), totalPages);
+  const offset = (page - 1) * PLAYERS_PER_PAGE;
+  const rows = matched.slice(offset, offset + PLAYERS_PER_PAGE);
+
+  // Carried onto every sort link and page link so one control never silently
+  // discards another.
+  const baseQuery: Record<string, string> = {};
+  if (activeGame) baseQuery.game = activeGame;
+  if (search) baseQuery.q = search;
+
+  const sortQuery = { ...baseQuery };
+  const pageQuery = { ...baseQuery, sort: sortKey, dir: sortDir };
+
+  /** Clicking the active column flips it; any other column starts at its own default. */
+  const nextDir = (key: Parameters<typeof defaultDirection>[0]) =>
+    sortKey === key ? (sortDir === "asc" ? "desc" : "asc") : defaultDirection(key);
   const headCell = "px-3 py-2 text-[11px] font-normal uppercase tracking-wide text-foreground-muted";
   const num = (v: number | null, digits = 2) => (v == null ? "—" : v.toFixed(digits));
 
@@ -52,11 +91,11 @@ export default async function PlayersPage({
       <h1 className="game-rule font-display mb-1 inline-block pb-1 text-2xl font-bold">{t("nav.players")}</h1>
       {/* States the coverage outright, so an empty cell reads as "not recorded"
           rather than as a broken table. */}
-      {rows.length > 0 && scored < rows.length && (
+      {allRows.length > 0 && scored < allRows.length && (
         <p className="mb-4 text-sm text-foreground-muted">
           {az
-            ? `${rows.length} oyunçudan ${scored}-nin statistikası qeydə alınıb. Qalanları üçün hələ məlumat yoxdur — uydurma rəqəm yazılmır.`
-            : `Statistics recorded for ${scored} of ${rows.length} players. The rest have none yet — no placeholder numbers are shown.`}
+            ? `${allRows.length} oyunçudan ${scored}-nin statistikası qeydə alınıb. Qalanları üçün hələ məlumat yoxdur — uydurma rəqəm yazılmır.`
+            : `Statistics recorded for ${scored} of ${allRows.length} players. The rest have none yet — no placeholder numbers are shown.`}
         </p>
       )}
 
@@ -79,24 +118,100 @@ export default async function PlayersPage({
         ))}
       </div>
 
+      <PlayerSearch
+        game={activeGame}
+        defaultValue={search}
+        placeholder={az ? "Oyunçu və ya komanda axtar..." : "Search player or team..."}
+        clearLabel={az ? "Təmizlə" : "Clear"}
+      />
+
       <div className="game-edge overflow-x-auto rounded-lg border border-border-subtle bg-surface">
         <table className="w-full min-w-[620px]">
           <thead>
             <tr className="bg-surface-raised">
               <th className={`${headCell} text-center`}>#</th>
-              <th className={`${headCell} text-left`}>{az ? "Oyunçu" : "Player"}</th>
-              <th className={`${headCell} text-left`}>{az ? "Komanda" : "Team"}</th>
-              <th className={`${headCell} text-left`}>{az ? "Bal" : "Score"}</th>
-              <th className={`${headCell} text-right`}>{az ? "Öldürmə" : "Kills"}</th>
-              <th className={`${headCell} text-right`}>{az ? "Ölüm" : "Deaths"}</th>
-              <th className={`${headCell} hidden text-right sm:table-cell`}>{az ? "Zərər" : "Damage"}</th>
-              <th className={`${headCell} hidden text-right sm:table-cell`}>{az ? "Xəritə" : "Maps"}</th>
+              <SortableHeader
+                label={az ? "Oyunçu" : "Player"}
+                sortKey="nickname"
+                activeKey={sortKey}
+                activeDir={sortDir}
+                nextDir={nextDir("nickname")}
+                query={sortQuery}
+                pathname="/players"
+                className={headCell}
+              />
+              <SortableHeader
+                label={az ? "Komanda" : "Team"}
+                sortKey="team"
+                activeKey={sortKey}
+                activeDir={sortDir}
+                nextDir={nextDir("team")}
+                query={sortQuery}
+                pathname="/players"
+                className={headCell}
+              />
+              <SortableHeader
+                label={az ? "Bal" : "Score"}
+                sortKey="score"
+                activeKey={sortKey}
+                activeDir={sortDir}
+                nextDir={nextDir("score")}
+                query={sortQuery}
+                pathname="/players"
+                className={headCell}
+              />
+              <SortableHeader
+                label={az ? "Öldürmə" : "Kills"}
+                sortKey="kills"
+                activeKey={sortKey}
+                activeDir={sortDir}
+                nextDir={nextDir("kills")}
+                query={sortQuery}
+                pathname="/players"
+                align="right"
+                className={headCell}
+              />
+              <SortableHeader
+                label={az ? "Ölüm" : "Deaths"}
+                sortKey="deaths"
+                activeKey={sortKey}
+                activeDir={sortDir}
+                nextDir={nextDir("deaths")}
+                query={sortQuery}
+                pathname="/players"
+                align="right"
+                className={headCell}
+              />
+              <SortableHeader
+                label={az ? "Zərər" : "Damage"}
+                sortKey="damage"
+                activeKey={sortKey}
+                activeDir={sortDir}
+                nextDir={nextDir("damage")}
+                query={sortQuery}
+                pathname="/players"
+                align="right"
+                className={`${headCell} hidden sm:table-cell`}
+              />
+              <SortableHeader
+                label={az ? "Xəritə" : "Maps"}
+                sortKey="maps"
+                activeKey={sortKey}
+                activeDir={sortDir}
+                nextDir={nextDir("maps")}
+                query={sortQuery}
+                pathname="/players"
+                align="right"
+                className={`${headCell} hidden sm:table-cell`}
+              />
             </tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
               <tr key={r.player.id} className="border-t border-border-subtle hover:bg-surface-raised">
-                <td className="w-10 px-3 py-2 text-center text-sm text-foreground-muted tabular-nums">{i + 1}</td>
+                <td className="w-10 px-3 py-2 text-center text-sm text-foreground-muted tabular-nums">
+                  {offset + i + 1}
+                </td>
                 <td className="px-3 py-2">
                   <Link href={`/players/${r.player.slug}`} className="flex items-center gap-2 group">
                     <PlayerAvatar
@@ -145,13 +260,35 @@ export default async function PlayersPage({
             {rows.length === 0 && (
               <tr>
                 <td colSpan={8} className="p-6 text-center text-sm text-foreground-muted">
-                  {az ? "Oyunçu tapılmadı." : "No players found."}
+                  {/* "Nothing matched your search" and "this game has no players
+                      yet" are different facts and deserve different sentences. */}
+                  {search
+                    ? az
+                      ? `«${search}» üzrə oyunçu tapılmadı.`
+                      : `No players match “${search}”.`
+                    : az
+                      ? "Oyunçu tapılmadı."
+                      : "No players found."}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        pathname="/players"
+        query={pageQuery}
+        labels={{
+          previous: az ? "Əvvəlki" : "Previous",
+          next: az ? "Növbəti" : "Next",
+          summary: az
+            ? `${matched.length} oyunçudan ${offset + 1}–${offset + rows.length}`
+            : `${offset + 1}–${offset + rows.length} of ${matched.length}`,
+        }}
+      />
       </GameAccent>
     </PageShell>
   );
