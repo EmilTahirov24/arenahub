@@ -731,6 +731,10 @@ async function main() {
   }
 
   if (!seedDemo) {
+    // Real CS2 matches exist even in this mode, so the ratings still have to be
+    // computed — skipping it here left production with every team on the
+    // default 1000 and no ranking at all.
+    await recomputeRatings();
     console.log(`Seed tamamlandı (yalnız real data).`);
     console.log(`Admin login: ${adminEmail} / ${adminPassword}`);
     return;
