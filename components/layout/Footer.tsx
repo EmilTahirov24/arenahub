@@ -13,7 +13,28 @@ export default async function Footer() {
           </span>
           <span> &copy; {new Date().getFullYear()} — {t("footer.rights")}</span>
         </div>
-        <div className="flex gap-4 text-xs">
+        <div className="flex flex-wrap items-center gap-4 text-xs">
+          {/* CC-BY-SA requires crediting Liquipedia wherever their data is used;
+              this is a licence condition, not a courtesy. */}
+          <span>
+            {t("footer.rosterSource")}{" "}
+            <a
+              href="https://liquipedia.net"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground hover:underline"
+            >
+              Liquipedia
+            </a>{" "}
+            <a
+              href="https://creativecommons.org/licenses/by-sa/3.0/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground hover:underline"
+            >
+              (CC BY-SA 3.0)
+            </a>
+          </span>
           <Link href="/terms" className="hover:text-foreground hover:underline">
             İstifadə Şərtləri
           </Link>

@@ -15,7 +15,8 @@
     "local": "Local Scene"
   },
   "footer": {
-    "rights": "All rights reserved."
+    "rights": "All rights reserved.",
+    "rosterSource": "Roster data from"
   },
   "home": {
     "title": "Esports, all in one place",
