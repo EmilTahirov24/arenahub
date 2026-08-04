@@ -86,9 +86,14 @@ async function main() {
 
   const now = new Date();
   let written = 0;
+  let swept = 0;
   let newTeams = 0;
   let newTournaments = 0;
   const problems: string[] = [];
+
+  // Only wikis that answered get swept afterwards: a Liquipedia outage must not
+  // be read as "every live match has gone away".
+  const fetched: { slug: string; gameId: string }[] = [];
 
   for (const def of WIKIS) {
     const game = await prisma.game.findUnique({ where: { slug: def.slug } });
@@ -105,6 +110,7 @@ async function main() {
       problems.push(`${def.slug}: portal oxunmadı — ${(e as Error).message}`);
       continue;
     }
+    fetched.push({ slug: def.slug, gameId: game.id });
 
     // Undated matches cannot be placed on a calendar, a match against an
     // unnamed side is a bracket placeholder rather than a fixture, and
@@ -217,10 +223,49 @@ async function main() {
     }
   }
 
+  // A match can drop off the ticker while still marked LIVE: the wiki stops
+  // listing it before anyone records who won. Nothing in the loop above will
+  // ever see it again, so it would sit on the live page for good — which is how
+  // two League games from one morning were still "live" seven hours later. The
+  // twenty-minute schedule does not help; only something that looks at what the
+  // ticker *stopped* saying does.
+  //
+  // There is no result to write and inventing one is out of the question, so the
+  // placeholder is removed. Anything carrying maps, statistics or a prediction
+  // is somebody's work and stays put. Liquipedia publishing the result later
+  // simply recreates the row.
+  const cutoff = new Date(now.getTime() - LIVE_WINDOW_MS);
+  for (const { slug, gameId } of fetched) {
+    const abandoned = await prisma.match.findMany({
+      where: { gameId, status: { in: ["LIVE", "UPCOMING"] }, scheduledAt: { lt: cutoff } },
+      select: {
+        id: true,
+        scheduledAt: true,
+        teamA: { select: { name: true } },
+        teamB: { select: { name: true } },
+        _count: { select: { maps: true, playerStats: true, predictions: true } },
+      },
+    });
+    const removable = abandoned.filter(
+      (m) => m._count.maps === 0 && m._count.playerStats === 0 && m._count.predictions === 0,
+    );
+
+    for (const m of removable) {
+      console.log(
+        `${slug.padEnd(9)} tərk edilmiş: ${m.teamA.name} vs ${m.teamB.name} — ${m.scheduledAt.toISOString().slice(0, 16)}`,
+      );
+    }
+    if (apply && removable.length) {
+      await prisma.match.deleteMany({ where: { id: { in: removable.map((m) => m.id) } } });
+    }
+    swept += removable.length;
+  }
+
   console.log(
     `\n${written} matç` +
       (apply ? ` yazıldı, ${newTeams} yeni komanda, ${newTournaments} yeni turnir.` : " tapıldı."),
   );
+  if (swept) console.log(`${swept} tərk edilmiş matç ${apply ? "silindi" : "silinəcək"}.`);
   if (problems.length) console.log(`\nProblemlər:\n  ` + problems.join("\n  "));
   if (!apply) console.log("\nTətbiq etmək üçün: --apply");
 }
