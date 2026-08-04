@@ -48,6 +48,9 @@ next-env.d.ts
 
 .vercel
 .env*
+# ...but not the template, which holds no secrets and is the only record of
+# which variables the app expects. It was being ignored along with the rest.
+!.env.example
 
 scripts/.merge-backup-*.json
 scripts/.match-cleanup-*.json

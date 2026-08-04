@@ -14,6 +14,54 @@ export type EmailResult = { ok: true; delivered: boolean } | { ok: false; reason
 const LOGGED_TO_CONSOLE: EmailResult = { ok: true, delivered: false };
 
 /**
+ * Which way out the message goes.
+ *
+ * SMTP wins when it is configured, because it is the option that actually
+ * reaches strangers. Resend will not send to an arbitrary address until a
+ * domain has been verified with it, and verifying a domain means owning one —
+ * on the sandbox sender (`onboarding@resend.dev`) every message silently goes
+ * nowhere except the Resend account holder's own inbox, which is indis-
+ * tinguishable from working when you are the one testing it.
+ *
+ * A plain mailbox has no such restriction: Gmail with an app password sends as
+ * the account and reaches anyone, capped around 500 a day. Once a domain is
+ * verified in Resend, drop the SMTP_* variables and Resend takes over again —
+ * it is the better long-term answer for deliverability and volume.
+ */
+function transport(): "smtp" | "resend" | "console" {
+  if (process.env.SMTP_USER && process.env.SMTP_PASS) return "smtp";
+  if (process.env.RESEND_API_KEY) return "resend";
+  return "console";
+}
+
+/**
+ * Gmail rejects a From that is not the authenticated account, and most other
+ * providers rewrite it silently — so the configured address is only honoured
+ * when it really is the mailbox we are signed in to.
+ */
+function smtpFrom(user: string): string {
+  const configured = process.env.EMAIL_FROM;
+  return configured?.includes(user) ? configured : `ArenaHub <${user}>`;
+}
+
+/** Built once and reused: a new connection per email is slow and rude. */
+let mailer: import("nodemailer").Transporter | null = null;
+
+async function smtpTransporter() {
+  if (mailer) return mailer;
+  const nodemailer = await import("nodemailer");
+  const port = Number(process.env.SMTP_PORT ?? 465);
+  mailer = nodemailer.createTransport({
+    host: process.env.SMTP_HOST ?? "smtp.gmail.com",
+    port,
+    // 465 is implicit TLS; 587 upgrades with STARTTLS after connecting.
+    secure: port === 465,
+    auth: { user: process.env.SMTP_USER!, pass: process.env.SMTP_PASS! },
+  });
+  return mailer;
+}
+
+/**
  * Real email via Resend once RESEND_API_KEY is set; otherwise the link is
  * just logged to the server console so password reset still works in local
  * dev without any email provider configured — same fallback shape as
@@ -48,21 +96,39 @@ export async function sendVerificationEmail(
 }
 
 async function send(msg: { to: string; url: string; label: string; subject: string; html: string }): Promise<EmailResult> {
-  if (!process.env.RESEND_API_KEY) {
+  const via = transport();
+
+  if (via === "console") {
     console.log(`[dev-mode] ${msg.label} link for ${msg.to}: ${msg.url}`);
     return LOGGED_TO_CONSOLE;
   }
 
   try {
+    if (via === "smtp") {
+      const user = process.env.SMTP_USER!;
+      const mail = await smtpTransporter();
+      await mail.sendMail({
+        from: smtpFrom(user),
+        to: msg.to,
+        subject: msg.subject,
+        html: msg.html,
+      });
+      return { ok: true, delivered: true };
+    }
+
     const { Resend } = await import("resend");
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     // Resend's sandbox sender only delivers to the account owner's own inbox,
-    // so leaving EMAIL_FROM unset means real users never receive anything.
-    // Worth saying out loud rather than discovering it from silence.
+    // so leaving EMAIL_FROM unset — or leaving it pointed at resend.dev — means
+    // real users never receive anything. Worth saying out loud rather than
+    // discovering it from silence.
     const from = process.env.EMAIL_FROM;
-    if (!from) {
-      console.warn("EMAIL_FROM is not set — using Resend's sandbox sender, which only reaches the account owner.");
+    if (!from || from.includes("resend.dev")) {
+      console.warn(
+        "EMAIL_FROM uses Resend's sandbox sender, which only reaches the Resend account owner. " +
+          "Verify a domain in Resend, or set SMTP_USER/SMTP_PASS to send through a real mailbox.",
+      );
     }
 
     const { error } = await resend.emails.send({
@@ -82,8 +148,12 @@ async function send(msg: { to: string; url: string; label: string; subject: stri
   } catch (e) {
     // A thrown error used to escape the server action entirely, leaving the
     // caller half-done — an account created but no session, for instance.
-    console.error(`Sending the ${msg.label.toLowerCase()} email threw:`, e);
+    console.error(`Sending the ${msg.label.toLowerCase()} email via ${via} threw:`, e);
     console.log(`[fallback] ${msg.label} link for ${msg.to}: ${msg.url}`);
+
+    // A dead connection must not be reused on the next attempt.
+    if (via === "smtp") mailer = null;
+
     return { ok: false, reason: e instanceof Error ? e.message : "unknown error" };
   }
 }
