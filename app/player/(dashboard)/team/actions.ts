@@ -43,24 +43,49 @@ export async function createTeam(formData: FormData) {
   redirect("/player/team");
 }
 
-export async function updateOwnTeam(formData: FormData) {
+export type SaveTeamState = { ok?: true; error?: string };
+
+/**
+ * Returns a state rather than nothing.
+ *
+ * This was a bare action: it saved, revalidated, and left the screen exactly as
+ * it was — no message, no navigation, same values in the same boxes. The owner
+ * pressed "Yadda saxla" and had no way to tell whether anything had happened.
+ * Same fault, and same fix, as the profile form in app/player/(dashboard).
+ */
+export async function updateOwnTeam(
+  _prevState: SaveTeamState | undefined,
+  formData: FormData,
+): Promise<SaveTeamState> {
   const session = await getPlayerSession();
-  if (!session) throw new Error("Unauthorized");
+  // Reachable by anyone whose session simply expired, so it gets a sentence
+  // rather than a thrown error and the framework's error page.
+  if (!session) return { error: "Sessiyanız bitib. Yenidən daxil olun." };
 
   const team = await prisma.team.findFirst({ where: { ownerId: session.id } });
-  if (!team) throw new Error("Forbidden");
+  if (!team) return { error: "Sahibi olduğunuz komanda tapılmadı." };
 
-  await prisma.team.update({
-    where: { id: team.id },
-    data: {
-      name: String(formData.get("name") ?? ""),
-      country: String(formData.get("country") ?? "") || null,
-      primaryColor: String(formData.get("primaryColor") ?? "") || null,
-      secondaryColor: String(formData.get("secondaryColor") ?? "") || null,
-      logoUrl: String(formData.get("logoUrl") ?? "") || null,
-      description: String(formData.get("description") ?? "") || null,
-    },
-  });
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) return { error: "Komanda adı boş ola bilməz." };
+
+  try {
+    await prisma.team.update({
+      where: { id: team.id },
+      data: {
+        name,
+        country: String(formData.get("country") ?? "") || null,
+        primaryColor: String(formData.get("primaryColor") ?? "") || null,
+        secondaryColor: String(formData.get("secondaryColor") ?? "") || null,
+        logoUrl: String(formData.get("logoUrl") ?? "") || null,
+        description: String(formData.get("description") ?? "") || null,
+      },
+    });
+  } catch (e) {
+    console.error("Team save failed:", e);
+    return { error: "Yadda saxlamaq alınmadı. Bir azdan yenidən yoxlayın." };
+  }
+
   revalidatePath("/player/team");
   revalidatePath("/[locale]", "layout");
+  return { ok: true };
 }

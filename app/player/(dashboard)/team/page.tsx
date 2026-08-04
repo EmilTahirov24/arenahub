@@ -6,9 +6,10 @@ import ImageUpload from "@/components/forms/ImageUpload";
 import CountrySelect from "@/components/forms/CountrySelect";
 import TeamAvatar from "@/components/common/TeamAvatar";
 import CountryFlag from "@/components/common/CountryFlag";
+import TeamSettingsForm from "@/components/team/TeamSettingsForm";
 import { inputClass, labelClass, primaryButtonClass, dangerButtonClass } from "@/components/admin/formStyles";
 import { leaveTeam } from "../invites/actions";
-import { createTeam, updateOwnTeam } from "./actions";
+import { createTeam } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -116,7 +117,7 @@ export default async function PlayerTeamPage() {
         </Link>
       </div>
 
-      <form action={updateOwnTeam} className="max-w-lg space-y-4">
+      <TeamSettingsForm>
         <div>
           <label className={labelClass}>Ad</label>
           <input name="name" required defaultValue={team.name} className={inputClass} />
@@ -140,10 +141,7 @@ export default async function PlayerTeamPage() {
           <label className={labelClass}>Təsvir</label>
           <textarea name="description" defaultValue={team.description ?? ""} rows={4} className={inputClass} />
         </div>
-        <button type="submit" className={primaryButtonClass}>
-          Yadda saxla
-        </button>
-      </form>
+      </TeamSettingsForm>
     </div>
   );
 }
