@@ -57,7 +57,12 @@ export default function VerifyEmailBanner({ action, initialWaitSeconds }: { acti
           type="submit"
           disabled={disabled}
           className={`rounded-md border px-3 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
-            failed ? "border-live/40 hover:bg-live/20" : "border-warning/40 hover:bg-warning/20"
+            // The button sits inside a banner that is already a 10% wash of the
+            // same colour, so a hover wash stacks on top of it and pushes the
+            // text below 4.5:1. The border carries the hover instead.
+            failed
+              ? "border-live/40 hover:border-live/90"
+              : "border-warning/40 hover:border-warning/90"
           }`}
         >
           {pending
