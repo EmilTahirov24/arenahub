@@ -45,3 +45,8 @@ next-env.d.ts
 # uploaded media (local dev storage)
 /public/uploads/*
 !/public/uploads/.gitkeep
+
+.vercel
+.env*
+
+scripts/.merge-backup-*.json
