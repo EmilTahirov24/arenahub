@@ -7,8 +7,8 @@ import CountrySelect from "@/components/forms/CountrySelect";
 import CountryFlag from "@/components/common/CountryFlag";
 import SocialInputs from "@/components/players/SocialInputs";
 import PendingInvites from "@/components/team/PendingInvites";
-import { inputClass, labelClass, primaryButtonClass } from "@/components/admin/formStyles";
-import { updateOwnPlayer } from "./actions";
+import ProfileForm from "@/components/players/ProfileForm";
+import { inputClass, labelClass } from "@/components/admin/formStyles";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +39,7 @@ export default async function PlayerHomePage() {
 
       <PendingInvites playerId={player.id} />
 
-      <form action={updateOwnPlayer} className="max-w-lg space-y-4">
+      <ProfileForm>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={labelClass}>Ad</label>
@@ -71,11 +71,7 @@ export default async function PlayerHomePage() {
         <ImageUpload name="photoUrl" label="Şəkil" defaultValue={player.photoUrl} />
 
         <SocialInputs socials={socials} />
-
-        <button type="submit" className={primaryButtonClass}>
-          Yadda saxla
-        </button>
-      </form>
+      </ProfileForm>
 
       <h2 className="font-display mb-3 mt-10 text-lg font-bold">Proqnozlarım</h2>
       <div className="mb-6 grid max-w-lg grid-cols-2 gap-3">
