@@ -121,6 +121,11 @@ export default async function EventDetailPage({
             </Link>
           );
         })}
+        {participants.length === 0 && (
+          <p className="text-sm text-foreground-muted">
+            {locale === "az" ? "İştirakçılar hələ açıqlanmayıb." : "Participants have not been announced yet."}
+          </p>
+        )}
       </div>
 
       {(() => {

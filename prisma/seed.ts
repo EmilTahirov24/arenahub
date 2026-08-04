@@ -174,12 +174,17 @@ const REAL_CS2_TEAMS: { name: string; country: string | null; earnings?: number;
 type SeedTournament = {
   name: string;
   prizePool: string;
-  daysAgo: number;
+  /** Days before today the event ended. Omitted for events yet to be played. */
+  daysAgo?: number;
+  /** Absolute dates, for events announced with a fixed schedule. */
+  startDate?: string;
+  endDate?: string;
+  status?: "UPCOMING" | "ONGOING" | "FINISHED";
   prizes: { placeFrom: number; placeTo: number; amount: number; label?: string }[];
   /** placement -> team names finishing there */
-  placements: { place: number; teams: string[] }[];
+  placements?: { place: number; teams: string[] }[];
   /** [teamA, scoreA, scoreB, teamB, bestOf] */
-  matches: [string, number, number, string, number][];
+  matches?: [string, number, number, string, number][];
 };
 
 const CS2_TOURNAMENTS: SeedTournament[] = [
@@ -271,6 +276,28 @@ const CS2_TOURNAMENTS: SeedTournament[] = [
       ["FaZe", 2, 1, "The MongolZ", 3],
       ["3DMAX", 1, 2, "MOUZ", 3],
       ["Liquid", 0, 2, "Spirit", 3],
+    ],
+  },
+  {
+    // Announced but not yet played. No participants or matches were published
+    // yet, so none are invented — the page shows the prize breakdown alone,
+    // which is exactly what the source shows.
+    name: "Esports World Cup 2026",
+    // Not printed in the source; it is the sum of the breakdown below:
+    // 600k + 340k + 190k + 110k + 4×60k + 8×35k + 8×20k + 8×10k.
+    prizePool: "$2 000 000",
+    startDate: "2026-08-12",
+    endDate: "2026-08-24",
+    status: "UPCOMING",
+    prizes: [
+      { placeFrom: 1, placeTo: 1, amount: 600_000, label: "Winner" },
+      { placeFrom: 2, placeTo: 2, amount: 340_000 },
+      { placeFrom: 3, placeTo: 3, amount: 190_000 },
+      { placeFrom: 4, placeTo: 4, amount: 110_000 },
+      { placeFrom: 5, placeTo: 8, amount: 60_000 },
+      { placeFrom: 9, placeTo: 16, amount: 35_000 },
+      { placeFrom: 17, placeTo: 24, amount: 20_000 },
+      { placeFrom: 25, placeTo: 32, amount: 10_000 },
     ],
   },
 ];
@@ -478,7 +505,7 @@ async function main() {
         startDate: daysFromNow(-30),
         endDate: daysFromNow(-23),
         location: "Berlin, Germany",
-        prizePool: "$250,000",
+        prizePool: "$250 000",
         status: "FINISHED",
       },
     });
@@ -491,7 +518,7 @@ async function main() {
         startDate: daysFromNow(-5),
         endDate: daysFromNow(5),
         location: "Katowice, Poland",
-        prizePool: "$500,000",
+        prizePool: "$500 000",
         status: "ONGOING",
       },
     });
@@ -758,8 +785,8 @@ async function seedCs2Tournaments(gameId: string) {
   );
 
   for (const def of CS2_TOURNAMENTS) {
-    const start = daysFromNow(-def.daysAgo - 4);
-    const end = daysFromNow(-def.daysAgo);
+    const start = def.startDate ? new Date(def.startDate) : daysFromNow(-(def.daysAgo ?? 0) - 4);
+    const end = def.endDate ? new Date(def.endDate) : daysFromNow(-(def.daysAgo ?? 0));
 
     const tournament = await prisma.tournament.create({
       data: {
@@ -770,7 +797,7 @@ async function seedCs2Tournaments(gameId: string) {
         startDate: start,
         endDate: end,
         prizePool: def.prizePool,
-        status: "FINISHED",
+        status: def.status ?? "FINISHED",
       },
     });
 
@@ -779,7 +806,7 @@ async function seedCs2Tournaments(gameId: string) {
     });
 
     let seed = 1;
-    for (const row of def.placements) {
+    for (const row of def.placements ?? []) {
       for (const name of row.teams) {
         const team = teamByName.get(name);
         if (!team) throw new Error(`Seed: komanda tapılmadı — ${name}`);
@@ -790,7 +817,7 @@ async function seedCs2Tournaments(gameId: string) {
     }
 
     let order = 0;
-    for (const [aName, aScore, bScore, bName, bestOf] of def.matches) {
+    for (const [aName, aScore, bScore, bName, bestOf] of def.matches ?? []) {
       const a = teamByName.get(aName);
       const b = teamByName.get(bName);
       if (!a || !b) throw new Error(`Seed: matç komandası tapılmadı — ${aName} / ${bName}`);
@@ -801,7 +828,7 @@ async function seedCs2Tournaments(gameId: string) {
           tournamentId: tournament.id,
           teamAId: a.id,
           teamBId: b.id,
-          scheduledAt: daysFromNow(-def.daysAgo - 3, order),
+          scheduledAt: daysFromNow(-(def.daysAgo ?? 0) - 3, order),
           status: "FINISHED",
           bestOf,
           starRating: 5,
