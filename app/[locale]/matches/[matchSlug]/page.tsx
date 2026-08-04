@@ -179,12 +179,14 @@ export default async function MatchDetailPage({
                 <span className="text-xs text-foreground-muted">BO{match.bestOf}</span>
               </>
             )}
+            {/* The hover deepens the border rather than the wash: at 20% the
+                red text on its own tint drops to 4.29:1. */}
             {match.streamUrl && (
               <a
                 href={match.streamUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-live/40 bg-live/10 px-3 py-1 text-xs font-semibold text-live hover:bg-live/20"
+                className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-live/40 bg-live/10 px-3 py-1 text-xs font-semibold text-live hover:border-live/80 hover:bg-live/15"
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-live" />
                 {locale === "az" ? "İzlə" : "Watch"}
