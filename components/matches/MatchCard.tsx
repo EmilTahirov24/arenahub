@@ -25,12 +25,15 @@ export default async function MatchCard({ match }: MatchCardProps) {
   return (
     <Link
       href={`/matches/${match.slug}`}
-      className={`block rounded-lg border bg-surface p-3 transition-colors hover:bg-surface-raised ${
+      /* min-w-0: as a grid/flex item this card defaults to min-width:auto, and
+         the nowrap text inside makes that minimum the full untruncated string,
+         which pushed the card past the viewport on narrow screens. */
+      className={`block min-w-0 rounded-lg border bg-surface p-3 transition-colors hover:bg-surface-raised ${
         isLive ? "border-live/50" : "border-border-subtle"
       }`}
     >
       <div className="mb-2 flex items-center justify-between gap-2 text-xs text-foreground-muted">
-        <span className="truncate">{match.tournament?.name ?? t("nav.matches")}</span>
+        <span className="min-w-0 truncate">{match.tournament?.name ?? t("nav.matches")}</span>
         <span className="flex shrink-0 items-center gap-2">
           {match.stage && <span>{match.stage}</span>}
           <StarRating value={match.starRating} />
