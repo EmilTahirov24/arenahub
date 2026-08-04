@@ -16,6 +16,11 @@ on:
   schedule:
     - cron: "*/20 * * * *"
   workflow_dispatch:
+  # The first scheduled run failed during `npm ci`, which is invisible until the
+  # next tick twenty minutes later. Editing this file now proves itself straight
+  # away instead.
+  push:
+    paths: [".github/workflows/import-live.yml"]
 
 # A slow run must not overlap the next tick: two importers writing the same
 # matches at once would race on the create-or-update check.
@@ -29,25 +34,44 @@ jobs:
     # One pass makes four action=parse calls, each throttled to one per 30s by
     # Liquipedia's terms, plus the database writes.
     timeout-minutes: 15
+    # Job-wide rather than per-step: the root package.json has a `postinstall`,
+    # so `npm ci` runs project code too and must not be the one step that is
+    # missing the environment.
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      # package-lock.json is written by npm 11 and carries `allowScripts`, which
+      # only npm 11 understands. Node 22 ships npm 10, so the runner has to stay
+      # on the major the lockfile came from.
+      - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
+
+      # Printed so that a future install failure can be read off the log instead
+      # of being guessed at.
+      - name: Versions
+        run: node -v && npm -v
 
       - run: npm ci
 
       # The Prisma client is generated into app/generated and not committed.
       - run: npx prisma generate
 
+      # Checked after the install so that a failure here is unambiguous: the
+      # dependencies are fine and the only thing missing is the secret.
+      - name: Verify database secret
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL is not set. Add it under Settings → Secrets and variables → Actions → New repository secret."
+            exit 1
+          fi
+          echo "DATABASE_URL is present (${#DATABASE_URL} characters)."
+
       - run: npx tsx scripts/import-live.ts --apply
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       # Ratings are a full replay of every finished match, so they have to be
       # rebuilt after new results land — see lib/elo.ts.
       - run: npx tsx scripts/recompute-ratings.ts
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
