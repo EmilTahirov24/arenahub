@@ -182,6 +182,11 @@ model Player {
   verifyToken       String?   @unique
   verifyTokenExpiry DateTime?
 
+  /// Sessions issued before this instant are refused. Session cookies are
+  /// stateless 30-day JWTs, so without this a stolen cookie would survive a
+  /// password reset. Set when the password changes.
+  sessionsValidAfter DateTime?
+
   gameId String
   game   Game   @relation(fields: [gameId], references: [id])
 

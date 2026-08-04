@@ -168,7 +168,13 @@ export default async function TeamProfilePage({
             </div>
           </Link>
         ))}
-        {roster.length === 0 && <p className="text-sm text-foreground-muted">—</p>}
+        {roster.length === 0 && (
+          <p className="text-sm text-foreground-muted">
+            {locale === "az"
+              ? "Bu komandanın aktiv tərkibi qeydə alınmayıb."
+              : "No active roster is on record for this team."}
+          </p>
+        )}
       </div>
 
       {entries.length > 0 && (
@@ -192,7 +198,13 @@ export default async function TeamProfilePage({
         {matches.map((match) => (
           <MatchCard key={match.id} match={match} />
         ))}
-        {matches.length === 0 && <p className="text-sm text-foreground-muted">—</p>}
+        {matches.length === 0 && (
+          <p className="text-sm text-foreground-muted">
+            {locale === "az"
+              ? "Bu komandanın hələ qeydə alınmış matçı yoxdur."
+              : "No matches recorded for this team yet."}
+          </p>
+        )}
       </div>
     </PageShell>
   );

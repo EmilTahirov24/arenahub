@@ -1,18 +1,32 @@
-import crypto from "crypto";
+import { generateToken, hashToken, tokensMatch } from "@/lib/tokens";
 
 export const RESET_TOKEN_EXPIRY_MINUTES = 60;
 const REQUEST_RATE_LIMIT_MINUTES = 15;
 
-export function generateResetToken() {
-  return crypto.randomBytes(32).toString("hex");
+/**
+ * The raw half goes in the email link, the hashed half into the database — see
+ * lib/tokens.ts. A reset link is a full account takeover, so the stored copy
+ * must not be usable on its own.
+ */
+export function createResetToken() {
+  const raw = generateToken();
+  return { raw, hash: hashToken(raw), expiresAt: resetTokenExpiry() };
 }
 
 export function resetTokenExpiry() {
   return new Date(Date.now() + RESET_TOKEN_EXPIRY_MINUTES * 60_000);
 }
 
-export function isResetTokenValid(user: { resetToken: string | null; resetTokenExpiry: Date | null }, token: string) {
-  return !!user.resetToken && user.resetToken === token && !!user.resetTokenExpiry && user.resetTokenExpiry > new Date();
+/** Look a pending reset up by the token from the link. */
+export function resetTokenLookup(raw: string) {
+  return hashToken(raw);
+}
+
+export function isResetTokenValid(
+  user: { resetToken: string | null; resetTokenExpiry: Date | null },
+  rawToken: string,
+) {
+  return tokensMatch(user.resetToken, rawToken) && !!user.resetTokenExpiry && user.resetTokenExpiry > new Date();
 }
 
 /**

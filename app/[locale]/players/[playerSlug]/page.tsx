@@ -169,7 +169,11 @@ export default async function PlayerProfilePage({
           </table>
         </div>
       ) : (
-        <p className="text-sm text-foreground-muted">—</p>
+        <p className="text-sm text-foreground-muted">
+          {locale === "az"
+            ? "Bu oyunçu üçün hələ matç statistikası qeydə alınmayıb — uydurma rəqəm yazılmır."
+            : "No match statistics recorded for this player yet — no placeholder numbers are shown."}
+        </p>
       )}
     </PageShell>
   );

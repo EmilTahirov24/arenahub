@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { isResetTokenValid } from "@/lib/passwordReset";
+import { isResetTokenValid, resetTokenLookup } from "@/lib/passwordReset";
 
 export async function resetPlayerPassword(_prevState: { error?: string } | undefined, formData: FormData) {
   const token = String(formData.get("token") ?? "");
@@ -20,7 +20,7 @@ export async function resetPlayerPassword(_prevState: { error?: string } | undef
     return { error: "Şifrələr uyğun gəlmir." };
   }
 
-  const player = await prisma.player.findUnique({ where: { resetToken: token } });
+  const player = await prisma.player.findUnique({ where: { resetToken: resetTokenLookup(token) } });
 
   if (!player || !isResetTokenValid(player, token)) {
     return { error: "Sıfırlama linki etibarsızdır və ya vaxtı bitib. Yenidən sorğu göndərin." };
@@ -34,8 +34,17 @@ export async function resetPlayerPassword(_prevState: { error?: string } | undef
       resetTokenExpiry: null,
       failedLoginAttempts: 0,
       lockUntil: null,
+
+      // Opening a link sent to the address proves the inbox belongs to them,
+      // which is the same thing the verification link proves — so stop nagging.
+      emailVerified: true,
+
+      // Sessions are stateless 30-day JWTs with no server-side record, so a
+      // stolen cookie would otherwise keep working after the owner changed
+      // their password. Anything issued before this instant stops being valid.
+      sessionsValidAfter: new Date(),
     },
   });
 
-  redirect("/player/login");
+  redirect("/player/login?reset=success");
 }

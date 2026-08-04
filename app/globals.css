@@ -15,8 +15,14 @@
 
   --live: #ef4444;
 
-  /* Overridden per-section via inline style using Game.accentColor */
+  /* Set per page via inline style from Game.accentColor; falls back to the
+     brand colour on pages that cover every game, like the home page. */
   --game-accent: var(--brand-via);
+
+  /* Ambient light behind the page. Two soft pools at the top that fade out
+     before the content starts, so tables keep sitting on a flat --surface. */
+  --ambient-a: color-mix(in oklab, var(--brand-from) 14%, transparent);
+  --ambient-b: color-mix(in oklab, var(--brand-to) 10%, transparent);
 
   --font-display: var(--font-space-grotesk);
   --font-sans: var(--font-inter);
@@ -29,6 +35,11 @@
   --border-subtle: #e2e2ec;
   --foreground: #14141f;
   --foreground-muted: #5c5f70;
+
+  /* The same strength that reads as a soft glow on near-black turns muddy on
+     an off-white ground, so it is halved rather than reused. */
+  --ambient-a: color-mix(in oklab, var(--brand-from) 7%, transparent);
+  --ambient-b: color-mix(in oklab, var(--brand-to) 6%, transparent);
 }
 
 @theme inline {
@@ -76,6 +87,46 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+
+  /* Gives body its own stacking context so the ambient layer below, which sits
+     at z-index -1, paints above body's own background instead of behind it.
+     Without this the negative index resolves against the root, and body's
+     opaque fill covers the whole effect. */
+  isolation: isolate;
+}
+
+/*
+ * Ambient light. Fixed rather than absolute so it costs nothing in layout and
+ * cannot extend the scroll height; pointer-events none so it never intercepts
+ * a click. Sits behind all content, including the translucent header.
+ */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 32rem at 15% -8%, var(--ambient-a), transparent 70%),
+    radial-gradient(50rem 28rem at 85% -4%, var(--ambient-b), transparent 70%);
+}
+
+/*
+ * Per-game accent on page furniture. The colour comes from Game.accentColor,
+ * set as an inline --game-accent on a wrapper; these classes then read it, so
+ * no component needs to thread a hex string through its props.
+ */
+.game-rule {
+  border-bottom: 2px solid var(--game-accent);
+}
+
+.game-bar {
+  border-left: 3px solid var(--game-accent);
+  padding-left: 0.625rem;
+}
+
+.game-edge {
+  box-shadow: inset 0 2px 0 0 var(--game-accent);
 }
 
 .font-display {

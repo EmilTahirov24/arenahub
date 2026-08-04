@@ -77,6 +77,19 @@ export async function fetchRenderedHtml(opts: LiquipediaOptions, title: string):
   return json?.parse?.text?.["*"] ?? null;
 }
 
+/**
+ * The wiki's own list of upcoming, live and just-finished matches.
+ *
+ * A tournament page only carries a schedule once the organiser has published
+ * one — which can be days before the event, and never for the smaller ones. All
+ * four wikis maintain this page from their match database instead, so it always
+ * has the near future in it. It is the page worth polling.
+ */
+export async function fetchMatchTicker(opts: LiquipediaOptions): Promise<ParsedMatch[]> {
+  const html = await fetchRenderedHtml(opts, "Liquipedia:Matches");
+  return html ? parseRenderedMatches(html, opts.wiki) : [];
+}
+
 /** The team's home country, as written in the page infobox ("France"). */
 export function parseTeamLocation(wikitext: string): string | null {
   const box = wikitext.match(/\{\{Infobox team[\s\S]{0,1500}/i);
@@ -563,6 +576,10 @@ export type ParsedMatch = {
   maps: ParsedMap[];
   /** True once a side has a score; brackets pre-declare empty future matches. */
   played: boolean;
+  /** Series format when the page states it — a fixture has no score to infer it from. */
+  bestOf: number | null;
+  /** Tournament page title, when the block names it (the wiki-wide list does). */
+  tournament?: string | null;
 };
 
 /**
@@ -621,6 +638,7 @@ export function parseMatches(wikitext: string): ParsedMatch[] {
       winner,
       maps,
       played: /^(true|y|yes|1)$/i.test(cleanValue(named.finished)) || scoreA > 0 || scoreB > 0 || maps.length > 0,
+      bestOf: intOrNull(named.bestof),
     });
   }
 
@@ -649,9 +667,17 @@ export function parseMatches(wikitext: string): ParsedMatch[] {
  */
 export function parseRenderedMatches(html: string, wiki: string): ParsedMatch[] {
   const out: ParsedMatch[] = [];
-  const popups = splitOn(html, 'class="brkts-popup brkts-popup-container brkts-match-info-popup');
 
-  for (const popup of popups) {
+  // Two containers, one shape. A tournament page wraps each match in a popup
+  // attached to its bracket; the wiki-wide match list on `Liquipedia:Matches`
+  // uses a plain `match-info` block. The header inside is identical, so both
+  // are split on and read the same way.
+  const blocks = [
+    ...splitOn(html, 'class="brkts-popup brkts-popup-container brkts-match-info-popup'),
+    ...splitOn(html, '<div class="match-info">'),
+  ];
+
+  for (const popup of blocks) {
     const sides = splitOn(popup, '<div class="match-info-header-opponent');
     if (sides.length < 2) continue;
 
@@ -663,10 +689,12 @@ export function parseRenderedMatches(html: string, wiki: string): ParsedMatch[] 
     const teamB = teamNameFrom(right, wiki);
     if (!teamA || !teamB) continue;
 
-    const scores = [...popup.matchAll(/scoreholder-score[^"]*"[^>]*>\s*([\dWLFF-]+)\s*</g)].map((m) => m[1]);
-    const scoreA = Number.parseInt(scores[0] ?? "", 10);
-    const scoreB = Number.parseInt(scores[1] ?? "", 10);
-    if (!Number.isFinite(scoreA) || !Number.isFinite(scoreB)) continue;
+    // A fixture that has not been played yet renders a dash instead of a
+    // score, so a missing number is read as nothing played rather than as a
+    // reason to drop the match — the schedule is worth having too.
+    const scores = [...popup.matchAll(/scoreholder-score[^"]*"[^>]*>\s*([\dWLF-]+)\s*</g)].map((m) => m[1]);
+    const scoreA = Number.parseInt(scores[0] ?? "", 10) || 0;
+    const scoreB = Number.parseInt(scores[1] ?? "", 10) || 0;
 
     const timestamp = Number.parseInt(popup.match(/data-timestamp="(\d+)"/)?.[1] ?? "", 10);
     const finished = /data-finished="finished"/.test(popup);
@@ -676,16 +704,28 @@ export function parseRenderedMatches(html: string, wiki: string): ParsedMatch[] 
       teamB,
       scoreA,
       scoreB,
+      bestOf: intOrNull(popup.match(/scoreholder-lower"[^>]*>\s*\(Bo(\d)\)/)?.[1]),
       // Liquipedia renders the timestamp in seconds; a placeholder future match
       // uses a sentinel far in the past, which `finished` already filters out.
       date: Number.isFinite(timestamp) ? new Date(timestamp * 1000).toISOString() : null,
       winner: scoreA > scoreB ? 1 : scoreB > scoreA ? 2 : null,
       maps: parseRenderedMaps(popup, wiki),
       played: finished && (scoreA > 0 || scoreB > 0),
+      tournament: tournamentNameFrom(popup),
     });
   }
 
-  return out;
+  // A rendered page can show one fixture twice — a group table and the bracket
+  // beside it both list the same game — and each copy would otherwise become
+  // its own row. Two teams meeting twice at the same minute is not a thing, so
+  // the trio identifies a match safely.
+  const seen = new Set<string>();
+  return out.filter((m) => {
+    const key = `${m.teamA}|${m.teamB}|${m.date ?? ""}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 /** Individual maps or games inside a match popup. */
@@ -718,6 +758,25 @@ function parseRenderedMaps(popup: string, wiki: string): ParsedMap[] {
   }
 
   return maps;
+}
+
+/**
+ * The event a match belongs to, as named in the wiki-wide match list.
+ *
+ * Only that list carries it — on a tournament page every match obviously
+ * belongs to the page you are already on, so the field is absent there.
+ */
+function tournamentNameFrom(block: string): string | null {
+  const at = block.indexOf("match-info-tournament-name");
+  if (at === -1) return null;
+  const title = block.slice(at).match(/title="([^"]+)"/)?.[1];
+  if (!title) return null;
+
+  // The link often points at a section — "VCT/2026/China League/Stage 2#Play-Ins".
+  // The fragment is where on the page the match sits, not part of the event's
+  // name, and it looks like a bug when it reaches the site.
+  const name = decodeEntities(title).split("#")[0].trim();
+  return name || null;
 }
 
 /** The team's page title from an opponent block, e.g. "Paper Rex". */

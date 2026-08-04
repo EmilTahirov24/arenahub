@@ -1,48 +1,90 @@
 import "server-only";
 
 /**
+ * Whether the message actually left the building.
+ *
+ * This used to be `void`: a Resend rejection was written to the server console
+ * and swallowed, so registration carried on and told the user their link was on
+ * its way when nothing had been sent. Callers now have to look at the result —
+ * a signup whose email silently failed is a dead account.
+ */
+export type EmailResult = { ok: true; delivered: boolean } | { ok: false; reason: string };
+
+/** No provider configured: the link goes to the console so local dev works. */
+const LOGGED_TO_CONSOLE: EmailResult = { ok: true, delivered: false };
+
+/**
  * Real email via Resend once RESEND_API_KEY is set; otherwise the link is
  * just logged to the server console so password reset still works in local
  * dev without any email provider configured — same fallback shape as
  * lib/storage.ts for Vercel Blob.
  */
-export async function sendPasswordResetEmail(to: string, resetUrl: string, locale: "az" | "en" = "az") {
-  const subject = locale === "az" ? "ArenaHub — Şifrə sıfırlama" : "ArenaHub — Password reset";
-  const html = renderResetEmailHtml(resetUrl, locale);
-
-  if (!process.env.RESEND_API_KEY) {
-    console.log(`[dev-mode] Password reset link for ${to}: ${resetUrl}`);
-    return;
-  }
-
-  const { Resend } = await import("resend");
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  const from = process.env.EMAIL_FROM || "ArenaHub <onboarding@resend.dev>";
-
-  const { error } = await resend.emails.send({ from, to, subject, html });
-  if (error) {
-    console.error("Resend error, falling back to console log:", error);
-    console.log(`[fallback] Password reset link for ${to}: ${resetUrl}`);
-  }
+export async function sendPasswordResetEmail(
+  to: string,
+  resetUrl: string,
+  locale: "az" | "en" = "az",
+): Promise<EmailResult> {
+  return send({
+    to,
+    url: resetUrl,
+    label: "Password reset",
+    subject: locale === "az" ? "ArenaHub — Şifrə sıfırlama" : "ArenaHub — Password reset",
+    html: renderResetEmailHtml(resetUrl, locale),
+  });
 }
 
-export async function sendVerificationEmail(to: string, verifyUrl: string, locale: "az" | "en" = "az") {
-  const subject = locale === "az" ? "ArenaHub — Emailinizi təsdiqləyin" : "ArenaHub — Verify your email";
-  const html = renderVerifyEmailHtml(verifyUrl, locale);
+export async function sendVerificationEmail(
+  to: string,
+  verifyUrl: string,
+  locale: "az" | "en" = "az",
+): Promise<EmailResult> {
+  return send({
+    to,
+    url: verifyUrl,
+    label: "Verification",
+    subject: locale === "az" ? "ArenaHub — Emailinizi təsdiqləyin" : "ArenaHub — Verify your email",
+    html: renderVerifyEmailHtml(verifyUrl, locale),
+  });
+}
 
+async function send(msg: { to: string; url: string; label: string; subject: string; html: string }): Promise<EmailResult> {
   if (!process.env.RESEND_API_KEY) {
-    console.log(`[dev-mode] Verification link for ${to}: ${verifyUrl}`);
-    return;
+    console.log(`[dev-mode] ${msg.label} link for ${msg.to}: ${msg.url}`);
+    return LOGGED_TO_CONSOLE;
   }
 
-  const { Resend } = await import("resend");
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  const from = process.env.EMAIL_FROM || "ArenaHub <onboarding@resend.dev>";
+  try {
+    const { Resend } = await import("resend");
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
-  const { error } = await resend.emails.send({ from, to, subject, html });
-  if (error) {
-    console.error("Resend error, falling back to console log:", error);
-    console.log(`[fallback] Verification link for ${to}: ${verifyUrl}`);
+    // Resend's sandbox sender only delivers to the account owner's own inbox,
+    // so leaving EMAIL_FROM unset means real users never receive anything.
+    // Worth saying out loud rather than discovering it from silence.
+    const from = process.env.EMAIL_FROM;
+    if (!from) {
+      console.warn("EMAIL_FROM is not set — using Resend's sandbox sender, which only reaches the account owner.");
+    }
+
+    const { error } = await resend.emails.send({
+      from: from || "ArenaHub <onboarding@resend.dev>",
+      to: msg.to,
+      subject: msg.subject,
+      html: msg.html,
+    });
+
+    if (error) {
+      console.error(`Resend rejected the ${msg.label.toLowerCase()} email:`, error);
+      console.log(`[fallback] ${msg.label} link for ${msg.to}: ${msg.url}`);
+      return { ok: false, reason: error.message ?? "Resend error" };
+    }
+
+    return { ok: true, delivered: true };
+  } catch (e) {
+    // A thrown error used to escape the server action entirely, leaving the
+    // caller half-done — an account created but no session, for instance.
+    console.error(`Sending the ${msg.label.toLowerCase()} email threw:`, e);
+    console.log(`[fallback] ${msg.label} link for ${msg.to}: ${msg.url}`);
+    return { ok: false, reason: e instanceof Error ? e.message : "unknown error" };
   }
 }
 

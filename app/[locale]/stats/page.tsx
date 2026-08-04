@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { Link } from "@/i18n/navigation";
 import PageShell from "@/components/layout/PageShell";
+import GameAccent from "@/components/common/GameAccent";
 import PlayerAvatar from "@/components/common/PlayerAvatar";
 import TeamAvatar from "@/components/common/TeamAvatar";
 import CountryFlag from "@/components/common/CountryFlag";
@@ -51,7 +52,8 @@ export default async function StatsPage({
 
   return (
     <PageShell>
-      <h1 className="font-display mb-4 text-2xl font-bold">{t("nav.stats")}</h1>
+      <GameAccent color={activeGame?.accentColor}>
+      <h1 className="game-rule font-display mb-4 inline-block pb-1 text-2xl font-bold">{t("nav.stats")}</h1>
 
       <div className="mb-6 flex flex-wrap gap-2">
         {games.map((game) => (
@@ -73,8 +75,8 @@ export default async function StatsPage({
       </div>
 
       {/* ---------- Teams ---------- */}
-      <h2 className="font-display mb-2 text-lg font-bold">{az ? "Komanda statistikası" : "Team statistics"}</h2>
-      <div className="mb-8 overflow-x-auto rounded-lg border border-border-subtle bg-surface">
+      <h2 className="game-bar font-display mb-2 text-lg font-bold">{az ? "Komanda statistikası" : "Team statistics"}</h2>
+      <div className="game-edge mb-8 overflow-x-auto rounded-lg border border-border-subtle bg-surface">
         <table className="w-full min-w-[560px]">
           <thead>
             <tr className="bg-surface-raised">
@@ -131,8 +133,8 @@ export default async function StatsPage({
       </div>
 
       {/* ---------- Players ---------- */}
-      <h2 className="font-display mb-2 text-lg font-bold">{az ? "Oyunçu statistikası" : "Player statistics"}</h2>
-      <div className="overflow-x-auto rounded-lg border border-border-subtle bg-surface">
+      <h2 className="game-bar font-display mb-2 text-lg font-bold">{az ? "Oyunçu statistikası" : "Player statistics"}</h2>
+      <div className="game-edge overflow-x-auto rounded-lg border border-border-subtle bg-surface">
         <table className="w-full min-w-[560px]">
           <thead>
             <tr className="bg-surface-raised">
@@ -196,6 +198,7 @@ export default async function StatsPage({
             : "The full list of players is on the Players page."}
         </p>
       )}
+      </GameAccent>
     </PageShell>
   );
 }

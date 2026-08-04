@@ -288,10 +288,23 @@ async function main() {
           if (!resolve(alias)) unresolved.set(alias, (unresolved.get(alias) ?? 0) + 1);
         }
       }
-      console.log(`  bazadakı komandalarla: ${usable.length} matç`);
+      // Fixtures that have not been played. A bracket names both sides only
+      // once they have qualified, so a dated match between two known teams is
+      // a real scheduled game rather than an empty placeholder. Anything
+      // without a date is skipped — there is nothing to put in the calendar.
+      const scheduled = collected.filter(
+        (m) =>
+          !m.played &&
+          m.date !== null &&
+          new Date(m.date) > new Date() &&
+          resolve(m.teamA) &&
+          resolve(m.teamB),
+      );
+
+      console.log(`  bazadakı komandalarla: ${usable.length} nəticə, ${scheduled.length} qarşıdakı matç`);
       tournaments++;
       if (!apply) {
-        matchesWritten += usable.length;
+        matchesWritten += usable.length + scheduled.length;
         return;
       }
 
@@ -321,8 +334,9 @@ async function main() {
       });
 
       matchesWritten += await writeMatches(tournament.id, gameId, slug, usable, resolve);
+      matchesWritten += await writeMatches(tournament.id, gameId, `${slug}-upcoming`, scheduled, resolve);
       await writePrizes(tournament.id, parsePrizePool(wikitext));
-      await writeParticipants(tournament.id, usable, resolve);
+      await writeParticipants(tournament.id, [...usable, ...scheduled], resolve);
     }
   }
 
@@ -338,6 +352,17 @@ async function main() {
   if (!apply) console.log("\nTətbiq etmək üçün: --apply");
 }
 
+/** An unused match slug built from the given base. */
+async function freeSlug(base: string): Promise<string> {
+  const root = slugify(base) || "match";
+  for (let i = 0; i < 30; i++) {
+    const candidate = i === 0 ? root : `${root}-${i + 1}`;
+    const taken = await prisma.match.findUnique({ where: { slug: candidate }, select: { id: true } });
+    if (!taken) return candidate;
+  }
+  return `${root}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 /** Writes matches and their maps, replacing any earlier import of the same match. */
 async function writeMatches(
   tournamentId: string,
@@ -348,22 +373,21 @@ async function writeMatches(
 ): Promise<number> {
   let written = 0;
 
-  for (const [index, m] of matches.entries()) {
+  for (const m of matches) {
     const a = resolve(m.teamA)!;
     const b = resolve(m.teamB)!;
     const scheduledAt = m.date ? new Date(m.date) : new Date();
     const winnerId = m.winner === 1 ? a.id : m.winner === 2 ? b.id : null;
 
-    // Two teams can meet several times in one event, so the slug carries the
-    // position as well as the names.
-    const slug = slugify(`${prefix}-${a.name}-vs-${b.name}-${index + 1}`);
     const data = {
       scheduledAt,
-      status: "FINISHED" as const,
-      // From the series score, not the number of maps: a Bo3 that ended 2-0
-      // has only two maps, and counting them would file it as a Bo1. The
-      // winner needs (bestOf + 1) / 2 map wins, so the format follows.
-      bestOf: Math.max(1, Math.max(m.scoreA, m.scoreB) * 2 - 1),
+      status: m.played ? ("FINISHED" as const) : ("UPCOMING" as const),
+      // What the page says, when it says anything. Otherwise from the series
+      // score, not the number of maps: a Bo3 that ended 2-0 has only two maps,
+      // and counting them would file it as a Bo1 — the winner needs
+      // (bestOf + 1) / 2 map wins, so the format follows from the score.
+      // A fixture has neither, and best-of-three is the common default.
+      bestOf: m.bestOf ?? (m.played ? Math.max(1, Math.max(m.scoreA, m.scoreB) * 2 - 1) : 3),
       teamAScore: m.scoreA,
       teamBScore: m.scoreB,
       teamAId: a.id,
@@ -373,11 +397,21 @@ async function writeMatches(
       gameId,
     };
 
-    const match = await prisma.match.upsert({
-      where: { slug },
-      update: data,
-      create: { slug, ...data },
+    // A match is identified by who played it, in which event, and when —
+    // never by its position in the list. An index-based key looked fine until
+    // a filter changed: dropping two undecided matches renumbered everything
+    // after them, so the next import would have written the whole tail a
+    // second time under new slugs instead of updating what was already there.
+    const existing = await prisma.match.findFirst({
+      where: { tournamentId, teamAId: a.id, teamBId: b.id, scheduledAt },
+      select: { id: true },
     });
+
+    const match = existing
+      ? await prisma.match.update({ where: { id: existing.id }, data })
+      : await prisma.match.create({
+          data: { slug: await freeSlug(`${prefix}-${a.name}-vs-${b.name}`), ...data },
+        });
 
     // Maps are replaced wholesale: a re-import of a page whose result changed
     // must not leave the earlier maps behind alongside the new ones.

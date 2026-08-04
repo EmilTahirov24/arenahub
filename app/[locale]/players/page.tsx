@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { Link } from "@/i18n/navigation";
 import PageShell from "@/components/layout/PageShell";
+import GameAccent from "@/components/common/GameAccent";
 import PlayerAvatar from "@/components/common/PlayerAvatar";
 import TeamAvatar from "@/components/common/TeamAvatar";
 import CountryFlag from "@/components/common/CountryFlag";
@@ -47,7 +48,8 @@ export default async function PlayersPage({
 
   return (
     <PageShell>
-      <h1 className="font-display mb-1 text-2xl font-bold">{t("nav.players")}</h1>
+      <GameAccent color={game?.accentColor}>
+      <h1 className="game-rule font-display mb-1 inline-block pb-1 text-2xl font-bold">{t("nav.players")}</h1>
       {/* States the coverage outright, so an empty cell reads as "not recorded"
           rather than as a broken table. */}
       {rows.length > 0 && scored < rows.length && (
@@ -77,7 +79,7 @@ export default async function PlayersPage({
         ))}
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border-subtle bg-surface">
+      <div className="game-edge overflow-x-auto rounded-lg border border-border-subtle bg-surface">
         <table className="w-full min-w-[620px]">
           <thead>
             <tr className="bg-surface-raised">
@@ -150,6 +152,7 @@ export default async function PlayersPage({
           </tbody>
         </table>
       </div>
+      </GameAccent>
     </PageShell>
   );
 }

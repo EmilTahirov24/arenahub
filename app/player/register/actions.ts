@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { createSession } from "@/lib/auth";
-import { generateVerifyToken, verifyTokenExpiry } from "@/lib/emailVerification";
+import { createVerifyToken } from "@/lib/emailVerification";
 import { sendVerificationEmail } from "@/lib/email";
 import { rateLimit, clientIp } from "@/lib/rateLimit";
 import { siteUrl } from "@/lib/siteUrl";
@@ -36,11 +36,16 @@ export async function playerRegister(_prevState: { error?: string } | undefined,
   }
 
   // Each signup hashes a password and sends an email — throttle so a script
-  // can't mass-create accounts or use us to bomb someone else's inbox.
+  // can't mass-create accounts or use us to bomb someone else's inbox. Skipped
+  // when the caller's address is unknown: one shared bucket would lock out
+  // every honest visitor rather than the one abuser.
   const ip = clientIp(await headers());
-  const limit = rateLimit(`register:${ip}`, 5, 60 * 60 * 1000);
-  if (!limit.ok) {
-    return { error: "Çox sayda qeydiyyat cəhdi. Bir qədər sonra yenidən yoxlayın." };
+  if (ip) {
+    const limit = rateLimit(`register:${ip}`, 5, 60 * 60 * 1000);
+    if (!limit.ok) {
+      const minutes = Math.ceil(limit.retryAfterSec / 60);
+      return { error: `Çox sayda qeydiyyat cəhdi. ${minutes} dəqiqə sonra yenidən yoxlayın.` };
+    }
   }
 
   const game = await prisma.game.findUnique({ where: { id: gameId } });
@@ -53,7 +58,8 @@ export async function playerRegister(_prevState: { error?: string } | undefined,
     return { error: "Bu email artıq qeydiyyatdan keçib." };
   }
 
-  const verifyToken = generateVerifyToken();
+  // Raw token in the link, hash in the database — see lib/tokens.ts.
+  const verify = createVerifyToken();
 
   const player = await prisma.player.create({
     data: {
@@ -64,14 +70,18 @@ export async function playerRegister(_prevState: { error?: string } | undefined,
       email,
       passwordHash: await bcrypt.hash(password, 10),
       isClaimed: true,
-      verifyToken,
-      verifyTokenExpiry: verifyTokenExpiry(),
+      verifyToken: verify.hash,
+      verifyTokenExpiry: verify.expiresAt,
     },
   });
 
-  const verifyUrl = `${siteUrl()}/player/verify-email?token=${verifyToken}`;
-  await sendVerificationEmail(email, verifyUrl, "az");
+  const verifyUrl = `${siteUrl()}/player/verify-email?token=${verify.raw}`;
+  const mail = await sendVerificationEmail(email, verifyUrl, "az");
 
   await createSession({ kind: "player", id: player.id });
-  redirect("/player");
+
+  // The account exists and the session is valid either way — but if the message
+  // never left, saying nothing would leave someone waiting on an email that is
+  // not coming. The dashboard banner picks this up and offers a resend.
+  redirect(mail.ok ? "/player" : "/player?mail=failed");
 }
