@@ -52,7 +52,7 @@ export default async function PlayerTeamRosterPage() {
               {m.player.isClaimed ? (
                 <span
                   title="Bu oyunçunun öz hesabı var — profilini yalnız o redaktə edə bilər"
-                  className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400"
+                  className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-positive"
                 >
                   hesab ✓
                 </span>

@@ -105,7 +105,7 @@ export default async function PlayerHomePage() {
                   </div>
                 </div>
                 {isFinished ? (
-                  <span className={`text-xs font-bold ${isCorrect ? "text-emerald-400" : "text-live"}`}>
+                  <span className={`text-xs font-bold ${isCorrect ? "text-positive" : "text-live"}`}>
                     {isCorrect ? "Düz ✓" : "Səhv ✗"}
                   </span>
                 ) : (

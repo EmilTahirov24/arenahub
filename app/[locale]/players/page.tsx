@@ -244,7 +244,7 @@ export default async function PlayersPage({
                       <span className="w-9 font-display text-sm font-bold tabular-nums">{r.score.toFixed(2)}</span>
                       <span className="hidden h-1.5 w-20 overflow-hidden rounded-full bg-border-subtle md:block">
                         <span
-                          className="block h-full rounded-full bg-emerald-400"
+                          className="block h-full rounded-full bg-positive"
                           style={{ width: `${scoreBarFraction(r.score, bestScore) * 100}%` }}
                         />
                       </span>

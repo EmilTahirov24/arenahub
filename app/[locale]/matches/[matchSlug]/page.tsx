@@ -300,11 +300,11 @@ export default async function MatchDetailPage({
           {mvp && mvpTeam && (
             <Link
               href={`/players/${mvp.player.slug}`}
-              className="mb-4 flex items-center gap-3 rounded-lg border border-yellow-500/40 bg-yellow-500/10 p-4 hover:bg-yellow-500/15"
+              className="mb-4 flex items-center gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4 hover:bg-warning/15"
             >
               <PlayerAvatar name={mvp.player.nickname} photoUrl={mvp.player.photoUrl} color={mvpTeam.primaryColor} size={44} />
               <div>
-                <div className="flex items-center gap-1.5 text-xs font-bold text-yellow-500">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-warning">
                   <span>⭐</span>
                   {t("match.mvp")}
                 </div>
@@ -312,7 +312,7 @@ export default async function MatchDetailPage({
                   {mvp.player.nickname} <span className="font-normal text-foreground-muted">· {mvpTeam.name}</span>
                 </div>
               </div>
-              <div className="font-display ml-auto text-2xl font-bold text-yellow-500">{mvp.rating?.toFixed(2)}</div>
+              <div className="font-display ml-auto text-2xl font-bold text-warning">{mvp.rating?.toFixed(2)}</div>
             </Link>
           )}
 

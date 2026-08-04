@@ -13,7 +13,13 @@
   --brand-via: #d946ef;
   --brand-to: #22d3ee;
 
+  /* Status colours, kept as tokens rather than Tailwind classes so the light
+     theme can override them. Written straight into components they were the
+     same in both themes, and emerald-400 on white measures about 1.9:1 — well
+     under the 4.5:1 body text needs. */
   --live: #ef4444;
+  --positive: #34d399;
+  --warning: #eab308;
 
   /* Set per page via inline style from Game.accentColor; falls back to the
      brand colour on pages that cover every game, like the home page. */
@@ -40,6 +46,13 @@
      an off-white ground, so it is halved rather than reused. */
   --ambient-a: color-mix(in oklab, var(--brand-from) 7%, transparent);
   --ambient-b: color-mix(in oklab, var(--brand-to) 6%, transparent);
+
+  /* Darker counterparts of the status colours. The dark-theme values are
+     chosen to glow against near-black and simply disappear on white, so they
+     are replaced rather than dimmed — each of these clears 4.5:1 on --surface. */
+  --live: #dc2626;
+  --positive: #047857;
+  --warning: #a16207;
 }
 
 @theme inline {
@@ -54,6 +67,8 @@
   --color-brand-via: var(--brand-via);
   --color-brand-to: var(--brand-to);
   --color-live: var(--live);
+  --color-positive: var(--positive);
+  --color-warning: var(--warning);
   --color-game-accent: var(--game-accent);
 
   --font-display: var(--font-display);

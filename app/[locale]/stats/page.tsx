@@ -105,7 +105,7 @@ export default async function StatsPage({
                 </td>
                 <td className="px-3 py-2 text-right text-sm tabular-nums">{r.played}</td>
                 <td className="px-3 py-2 text-right text-sm tabular-nums">
-                  <span className="text-emerald-400">{r.won}</span>
+                  <span className="text-positive">{r.won}</span>
                   <span className="text-foreground-muted">–</span>
                   <span className="text-live">{r.lost}</span>
                 </td>

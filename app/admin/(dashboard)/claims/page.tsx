@@ -91,7 +91,7 @@ export default async function AdminClaimsPage() {
                 <span>
                   {claim.player.nickname} ← {claim.claimant.nickname}
                 </span>
-                <span className={claim.status === "APPROVED" ? "text-xs text-emerald-400" : "text-xs text-live"}>
+                <span className={claim.status === "APPROVED" ? "text-xs text-positive" : "text-xs text-live"}>
                   {claim.status === "APPROVED" ? "təsdiqləndi" : "rədd edildi"}
                   {claim.reviewedBy && ` · ${claim.reviewedBy.name}`}
                 </span>

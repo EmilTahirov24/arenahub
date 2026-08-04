@@ -46,7 +46,7 @@ export default async function ClaimProfilePage() {
                 <span
                   className={`text-xs font-semibold ${
                     claim.status === "APPROVED"
-                      ? "text-emerald-400"
+                      ? "text-positive"
                       : claim.status === "REJECTED"
                         ? "text-live"
                         : "text-foreground-muted"

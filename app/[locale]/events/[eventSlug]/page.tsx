@@ -89,7 +89,7 @@ export default async function EventDetailPage({
                   <span className="block truncate text-sm font-semibold">{placeRangeLabel(prize, locale)}</span>
                   {prize.label && <span className="block truncate text-xs text-foreground-muted">{prize.label}</span>}
                 </span>
-                <span className="shrink-0 font-display font-bold tabular-nums text-emerald-400">
+                <span className="shrink-0 font-display font-bold tabular-nums text-positive">
                   {formatMoney(prize.amount)}
                 </span>
               </div>
@@ -116,7 +116,7 @@ export default async function EventDetailPage({
               <TeamAvatar name={p.team.name} logoUrl={p.team.logoUrl} color={p.team.primaryColor} size={28} />
               <span className="min-w-0 flex-1 truncate text-sm">{p.team.name}</span>
               {prize != null && (
-                <span className="shrink-0 text-xs tabular-nums text-emerald-400">{formatMoney(prize)}</span>
+                <span className="shrink-0 text-xs tabular-nums text-positive">{formatMoney(prize)}</span>
               )}
             </Link>
           );
