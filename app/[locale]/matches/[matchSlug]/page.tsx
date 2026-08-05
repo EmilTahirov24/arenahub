@@ -19,6 +19,35 @@ import { Link } from "@/i18n/navigation";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * What a map card prints where the game has no score of its own.
+ *
+ * A League or Dota game is won outright — the source records a winner and
+ * leaves both numbers at zero. "0 : 0" would read as a game nobody won, so the
+ * winner's name takes that place; where even the winner is unknown, a dash is
+ * more honest than a number that means nothing.
+ */
+function mapScoreLabel(
+  map: { teamAScore: number; teamBScore: number; winnerId: string | null },
+  match: {
+    teamAId: string;
+    teamBId: string;
+    teamA: { name: string };
+    teamB: { name: string };
+  },
+  locale: string,
+): string | undefined {
+  if (map.teamAScore !== 0 || map.teamBScore !== 0) return undefined;
+  const winner =
+    map.winnerId === match.teamAId
+      ? match.teamA.name
+      : map.winnerId === match.teamBId
+        ? match.teamB.name
+        : null;
+  if (!winner) return "—";
+  return `${locale === "az" ? "Qalib" : "Winner"}: ${winner}`;
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -241,6 +270,7 @@ export default async function MatchDetailPage({
                     teamBScore={map.teamBScore}
                     status={map.status}
                     accentColor={match.game.accentColor}
+                    scoreLabel={mapScoreLabel(map, match, locale)}
                   />
                 ))
               : Array.from({ length: match.bestOf }).map((_, i) => (

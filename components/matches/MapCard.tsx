@@ -18,6 +18,7 @@ export default function MapCard({
   accentColor,
   tba,
   label,
+  scoreLabel,
 }: {
   mapName: string;
   order: number;
@@ -27,6 +28,14 @@ export default function MapCard({
   accentColor: string;
   tba?: boolean;
   label?: string;
+  /**
+   * Shown instead of the two numbers where a game has no score to show.
+   *
+   * A League or Dota game is won, not won by a margin — the source records a
+   * winner and leaves both scores at zero. Printing "0 : 0" there reads as a
+   * game that ended goalless, which is not a thing that can happen.
+   */
+  scoreLabel?: string;
 }) {
   const isLive = status === "LIVE";
 
@@ -51,6 +60,10 @@ export default function MapCard({
       <div className="flex items-center justify-center bg-surface py-3">
         {tba ? (
           <span className="text-xs text-foreground-muted">{label}</span>
+        ) : scoreLabel ? (
+          <span className="font-display max-w-full truncate px-2 text-sm font-bold" title={scoreLabel}>
+            {scoreLabel}
+          </span>
         ) : (
           <span className="font-display tabular-nums text-xl font-bold">
             {teamAScore} : {teamBScore}
