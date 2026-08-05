@@ -50,7 +50,7 @@ export default async function PlayerDashboardLayout({ children }: { children: Re
             Profilimi tap
           </Link>
         </nav>
-        <form action={playerLogout} className="mt-6">
+        <form action={playerLogout} className="mt-3 sm:mt-6">
           <button type="submit" className="w-full rounded-md border border-border-subtle px-3 py-2 text-left text-sm text-foreground-muted hover:bg-surface-raised">
             Çıxış
           </button>

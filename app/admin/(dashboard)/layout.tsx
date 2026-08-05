@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getAdminSession } from "@/lib/auth";
 import { pendingClaimCount } from "@/lib/profileClaims";
 import BackToSite from "@/components/layout/BackToSite";
+import AdminNav from "@/components/admin/AdminNav";
 import { adminLogout } from "./actions";
 
 const NAV = [
@@ -37,23 +38,14 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
           <span className="ml-1 text-xs text-foreground-muted">admin</span>
         </Link>
         <BackToSite />
-        <nav className="space-y-1">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center justify-between rounded-md px-3 py-2 text-sm text-foreground-muted hover:bg-surface-raised hover:text-foreground"
-            >
-              {item.label}
-              {item.badge === "claims" && pendingClaims > 0 && (
-                <span className="brand-gradient-bg rounded-full px-1.5 text-[10px] font-bold text-white">
-                  {pendingClaims}
-                </span>
-              )}
-            </Link>
-          ))}
-        </nav>
-        <form action={adminLogout} className="mt-6">
+        <AdminNav
+          items={NAV.map((item) => ({
+            href: item.href,
+            label: item.label,
+            badge: item.badge === "claims" ? pendingClaims : undefined,
+          }))}
+        />
+        <form action={adminLogout} className="mt-3 sm:mt-6">
           <button type="submit" className="w-full rounded-md border border-border-subtle px-3 py-2 text-left text-sm text-foreground-muted hover:bg-surface-raised">
             Çıxış
           </button>
