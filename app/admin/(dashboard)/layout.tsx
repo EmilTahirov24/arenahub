@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getAdminSession } from "@/lib/auth";
 import { pendingClaimCount } from "@/lib/profileClaims";
+import BackToSite from "@/components/layout/BackToSite";
 import { adminLogout } from "./actions";
 
 const NAV = [
@@ -31,16 +32,11 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
         {/* To the site, not to /admin — the logo pointed at the page it was
             already on, leaving logout as the only way back out. "Dashboard"
             below still goes to the admin root. */}
-        <Link href="/" className="font-display mb-1 block text-lg font-bold">
+        <Link href="/" className="font-display mb-3 block text-lg font-bold">
           <span className="brand-gradient-text">ArenaHub</span>
           <span className="ml-1 text-xs text-foreground-muted">admin</span>
         </Link>
-        <Link
-          href="/"
-          className="mb-5 block text-xs text-foreground-muted transition-colors hover:text-foreground"
-        >
-          ← Sayta qayıt
-        </Link>
+        <BackToSite />
         <nav className="space-y-1">
           {NAV.map((item) => (
             <Link

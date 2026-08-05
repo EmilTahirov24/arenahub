@@ -4,6 +4,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { getPlayerSession } from "@/lib/auth";
 import { Link } from "@/i18n/navigation";
+// /player sits outside the [locale] segment, so this link must not be prefixed.
+import NextLink from "next/link";
 import PageShell from "@/components/layout/PageShell";
 import TeamAvatar from "@/components/common/TeamAvatar";
 import PlayerAvatar from "@/components/common/PlayerAvatar";
@@ -116,12 +118,12 @@ export default async function TeamProfilePage({
           {isMyTeam && (
             // Same idea as the player profile: the owner sees the team as
             // everyone else does, with editing beside it rather than instead.
-            <a
+            <NextLink
               href="/player/team/edit"
-              className="shrink-0 rounded-md border border-border-subtle px-4 py-2 text-sm text-foreground-muted transition-colors hover:text-foreground"
+              className="shrink-0 rounded-md border border-border-subtle px-4 py-2 text-sm text-foreground-muted transition-colors hover:border-brand-via/50 hover:text-foreground"
             >
               {locale === "az" ? "Redaktə et" : "Edit"}
-            </a>
+            </NextLink>
           )}
 
           {finishedMatches.length > 0 && (
