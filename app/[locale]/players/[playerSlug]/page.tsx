@@ -4,6 +4,9 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { getPlayerSession } from "@/lib/auth";
 import { Link } from "@/i18n/navigation";
+// The dashboard lives outside the [locale] segment, so its links must not be
+// given a locale prefix — that is the one thing the i18n Link above always does.
+import NextLink from "next/link";
 import { parseSocials } from "@/lib/socials";
 import PageShell from "@/components/layout/PageShell";
 import PlayerAvatar from "@/components/common/PlayerAvatar";
@@ -109,12 +112,12 @@ export default async function PlayerProfilePage({
         {isMe && (
           // Your own profile is the public one; editing sits beside it rather
           // than replacing it.
-          <a
+          <NextLink
             href="/player/edit"
-            className="rounded-md border border-border-subtle px-4 py-2 text-sm text-foreground-muted transition-colors hover:text-foreground"
+            className="rounded-md border border-border-subtle px-4 py-2 text-sm text-foreground-muted transition-colors hover:border-brand-via/50 hover:text-foreground"
           >
             {locale === "az" ? "Redaktə et" : "Edit"}
-          </a>
+          </NextLink>
         )}
 
         <div className="flex gap-6">
