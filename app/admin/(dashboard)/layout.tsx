@@ -24,11 +24,22 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
   const pendingClaims = await pendingClaimCount();
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-56 shrink-0 border-r border-border-subtle bg-surface p-4">
-        <Link href="/admin" className="font-display mb-6 block text-lg font-bold">
+    // Stacks on a phone — same reason as the player dashboard: a fixed 224px
+    // sidebar leaves the tables and forms beside it unusably narrow.
+    <div className="flex min-h-screen flex-col sm:flex-row">
+      <aside className="w-full shrink-0 border-b border-border-subtle bg-surface p-4 sm:w-56 sm:border-r sm:border-b-0">
+        {/* To the site, not to /admin — the logo pointed at the page it was
+            already on, leaving logout as the only way back out. "Dashboard"
+            below still goes to the admin root. */}
+        <Link href="/" className="font-display mb-1 block text-lg font-bold">
           <span className="brand-gradient-text">ArenaHub</span>
           <span className="ml-1 text-xs text-foreground-muted">admin</span>
+        </Link>
+        <Link
+          href="/"
+          className="mb-5 block text-xs text-foreground-muted transition-colors hover:text-foreground"
+        >
+          ← Sayta qayıt
         </Link>
         <nav className="space-y-1">
           {NAV.map((item) => (

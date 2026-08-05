@@ -36,7 +36,11 @@
   "auth": {
     "player": "Oyunçu yarat",
     "login": "Giriş",
-    "register": "Qeydiyyat"
+    "register": "Qeydiyyat",
+    "account": "Hesabım",
+    "profile": "Profil",
+    "team": "Komandam",
+    "logout": "Çıxış"
   },
   "predictions": {
     "title": "Lider Cədvəli",

@@ -40,7 +40,9 @@ export default async function PlayerHomePage() {
       <PendingInvites playerId={player.id} />
 
       <ProfileForm>
-        <div className="grid grid-cols-2 gap-3">
+        {/* Side by side only once there is room: two columns of a 390px screen
+            gave each name field 165px, which is narrower than most surnames. */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className={labelClass}>Ad</label>
             <input name="firstName" defaultValue={player.firstName ?? ""} className={inputClass} />
