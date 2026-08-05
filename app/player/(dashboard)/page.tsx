@@ -1,19 +1,26 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getPlayerSession } from "@/lib/auth";
 import { parseSocials } from "@/lib/socials";
-import ImageUpload from "@/components/forms/ImageUpload";
-import CountrySelect from "@/components/forms/CountrySelect";
 import CountryFlag from "@/components/common/CountryFlag";
-import SocialInputs from "@/components/players/SocialInputs";
+import PlayerAvatar from "@/components/common/PlayerAvatar";
+import TeamAvatar from "@/components/common/TeamAvatar";
+import GameChip from "@/components/common/GameChip";
+import SocialLinks from "@/components/players/SocialLinks";
 import PendingInvites from "@/components/team/PendingInvites";
-import ProfileForm from "@/components/players/ProfileForm";
-import { inputClass, labelClass } from "@/components/admin/formStyles";
+import { primaryButtonClass, secondaryButtonClass } from "@/components/admin/formStyles";
 
 export const dynamic = "force-dynamic";
 
-const STATUSES = ["ACTIVE", "BENCHED", "RETIRED"] as const;
-
+/**
+ * Your own profile, shown the way a visitor sees it.
+ *
+ * This page used to open straight into the edit form, so the one place you go
+ * to look at yourself was the one place that never showed you. The card below
+ * mirrors the public profile header (app/[locale]/players/[playerSlug]) and
+ * editing is a button beside it rather than the page itself.
+ */
 export default async function PlayerHomePage() {
   const session = await getPlayerSession();
   if (!session) redirect("/player/login");
@@ -21,8 +28,12 @@ export default async function PlayerHomePage() {
   if (!player) redirect("/player/login");
   const socials = parseSocials(player.socials);
 
-  const [aheadCount, predictions] = await Promise.all([
+  const [aheadCount, membership, predictions] = await Promise.all([
     prisma.player.count({ where: { points: { gt: player.points } } }),
+    prisma.teamMembership.findFirst({
+      where: { playerId: player.id, leftAt: null },
+      include: { team: true },
+    }),
     prisma.matchPrediction.findMany({
       where: { playerId: player.id },
       orderBy: { createdAt: "desc" },
@@ -34,46 +45,59 @@ export default async function PlayerHomePage() {
 
   return (
     <div>
-      <h1 className="font-display mb-1 text-2xl font-bold">{player.nickname}</h1>
-      <p className="mb-6 text-sm text-foreground-muted">{player.game.name}</p>
-
       <PendingInvites playerId={player.id} />
 
-      <ProfileForm>
-        {/* Side by side only once there is room: two columns of a 390px screen
-            gave each name field 165px, which is narrower than most surnames. */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
-            <label className={labelClass}>Ad</label>
-            <input name="firstName" defaultValue={player.firstName ?? ""} className={inputClass} />
+      <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl border border-border-subtle bg-surface p-6">
+        <PlayerAvatar
+          name={player.nickname}
+          photoUrl={player.photoUrl}
+          color={membership?.team.primaryColor}
+          size={72}
+        />
+        <div className="min-w-48 flex-1">
+          <div className="mb-1 flex items-center gap-2">
+            <GameChip name={player.game.shortName} color={player.game.accentColor} />
+            {player.role && <span className="text-xs text-foreground-muted">{player.role}</span>}
           </div>
-          <div>
-            <label className={labelClass}>Soyad</label>
-            <input name="lastName" defaultValue={player.lastName ?? ""} className={inputClass} />
+          <h1 className="flex items-center gap-2 font-display text-2xl font-bold">
+            <CountryFlag code={player.country} size={18} />
+            {player.nickname}
+          </h1>
+          {(player.firstName || player.lastName) && (
+            <p className="text-sm text-foreground-muted">
+              {[player.firstName, player.lastName].filter(Boolean).join(" ")}
+            </p>
+          )}
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            {membership && (
+              <Link
+                href={`/az/teams/${membership.team.slug}`}
+                className="inline-flex items-center gap-2 hover:underline"
+              >
+                <TeamAvatar
+                  name={membership.team.name}
+                  logoUrl={membership.team.logoUrl}
+                  color={membership.team.primaryColor}
+                  size={20}
+                />
+                <span className="text-sm">{membership.team.name}</span>
+              </Link>
+            )}
+            <SocialLinks socials={socials} />
           </div>
         </div>
-        <div>
-          <label className={labelClass}>Rol</label>
-          <input name="role" defaultValue={player.role ?? ""} className={inputClass} placeholder="IGL, AWPer..." />
-        </div>
-        <div>
-          <label className={labelClass}>Ölkə</label>
-          <CountrySelect defaultValue={player.country} className={inputClass} />
-        </div>
-        <div>
-          <label className={labelClass}>Status</label>
-          <select name="status" defaultValue={player.status} className={inputClass}>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </div>
-        <ImageUpload name="photoUrl" label="Şəkil" defaultValue={player.photoUrl} />
 
-        <SocialInputs socials={socials} />
-      </ProfileForm>
+        <div className="flex flex-col gap-2">
+          <Link href="/player/edit" className={`${primaryButtonClass} text-center`}>
+            Redaktə et
+          </Link>
+          {/* The real page, not this rendering of it — the only way to be sure
+              what strangers actually see. */}
+          <Link href={`/az/players/${player.slug}`} className={`${secondaryButtonClass} text-center`}>
+            Açıq səhifəm →
+          </Link>
+        </div>
+      </div>
 
       <h2 className="font-display mb-3 mt-10 text-lg font-bold">Proqnozlarım</h2>
       <div className="mb-6 grid max-w-lg grid-cols-2 gap-3">

@@ -2,12 +2,16 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getPlayerSession } from "@/lib/auth";
-import ImageUpload from "@/components/forms/ImageUpload";
 import CountrySelect from "@/components/forms/CountrySelect";
 import TeamAvatar from "@/components/common/TeamAvatar";
 import CountryFlag from "@/components/common/CountryFlag";
-import TeamSettingsForm from "@/components/team/TeamSettingsForm";
-import { inputClass, labelClass, primaryButtonClass, dangerButtonClass } from "@/components/admin/formStyles";
+import {
+  inputClass,
+  labelClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+  dangerButtonClass,
+} from "@/components/admin/formStyles";
 import { leaveTeam } from "../invites/actions";
 import { createTeam } from "./actions";
 
@@ -108,40 +112,64 @@ export default async function PlayerTeamPage() {
     );
   }
 
+  // The owner used to land straight in the settings form — the one member of the
+  // team who could never simply look at it. Same card as the member view above,
+  // with the editing behind a button.
+  const ownedGame = await prisma.game.findUnique({ where: { id: team.gameId }, select: { name: true } });
+  const roster = await prisma.teamMembership.findMany({
+    where: { teamId: team.id, leftAt: null },
+    include: { player: true },
+  });
+
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold">Komandam</h1>
-        <Link href="/player/team/roster" className="text-sm text-brand-via hover:underline">
-          Tərkibə bax →
-        </Link>
+      <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl border border-border-subtle bg-surface p-6">
+        <TeamAvatar name={team.name} logoUrl={team.logoUrl} color={team.primaryColor} size={64} />
+        <div className="min-w-48 flex-1">
+          <h1 className="flex items-center gap-2 font-display text-2xl font-bold">
+            <CountryFlag code={team.country} size={18} />
+            {team.name}
+          </h1>
+          <p className="text-xs text-foreground-muted">{ownedGame?.name}</p>
+          {team.description && (
+            <p className="mt-2 max-w-prose text-sm text-foreground-muted">{team.description}</p>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Link href="/player/team/edit" className={`${primaryButtonClass} text-center`}>
+            Redaktə et
+          </Link>
+          <Link href={`/az/teams/${team.slug}`} className={`${secondaryButtonClass} text-center`}>
+            Açıq səhifə →
+          </Link>
+        </div>
       </div>
 
-      <TeamSettingsForm>
-        <div>
-          <label className={labelClass}>Ad</label>
-          <input name="name" required defaultValue={team.name} className={inputClass} />
-        </div>
-        <div>
-          <label className={labelClass}>Ölkə</label>
-          <CountrySelect defaultValue={team.country} className={inputClass} />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className={labelClass}>Əsas rəng</label>
-            <input name="primaryColor" type="color" defaultValue={team.primaryColor ?? "#7c3aed"} className="h-10 w-full rounded-md border border-border-subtle bg-background" />
-          </div>
-          <div>
-            <label className={labelClass}>İkinci rəng</label>
-            <input name="secondaryColor" type="color" defaultValue={team.secondaryColor ?? "#0a0b10"} className="h-10 w-full rounded-md border border-border-subtle bg-background" />
-          </div>
-        </div>
-        <ImageUpload name="logoUrl" label="Loqo" defaultValue={team.logoUrl} />
-        <div>
-          <label className={labelClass}>Təsvir</label>
-          <textarea name="description" defaultValue={team.description ?? ""} rows={4} className={inputClass} />
-        </div>
-      </TeamSettingsForm>
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="font-display text-sm font-bold uppercase tracking-wide text-foreground-muted">Tərkib</h2>
+        <Link href="/player/team/roster" className="text-sm text-brand-via hover:underline">
+          Tərkibi idarə et →
+        </Link>
+      </div>
+      <div className="mb-6 max-w-lg space-y-2">
+        {roster.length === 0 ? (
+          <p className="text-sm text-foreground-muted">Tərkibdə hələ heç kim yoxdur.</p>
+        ) : (
+          roster.map((m) => (
+            <div
+              key={m.id}
+              className="flex items-center gap-1.5 rounded-lg border border-border-subtle bg-surface px-4 py-2 text-sm"
+            >
+              <CountryFlag code={m.player.country} />
+              {m.player.nickname}
+              {m.playerId === session.id && <span className="text-xs text-brand-via">· siz</span>}
+              {m.isCoach && <span className="text-xs text-foreground-muted">· məşqçi</span>}
+              {m.isStandin && <span className="text-xs text-foreground-muted">· stand-in</span>}
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
