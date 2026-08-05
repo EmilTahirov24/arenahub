@@ -11,9 +11,11 @@ import Link from "next/link";
  */
 export default function BackToSite() {
   return (
+    // The bottom margin is tighter on a phone, where the sidebar is a strip
+    // above the content and every gap here is pushed onto the page below it.
     <Link
       href="/"
-      className="group mb-5 inline-flex w-fit items-center gap-1.5 rounded-full border border-border-subtle py-1.5 pl-2 pr-3 text-xs font-medium text-foreground-muted transition-colors hover:border-brand-via/50 hover:bg-surface-raised hover:text-foreground"
+      className="group mb-3 inline-flex w-fit items-center gap-1.5 rounded-full border border-border-subtle py-1.5 pl-2 pr-3 text-xs font-medium text-foreground-muted transition-colors hover:border-brand-via/50 hover:bg-surface-raised hover:text-foreground sm:mb-5"
     >
       <svg
         viewBox="0 0 24 24"
