@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
+import { getPlayerSession } from "@/lib/auth";
 import { Link } from "@/i18n/navigation";
 import PageShell from "@/components/layout/PageShell";
 import TeamAvatar from "@/components/common/TeamAvatar";
@@ -80,6 +81,11 @@ export default async function TeamProfilePage({
   // Most recent first, as a W/L streak strip.
   const recentForm = finishedMatches.slice(0, 5).map((m) => m.winnerId === team.id);
 
+  // Only the owner can change the team's settings, so only the owner is offered
+  // the link — a member seeing it would be sent to a page that turns them away.
+  const viewer = await getPlayerSession();
+  const isMyTeam = !!viewer && team.ownerId === viewer.id;
+
   return (
     <PageShell>
       <div className="mb-6 rounded-xl border border-border-subtle bg-surface p-6">
@@ -106,6 +112,17 @@ export default async function TeamProfilePage({
               {team.name}
             </h1>
           </div>
+
+          {isMyTeam && (
+            // Same idea as the player profile: the owner sees the team as
+            // everyone else does, with editing beside it rather than instead.
+            <a
+              href="/player/team/edit"
+              className="shrink-0 rounded-md border border-border-subtle px-4 py-2 text-sm text-foreground-muted transition-colors hover:text-foreground"
+            >
+              {locale === "az" ? "Redaktə et" : "Edit"}
+            </a>
+          )}
 
           {finishedMatches.length > 0 && (
             <div className="flex shrink-0 items-center gap-6">

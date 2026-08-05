@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
+import { getPlayerSession } from "@/lib/auth";
 import { Link } from "@/i18n/navigation";
 import { parseSocials } from "@/lib/socials";
 import PageShell from "@/components/layout/PageShell";
@@ -73,6 +74,9 @@ export default async function PlayerProfilePage({
 
   const socials = parseSocials(player.socials);
 
+  const viewer = await getPlayerSession();
+  const isMe = viewer?.id === player.id;
+
   return (
     <PageShell>
       <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl border border-border-subtle bg-surface p-6">
@@ -101,6 +105,17 @@ export default async function PlayerProfilePage({
             <SocialLinks socials={socials} />
           </div>
         </div>
+
+        {isMe && (
+          // Your own profile is the public one; editing sits beside it rather
+          // than replacing it.
+          <a
+            href="/player/edit"
+            className="rounded-md border border-border-subtle px-4 py-2 text-sm text-foreground-muted transition-colors hover:text-foreground"
+          >
+            {locale === "az" ? "Redaktə et" : "Edit"}
+          </a>
+        )}
 
         <div className="flex gap-6">
           {careerRating != null && (
