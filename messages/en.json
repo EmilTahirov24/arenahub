@@ -36,7 +36,11 @@
   "auth": {
     "player": "Create Player",
     "login": "Login",
-    "register": "Register"
+    "register": "Register",
+    "account": "My account",
+    "profile": "Profile",
+    "team": "My team",
+    "logout": "Log out"
   },
   "predictions": {
     "title": "Leaderboard",

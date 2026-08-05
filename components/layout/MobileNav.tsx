@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Link } from "@/i18n/navigation";
 import ThemeToggle from "./ThemeToggle";
 import LocaleSwitcher from "./LocaleSwitcher";
+import type { AccountMenu } from "./AuthMenu";
 
 type AuthConfig = {
   label: string;
@@ -18,10 +19,13 @@ export default function MobileNav({
   navItems,
   localItem,
   playerAuth,
+  account,
 }: {
   navItems: { href: string; label: string }[];
   localItem: { href: string; label: string };
   playerAuth: AuthConfig;
+  /** Null when nobody is signed in — then the panel offers login and register. */
+  account?: AccountMenu | null;
 }) {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -146,22 +150,63 @@ export default function MobileNav({
                 </Link>
               </nav>
 
+              {/* Signed in, the drawer shows the way back into the account
+                  rather than an invitation to create one — the same fix as the
+                  desktop menu, since on a phone this is the only menu there
+                  is. */}
               <div className="mb-3 rounded-lg border border-border-subtle p-3">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">{playerAuth.label}</p>
-                <div className="flex gap-2">
-                  <a
-                    href={playerAuth.loginHref}
-                    className="flex-1 rounded-md border border-border-subtle px-3 py-2 text-center text-sm text-foreground hover:bg-surface-raised"
-                  >
-                    {playerAuth.loginLabel}
-                  </a>
-                  <a
-                    href={playerAuth.registerHref}
-                    className="brand-gradient-bg flex-1 rounded-md px-3 py-2 text-center text-sm font-semibold text-white"
-                  >
-                    {playerAuth.registerLabel}
-                  </a>
-                </div>
+                {account ? (
+                  <>
+                    <div className="mb-3 flex items-center gap-2">
+                      {account.avatar}
+                      <span className="truncate text-sm font-semibold text-foreground">
+                        {account.nickname}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <a
+                        href={account.profileHref}
+                        className="rounded-md border border-border-subtle px-3 py-2 text-center text-sm text-foreground hover:bg-surface-raised"
+                      >
+                        {account.profileLabel}
+                      </a>
+                      <a
+                        href={account.teamHref}
+                        className="rounded-md border border-border-subtle px-3 py-2 text-center text-sm text-foreground hover:bg-surface-raised"
+                      >
+                        {account.teamLabel}
+                      </a>
+                      <form action={account.logoutAction}>
+                        <button
+                          type="submit"
+                          className="w-full rounded-md border border-border-subtle px-3 py-2 text-center text-sm text-foreground-muted hover:bg-surface-raised hover:text-foreground"
+                        >
+                          {account.logoutLabel}
+                        </button>
+                      </form>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
+                      {playerAuth.label}
+                    </p>
+                    <div className="flex gap-2">
+                      <a
+                        href={playerAuth.loginHref}
+                        className="flex-1 rounded-md border border-border-subtle px-3 py-2 text-center text-sm text-foreground hover:bg-surface-raised"
+                      >
+                        {playerAuth.loginLabel}
+                      </a>
+                      <a
+                        href={playerAuth.registerHref}
+                        className="brand-gradient-bg flex-1 rounded-md px-3 py-2 text-center text-sm font-semibold text-white"
+                      >
+                        {playerAuth.registerLabel}
+                      </a>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>,

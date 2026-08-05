@@ -2,9 +2,13 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import LocaleSwitcher from "./LocaleSwitcher";
 import ThemeToggle from "./ThemeToggle";
-import AuthMenu from "./AuthMenu";
+import AuthMenu, { type AccountMenu } from "./AuthMenu";
 import MobileNav from "./MobileNav";
 import CommandPalette from "@/components/search/CommandPalette";
+import PlayerAvatar from "@/components/common/PlayerAvatar";
+import { getPlayerSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { logoutToSite } from "@/app/[locale]/actions";
 
 const PlayerIcon = (
   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -39,6 +43,32 @@ export default async function Header() {
     registerLabel: t("auth.register"),
   };
 
+  // The header never looked at the session, so somebody who had just signed in
+  // came back to the site and was offered "Login / Register" — the site had no
+  // idea who they were, and there was no way back into their own dashboard.
+  const session = await getPlayerSession();
+  const player = session
+    ? await prisma.player.findUnique({
+        where: { id: session.id },
+        select: { nickname: true, photoUrl: true },
+      })
+    : null;
+
+  const account: AccountMenu | null = player
+    ? {
+        nickname: player.nickname,
+        // Rendered here rather than inside the menu: PlayerAvatar falls back to
+        // initials on its own, so a player with no photo still gets a face.
+        avatar: <PlayerAvatar name={player.nickname} photoUrl={player.photoUrl} size={24} />,
+        profileHref: "/player",
+        profileLabel: t("auth.profile"),
+        teamHref: "/player/team",
+        teamLabel: t("auth.team"),
+        logoutLabel: t("auth.logout"),
+        logoutAction: logoutToSite,
+      }
+    : null;
+
   return (
     <header className="sticky top-0 z-50 border-b border-border-subtle bg-background/90 backdrop-blur">
       <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-3">
@@ -66,7 +96,7 @@ export default async function Header() {
 
         <div className="hidden items-center gap-2 xl:flex">
           <CommandPalette />
-          <AuthMenu icon={PlayerIcon} {...playerAuth} />
+          <AuthMenu icon={PlayerIcon} {...playerAuth} account={account} />
           <ThemeToggle />
           <LocaleSwitcher />
         </div>
@@ -77,6 +107,7 @@ export default async function Header() {
             navItems={NAV_ITEMS.map((item) => ({ href: `/${item}`, label: t(`nav.${item}`) }))}
             localItem={{ href: `/${LOCAL_NAV_ITEM}`, label: t(`nav.${LOCAL_NAV_ITEM}`) }}
             playerAuth={playerAuth}
+            account={account}
           />
         </div>
       </div>

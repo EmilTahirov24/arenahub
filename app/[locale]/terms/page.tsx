@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import PageShell from "@/components/layout/PageShell";
 
-export const dynamic = "force-static";
+// Not force-static: under that setting Next hands `cookies()` an empty store
+// (node_modules/next/dist/docs — route segment config), so the header would
+// read the session as absent and show "Login / Register" to someone who is
+// signed in. Two pages of legal text cost nothing to render per request.
+export const dynamic = "force-dynamic";
 
 const CONTENT = {
   az: {
