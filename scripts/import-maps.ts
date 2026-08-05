@@ -165,13 +165,21 @@ async function main() {
     // else. For those the rendered page is the only source, and rendering is
     // their expensive endpoint — one request every 31s.
     //
-    // Asking for the rendered page only after the cheap route comes back with
-    // nothing useful keeps the slow request for the events that actually need
-    // it, and the whole job shrinks as events fill in.
+    // Asking for the rendered page only once the cheap route has fallen short
+    // keeps the slow request for the events that actually need it, and the whole
+    // job shrinks as events fill in.
+    //
+    // "Fallen short" means any match still unaccounted for, not zero matches
+    // found. A CS2 event usually writes its playoff bracket out as `{{Match}}`
+    // and leaves the group stage in the match database, so the first pass at one
+    // answered for four series out of eight and the other four were written off
+    // as missing. The two sources are merged rather than swapped for the same
+    // reason — each holds part of the event.
     let byPair = indexByPair(parseMatches(wikitext));
     let route = "wikitext";
+    const covered = () => matches.filter((m) => hasCandidate(byPair, m.teamA.name, m.teamB.name)).length;
 
-    if (!byPair.size || !matches.some((m) => hasCandidate(byPair, m.teamA.name, m.teamB.name))) {
+    if (covered() < matches.length) {
       let html: string | null = null;
       try {
         html = await fetchRenderedHtml(opts, title);
@@ -180,8 +188,14 @@ async function main() {
         continue;
       }
       if (html) {
-        byPair = indexByPair(parseRenderedMatches(html, wiki));
-        route = "html";
+        const fromHtml = indexByPair(parseRenderedMatches(html, wiki));
+        if (!byPair.size) {
+          byPair = fromHtml;
+          route = "html";
+        } else {
+          for (const [pair, list] of fromHtml) byPair.set(pair, [...(byPair.get(pair) ?? []), ...list]);
+          route = "ikisi";
+        }
       }
     }
 
