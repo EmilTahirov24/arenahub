@@ -152,6 +152,40 @@ async function main() {
     assert(!/tapılmadı/i.test(body), "sonuncu səhifə boş göründü");
   });
 
+  // /results əvvəl bütün bitmiş matçları bir sorğuda çəkirdi. Bu yoxlama həm
+  // səhifələmənin işlədiyini, həm də filtrin səhifə nömrəsi ilə birlikdə
+  // qaldığını təsdiqləyir.
+  await check("/results səhifələnir və filtri saxlayır", async () => {
+    await gotoPage(page, `${BASE}/az/results`);
+
+    // Əsas invariant budur: bir səhifə nə qədər data olsa da 50 matçdan çox
+    // göstərməməlidir. Səhifələmə linklərinin özü yalnız 50-dən çox nəticə
+    // olanda görünür, ona görə ona bağlanmaq lokal bazada yalan siqnal verərdi.
+    const shown = await page.locator('a[href^="/az/matches/"]').count();
+    assert(shown <= 50, `bir səhifədə ${shown} matç — sorğu limitsizdir`);
+
+    await page.locator('a[href*="game="]').first().click();
+    await page.waitForURL((u) => u.searchParams.has("game"), { timeout: 20_000 });
+    const game = new URL(page.url()).searchParams.get("game");
+
+    const next = page.locator('a[href*="page=2"]').first();
+    if (await next.count()) {
+      await next.click();
+      await page.waitForURL((u) => u.searchParams.get("page") === "2", { timeout: 20_000 });
+      assert(
+        new URL(page.url()).searchParams.get("game") === game,
+        `səhifə keçidi oyun filtrini sildi: ${page.url()}`,
+      );
+    }
+  });
+
+  await check("/results-da diapazondan kənar səhifə sonuncuya sıxılır", async () => {
+    const res = await gotoPage(page, `${BASE}/az/results?page=999`);
+    assert(res && res.status() === 200, `HTTP ${res?.status()}`);
+    const body = await visibleText(page);
+    assert(!/tapılmadı/i.test(body), "sonuncu səhifə boş göründü");
+  });
+
   console.log("\nMatç filtrləri\n");
 
   await check("oyun və tarix filtrləri bir-birini silmir", async () => {
