@@ -59,13 +59,28 @@ export async function searchClaimableProfiles(
   };
 }
 
-export async function submitProfileClaim(playerId: string, formData: FormData) {
+export type ClaimSubmitState = { ok?: boolean; error?: string } | undefined;
+
+/**
+ * Müraciəti göndərir.
+ *
+ * Bloklar `throw` edilmirdi ki, mesajları oxunsun deyə yazılıb: CLAIM_BLOCK_MESSAGE
+ * hər hal üçün nə etmək lazım olduğunu izah edən cümlə saxlayır — məsələn əvvəlcə
+ * indiki komandadan ayrılmaq. Atılan xəta bu cümləni Next-in xəta ekranı ilə əvəz
+ * edirdi, yəni adam nə səhv etdiyini bilmirdi. Hamısı vəziyyət kimi qaytarılır və
+ * formanın altında göstərilir.
+ */
+export async function submitProfileClaim(
+  playerId: string,
+  _prev: ClaimSubmitState,
+  formData: FormData,
+): Promise<ClaimSubmitState> {
   const claimantId = await requirePlayer();
   const message = String(formData.get("message") ?? "").trim();
-  if (message.length < 10) throw new Error("Sübut mətni ən azı 10 simvol olmalıdır");
+  if (message.length < 10) return { error: "Sübut mətni ən azı 10 simvol olmalıdır." };
 
   const block = await claimBlockFor(playerId, claimantId);
-  if (block) throw new Error(CLAIM_BLOCK_MESSAGE[block]);
+  if (block) return { error: CLAIM_BLOCK_MESSAGE[block] };
 
   await prisma.profileClaim.upsert({
     where: { playerId_claimantId: { playerId, claimantId } },
@@ -75,6 +90,7 @@ export async function submitProfileClaim(playerId: string, formData: FormData) {
 
   revalidatePath("/player/claim");
   revalidatePath("/player");
+  return { ok: true };
 }
 
 export async function withdrawProfileClaim(claimId: string) {

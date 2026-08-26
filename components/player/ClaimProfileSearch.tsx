@@ -8,7 +8,44 @@ import {
   searchClaimableProfiles,
   submitProfileClaim,
   type ClaimSearchState,
+  type ClaimSubmitState,
 } from "@/app/player/(dashboard)/claim/actions";
+
+/**
+ * Bir profil üçün müraciət forması.
+ *
+ * Ayrıca komponentdir, çünki `useActionState` nəticələr döngüsünün içində
+ * çağırıla bilməz — hər sətrin öz vəziyyəti olmalıdır.
+ */
+function ClaimForm({ playerId }: { playerId: string }) {
+  const [state, action, pending] = useActionState<ClaimSubmitState, FormData>(
+    submitProfileClaim.bind(null, playerId),
+    undefined,
+  );
+
+  return (
+    <form action={action} className="mt-3 space-y-2">
+      <label className="block text-xs text-foreground-muted">
+        Bunun sizin profiliniz olduğunu necə təsdiqləyə bilərik? Sosial hesab linki, komanda yoldaşının adı,
+        turnir səhifəsi — admin buna baxıb qərar verəcək.
+      </label>
+      <textarea name="message" required minLength={10} rows={3} className={inputClass} />
+      <button type="submit" disabled={pending} className={primaryButtonClass}>
+        {pending ? "Göndərilir…" : "Müraciət göndər"}
+      </button>
+      <div aria-live="polite">
+        {!pending && state?.error && (
+          <p className="rounded-md border border-live/40 bg-live/10 px-3 py-2 text-sm text-live">{state.error}</p>
+        )}
+        {!pending && state?.ok && (
+          <p className="rounded-md border border-positive/40 bg-positive/10 px-3 py-2 text-sm text-positive">
+            Müraciət göndərildi ✓ — yuxarıdakı «Müraciətlərim» siyahısında izləyə bilərsiniz.
+          </p>
+        )}
+      </div>
+    </form>
+  );
+}
 
 export default function ClaimProfileSearch() {
   const [state, formAction, pending] = useActionState<ClaimSearchState | undefined, FormData>(
@@ -53,18 +90,7 @@ export default function ClaimProfileSearch() {
               </button>
             </div>
 
-            {selected === p.id && (
-              <form action={submitProfileClaim.bind(null, p.id)} className="mt-3 space-y-2">
-                <label className="block text-xs text-foreground-muted">
-                  Bunun sizin profiliniz olduğunu necə təsdiqləyə bilərik? Sosial hesab linki, komanda yoldaşının adı,
-                  turnir səhifəsi — admin buna baxıb qərar verəcək.
-                </label>
-                <textarea name="message" required minLength={10} rows={3} className={inputClass} />
-                <button type="submit" className={primaryButtonClass}>
-                  Müraciət göndər
-                </button>
-              </form>
-            )}
+            {selected === p.id && <ClaimForm playerId={p.id} />}
           </div>
         ))}
       </div>
