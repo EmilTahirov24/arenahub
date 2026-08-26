@@ -1,12 +1,14 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getPlayerSession } from "@/lib/auth";
 
 async function requirePlayer() {
   const session = await getPlayerSession();
-  if (!session) throw new Error("Unauthorized");
+  // Bitmiş sessiya adi haldır — xəta ekranı yox, giriş səhifəsi (AGENTS.md).
+  if (!session) redirect("/player/login");
   return session.id;
 }
 

@@ -11,7 +11,8 @@ function slugify(s: string) {
 
 export async function createTeam(formData: FormData) {
   const session = await getPlayerSession();
-  if (!session) throw new Error("Unauthorized");
+  // Bitmiş sessiya adi haldır — xəta ekranı yox, giriş səhifəsi (AGENTS.md).
+  if (!session) redirect("/player/login");
 
   const existing = await prisma.team.findFirst({ where: { ownerId: session.id } });
   if (existing) throw new Error("Artıq komandanız var");
