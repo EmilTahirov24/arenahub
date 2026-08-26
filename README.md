@@ -76,6 +76,30 @@ prisma/schema.prisma   məlumat modeli · prisma/migrations/ əl ilə yazılmı�
 - **Migration-lar əl ilə yazılır:** `prisma migrate dev` bu mühitdə interaktivdir və işləmir. SQL faylını özün yaz, sonra `prisma migrate deploy`.
 - **Rate limiter yaddaşdadır** ([lib/rateLimit.ts](lib/rateLimit.ts)) — çoxinstansiyalı deploy-da hər instansiyanın öz sayğacı olur. İndiki miqyas üçün kifayətdir; dəqiqlik lazım olsa Upstash/Redis.
 
+## Testlər
+
+Brauzer yoxlamaları [e2e/](e2e/) qovluğundadır — `playwright` ilə yazılıb, ayrıca
+quraşdırma tələb etmir. Server əvvəlcədən qaldırılmalıdır:
+
+```bash
+npm run dev     # bir terminalda
+npm run e2e     # o birində — dörd dəstin hamısı
+```
+
+Ayrı-ayrılıqda da qaçır: `npx tsx e2e/02-lifecycle.ts`.
+
+| Dəst | Nəyi yoxlayır |
+|---|---|
+| [01-smoke](e2e/01-smoke.ts) | hər public səhifə iki dildə, dinamik səhifələr, sitemap/robots/axtarış |
+| [02-lifecycle](e2e/02-lifecycle.ts) | turnir → matç → canlı xəritə hesabı → qalib → Elo → public tərəf |
+| [03-player](e2e/03-player.ts) | qeydiyyat, e-poçt təsdiqi, profil, komanda, matç proqnozu |
+| [04-admin](e2e/04-admin.ts) | CRUD, xəbər sanitizasiyası, yükləmə limitləri, EDITOR rolu, 390px |
+
+Bilməli olduğun iki şey: fikstürlərin adı `E2E` ilə başlayır və hər qaçışın
+əvvəlində silinir (uğursuz qaçış datanı yerində qoyur ki, ona baxa biləsən);
+qeydiyyat saatda 5 cəhdlə məhduddur, ona görə `03-player` saatda ~2 dəfə qaçır —
+sayğac yaddaşda olduğu üçün `npm run dev`-i yenidən başlatmaq onu sıfırlayır.
+
 ## Skriptlər
 
 | | |
@@ -83,5 +107,16 @@ prisma/schema.prisma   məlumat modeli · prisma/migrations/ əl ilə yazılmı�
 | `npm run dev` | development server |
 | `npm run build` / `npm start` | production build və server |
 | `npm run lint` | eslint |
+| `npm run e2e` | brauzer yoxlamaları (server işləməlidir) |
 | `npx prisma db seed` | demo data + admin hesabı |
 | `npx tsx scripts/recompute-ratings.ts` | komanda reytinqlərini matç tarixçəsindən yenidən qurur (seed-dən sonra lazımdır) |
+| `npx tsx scripts/check-email.ts --to ünvan` | e-poçt qurulumunu yoxlayır, real məktub göndərir |
+| `npx tsx scripts/import-live.ts --apply` | Liquipedia-dan qarşıdakı/canlı/təzə bitmiş matçlar |
+| `npx tsx scripts/import-maps.ts --apply --limit 6` | bitmiş matçların xəritə nəticələri |
+| `npx tsx scripts/import-tournaments.ts` | turnirlər |
+| `npx tsx scripts/import-teams.ts` | komandalar |
+| `npx tsx scripts/import-rosters.ts` | tərkiblər (bayraqlar, tam adlar, rollar) |
+| `npx tsx scripts/dedupe-matches.ts` | təkrar düşmüş matçları birləşdirir |
+| `npx tsx scripts/merge-duplicate-tournaments.ts` | təkrar turnirləri birləşdirir |
+
+İdxal skriptləri `--apply` olmadan yalnız nə edəcəyini yazır — əvvəlcə onsuz işlət.
