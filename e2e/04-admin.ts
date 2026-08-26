@@ -62,7 +62,23 @@ async function main() {
   await loginAdmin(page);
   console.log("Admin girişi: ok\n");
 
-  console.log("Oyunlar — yarat / redaktə et / sil\n");
+  await check("dashboard menyudakı hər bölmə üçün sayğac göstərir", async () => {
+    await gotoPage(page, `${BASE}/admin`);
+    const body = await visibleText(page);
+    for (const label of [
+      "Komandalar",
+      "Oyunçular",
+      "Matçlar",
+      "Turnirlər",
+      "Xəbərlər",
+      "Aktiv reklamlar",
+      "Gözləyən müraciətlər",
+    ]) {
+      assert(body.includes(label), `dashboard-da «${label}» sayğacı yoxdur`);
+    }
+  });
+
+  console.log("\nOyunlar — yarat / redaktə et / sil\n");
 
   let gameId = "";
   await check("oyun yaradılır və siyahıda görünür", async () => {

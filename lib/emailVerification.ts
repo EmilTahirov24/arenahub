@@ -30,10 +30,6 @@ export function isVerifyTokenValid(
   return tokensMatch(user.verifyToken, rawToken) && !!user.verifyTokenExpiry && user.verifyTokenExpiry > new Date();
 }
 
-export function wasVerifyEmailSentRecently(user: { verifyTokenExpiry: Date | null }) {
-  return resendAvailableInSeconds(user) > 0;
-}
-
 /** Seconds until the resend button should re-enable; 0 if it's available now. */
 export function resendAvailableInSeconds(user: { verifyTokenExpiry: Date | null }): number {
   if (!user.verifyTokenExpiry) return 0;

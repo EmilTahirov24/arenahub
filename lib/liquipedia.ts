@@ -13,7 +13,6 @@
  * No database and no framework imports, so scripts can use it directly.
  */
 
-export const LIQUIPEDIA_ATTRIBUTION = "Liquipedia (CC BY-SA 3.0)";
 export const LIQUIPEDIA_URL = "https://liquipedia.net";
 
 /**
