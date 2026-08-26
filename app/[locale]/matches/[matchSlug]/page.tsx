@@ -17,6 +17,8 @@ import MapCard from "@/components/matches/MapCard";
 import PredictionWidget from "@/components/matches/PredictionWidget";
 import { Link } from "@/i18n/navigation";
 
+// Qəsdən dinamik: Canlı matçda AutoRefresh 8 saniyədən bir yeniləyir; keş həmin yeniləməyə köhnə hesab qaytarardı.
+// Bahalı, amma canlı olmayan sorğular ayrıca keşlənir — bax lib/cache.ts.
 export const dynamic = "force-dynamic";
 
 /**

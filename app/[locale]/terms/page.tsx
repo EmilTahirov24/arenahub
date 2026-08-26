@@ -2,11 +2,10 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import PageShell from "@/components/layout/PageShell";
 
-// Not force-static: under that setting Next hands `cookies()` an empty store
-// (node_modules/next/dist/docs — route segment config), so the header would
-// read the session as absent and show "Login / Register" to someone who is
-// signed in. Two pages of legal text cost nothing to render per request.
-export const dynamic = "force-dynamic";
+// Əvvəl burada force-dynamic vardı: header sessiyanı serverdə oxuyurdu, statik
+// render isə `cookies()`-i boş qaytarır və girmiş adama məhz bu səhifədə
+// "Giriş / Qeydiyyat" göstərirdi. Header artıq cookie oxumur — bax
+// components/layout/AccountContext.tsx — ona görə səbəb qalmadı.
 
 const CONTENT = {
   az: {

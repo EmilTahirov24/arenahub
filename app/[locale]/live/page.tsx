@@ -6,6 +6,8 @@ import MatchCard from "@/components/matches/MatchCard";
 import NextUp from "@/components/matches/NextUp";
 import AutoRefresh from "@/components/live/AutoRefresh";
 
+// Qəsdən dinamik: Bu səhifənin bütün mənası indi baş verənləri göstərməkdir.
+// Bahalı, amma canlı olmayan sorğular ayrıca keşlənir — bax lib/cache.ts.
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({

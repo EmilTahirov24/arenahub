@@ -8,7 +8,10 @@ import AdSlot from "@/components/ads/AdSlot";
 import GameChip from "@/components/common/GameChip";
 import TeamAvatar from "@/components/common/TeamAvatar";
 
-export const dynamic = "force-dynamic";
+// İdxal saatda bir dəfə işləyir, admin dəyişiklikləri isə revalidatePath ilə
+// dərhal ləğv olunur — ona görə 300 saniyəlik pəncərə datanı köhnəltmir, əvəzində
+// hər sorğuda təkrarlanan baza işini aradan qaldırır.
+export const revalidate = 300;
 
 export async function generateMetadata({
   params,

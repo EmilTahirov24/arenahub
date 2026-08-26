@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import PageShell from "@/components/layout/PageShell";
 
-// See the note in ../terms/page.tsx: force-static empties `cookies()`, which
-// would show a signed-in visitor the logged-out header on this page alone.
-export const dynamic = "force-dynamic";
+// Bax ../terms/page.tsx: header artıq sessiyanı serverdə oxumadığı üçün bu
+// səhifənin dinamik qalmasına ehtiyac yoxdur.
 
 const CONTENT = {
   az: {
