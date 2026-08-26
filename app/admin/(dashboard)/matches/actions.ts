@@ -20,7 +20,6 @@ function matchData(formData: FormData) {
     starRating: Number(formData.get("starRating") ?? 1),
     streamUrl: String(formData.get("streamUrl") ?? "") || null,
     status: String(formData.get("status") ?? "UPCOMING") as MatchStatus,
-    isFeatured: formData.get("isFeatured") === "on",
   };
 }
 

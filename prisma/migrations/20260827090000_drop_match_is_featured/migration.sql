@@ -1,0 +1,19 @@
+-- Match.isFeatured silinir: yazılırdı, heç vaxt oxunmurdu.
+--
+-- Admin matç formasında «Seçilmiş (featured)» qutusu vardı və dəyər bazaya
+-- düşürdü, amma public tərəfdə heç bir sorğu ona baxmırdı — nə ana səhifə, nə
+-- matç siyahısı, nə də başqa yer. Yəni sahib qutunu işarələyir, heç nə baş
+-- vermirdi. Bu, çatışmayan xüsusiyyətdən pisdir: idarəedici işlədiyini iddia
+-- edir.
+--
+-- Sütunu doldurmaq əvəzinə silmək seçildi, çünki matçda onsuz da `starRating`
+-- (1–5) var və o, HƏM matç kartında, HƏM də matç səhifəsində ulduzlarla
+-- göstərilir. İki ayrı «bu matç vacibdir» idarəedicisi bir-birini təkrarlayır
+-- və hansının üstün olduğu sualını doğurur.
+--
+-- Data itmir: silinmə anında production-da `isFeatured = true` olan bir dənə də
+-- matç yox idi (yoxlanıldı).
+--
+-- NewsArticle.isFeatured SAXLANILIR — orada alternativ yoxdur və mənası
+-- aydındır: seçilmiş xəbər ana səhifədə birinci gəlir.
+ALTER TABLE "Match" DROP COLUMN "isFeatured";
