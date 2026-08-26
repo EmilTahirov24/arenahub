@@ -2,20 +2,20 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
-import { getPlayerSession } from "@/lib/auth";
 import { Link } from "@/i18n/navigation";
-// The dashboard lives outside the [locale] segment, so its links must not be
-// given a locale prefix — that is the one thing the i18n Link above always does.
-import NextLink from "next/link";
 import { parseSocials } from "@/lib/socials";
 import PageShell from "@/components/layout/PageShell";
+import OwnerEditLink from "@/components/layout/OwnerEditLink";
 import PlayerAvatar from "@/components/common/PlayerAvatar";
 import TeamAvatar from "@/components/common/TeamAvatar";
 import GameChip from "@/components/common/GameChip";
 import CountryFlag from "@/components/common/CountryFlag";
 import SocialLinks from "@/components/players/SocialLinks";
 
-export const dynamic = "force-dynamic";
+// İdxal saatda bir dəfə işləyir, admin dəyişiklikləri isə revalidatePath ilə
+// dərhal ləğv olunur — ona görə 300 saniyəlik pəncərə datanı köhnəltmir, əvəzində
+// hər sorğuda təkrarlanan baza işini aradan qaldırır.
+export const revalidate = 300;
 
 function average(values: number[]) {
   if (values.length === 0) return null;
@@ -77,9 +77,6 @@ export default async function PlayerProfilePage({
 
   const socials = parseSocials(player.socials);
 
-  const viewer = await getPlayerSession();
-  const isMe = viewer?.id === player.id;
-
   return (
     <PageShell>
       <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl border border-border-subtle bg-surface p-6">
@@ -109,16 +106,15 @@ export default async function PlayerProfilePage({
           </div>
         </div>
 
-        {isMe && (
-          // Your own profile is the public one; editing sits beside it rather
-          // than replacing it.
-          <NextLink
-            href="/player/edit"
-            className="rounded-md border border-border-subtle px-4 py-2 text-sm text-foreground-muted transition-colors hover:border-brand-via/50 hover:text-foreground"
-          >
-            {locale === "az" ? "Redaktə et" : "Edit"}
-          </NextLink>
-        )}
+        {/* Öz profilin elə public profildir; redaktə onun yanındadır. Kimin
+            baxdığı client tərəfdə müəyyən edilir ki, səhifə keşlənə bilsin —
+            bax components/layout/OwnerEditLink.tsx. */}
+        <OwnerEditLink
+          href="/player/edit"
+          label={locale === "az" ? "Redaktə et" : "Edit"}
+          match={{ kind: "player", slug: player.slug }}
+          className="rounded-md border border-border-subtle px-4 py-2 text-sm text-foreground-muted transition-colors hover:border-brand-via/50 hover:text-foreground"
+        />
 
         <div className="flex gap-6">
           {careerRating != null && (

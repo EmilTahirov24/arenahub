@@ -182,6 +182,28 @@ async function main() {
     await assertNotErrorPage(page);
   });
 
+  // Header artıq sessiyanı serverdə oxumur (səhifələr keşlənə bilsin deyə) —
+  // hesab /api/me-dən client tərəfdə gəlir. Bu iki yoxlama həmin köçürmənin
+  // istifadəçi üçün heç nəyi pisləşdirmədiyini təsdiqləyir.
+  await check("girmiş oyunçunun ləqəbi public saytın header-ində görünür", async () => {
+    await gotoPage(page, `${BASE}/az`);
+    await page.locator("header").locator(`text=${NICK}`).first().waitFor({ timeout: 15_000 });
+  });
+
+  await check("yüklənərkən «Oyunçu yarat» sayrışması olmur", async () => {
+    await page.goto(`${BASE}/az/matches`, { waitUntil: "domcontentloaded" });
+    let sawLoggedOut = false;
+    for (let i = 0; i < 30; i++) {
+      const header = await page.locator("header").innerText().catch(() => "");
+      if (header.includes("Oyunçu yarat")) sawLoggedOut = true;
+      if (header.includes(NICK)) break;
+      await page.waitForTimeout(100);
+    }
+    assert(!sawLoggedOut, "girmiş adama bir anlıq «Oyunçu yarat» göstərildi");
+    const header = await page.locator("header").innerText();
+    assert(header.includes(NICK), "ləqəb heç görünmədi");
+  });
+
   await check("profil saxlanır və «Yadda saxlanıldı ✓» göstərir", async () => {
     await gotoPage(page, `${BASE}/player/edit`);
     await page.fill('input[name="firstName"]', "Sınaq");

@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import PlayerAvatar from "@/components/common/PlayerAvatar";
+import { useAccount } from "./AccountContext";
 
 /**
- * The signed-in half of the menu.
+ * Hesab menyusunun sabit hissəsi — etiketlər, ünvanlar və çıxış əməliyyatı.
  *
- * `avatar` arrives already rendered from the server so this component never
- * needs the player record itself — see components/layout/Header.tsx.
+ * Kim girib, o, artıq burada deyil: onu `useAccount()` client tərəfdə gətirir,
+ * çünki Header-in sessiya oxuması bütün saytın keşlənməsinə mane olurdu.
+ * Ləqəb və avatar da ona görə serverdən ötürülmür.
  */
 export type AccountMenu = {
-  nickname: string;
-  avatar: React.ReactNode;
   profileHref: string;
   profileLabel: string;
   teamHref: string;
@@ -26,7 +27,7 @@ export default function AuthMenu({
   registerHref,
   loginLabel,
   registerLabel,
-  account,
+  links,
 }: {
   label: string;
   icon: React.ReactNode;
@@ -34,9 +35,9 @@ export default function AuthMenu({
   registerHref: string;
   loginLabel: string;
   registerLabel: string;
-  /** Null when nobody is signed in — then the menu offers login and register. */
-  account?: AccountMenu | null;
+  links: AccountMenu;
 }) {
+  const { account, loading } = useAccount();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -66,6 +67,17 @@ export default function AuthMenu({
 
   const itemClass = "block w-full px-3 py-2 text-left text-sm text-foreground hover:bg-surface-raised";
 
+  // Cavab gələnə qədər nə «Giriş», nə də ləqəb göstərilir. Əks halda girmiş adam
+  // hər səhifə açılışında bir anlıq «çıxarılmışam» görürdü.
+  if (loading) {
+    return (
+      <div
+        aria-hidden
+        className="h-8 w-8 animate-pulse rounded-full border border-border-subtle bg-surface sm:w-24"
+      />
+    );
+  }
+
   return (
     <div ref={ref} className="relative">
       <button
@@ -81,7 +93,7 @@ export default function AuthMenu({
             : "flex h-8 items-center gap-1.5 rounded-full border border-border-subtle bg-surface px-3 text-xs font-medium text-foreground-muted transition-colors hover:text-foreground"
         }
       >
-        {account ? account.avatar : icon}
+        {account ? <PlayerAvatar name={account.nickname} photoUrl={account.photoUrl} size={24} /> : icon}
         <span className="hidden max-w-28 truncate sm:inline">
           {account ? account.nickname : label}
         </span>
@@ -94,19 +106,19 @@ export default function AuthMenu({
         >
           {account ? (
             <>
-              <a href={account.profileHref} className={itemClass} role="menuitem">
-                {account.profileLabel}
+              <a href={links.profileHref} className={itemClass} role="menuitem">
+                {links.profileLabel}
               </a>
               <a
-                href={account.teamHref}
+                href={links.teamHref}
                 className={`${itemClass} border-t border-border-subtle`}
                 role="menuitem"
               >
-                {account.teamLabel}
+                {links.teamLabel}
               </a>
-              <form action={account.logoutAction} className="border-t border-border-subtle">
+              <form action={links.logoutAction} className="border-t border-border-subtle">
                 <button type="submit" className={itemClass} role="menuitem">
-                  {account.logoutLabel}
+                  {links.logoutLabel}
                 </button>
               </form>
             </>

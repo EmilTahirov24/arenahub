@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import HtmlLang from "./HtmlLang";
 import Header from "@/components/layout/Header";
+import { AccountProvider } from "@/components/layout/AccountContext";
 import Footer from "@/components/layout/Footer";
 
 export function generateStaticParams() {
@@ -49,8 +50,12 @@ export default async function LocaleLayout({
         routes that carry authentication.
       */}
       <HtmlLang locale={locale} />
-      <Header />
-      <main className="flex-1">{children}</main>
+      {/* Hesab məlumatı bir dəfə çəkilir və həm header-in menyusu, həm də
+          səhifələrdəki «Redaktə et» linki onu bölüşür — bax AccountContext.tsx. */}
+      <AccountProvider>
+        <Header />
+        <main className="flex-1">{children}</main>
+      </AccountProvider>
       <Footer />
     </NextIntlClientProvider>
   );

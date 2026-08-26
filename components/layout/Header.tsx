@@ -5,9 +5,6 @@ import ThemeToggle from "./ThemeToggle";
 import AuthMenu, { type AccountMenu } from "./AuthMenu";
 import MobileNav from "./MobileNav";
 import CommandPalette from "@/components/search/CommandPalette";
-import PlayerAvatar from "@/components/common/PlayerAvatar";
-import { getPlayerSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { logoutToSite } from "@/app/[locale]/actions";
 
 const PlayerIcon = (
@@ -43,31 +40,18 @@ export default async function Header() {
     registerLabel: t("auth.register"),
   };
 
-  // The header never looked at the session, so somebody who had just signed in
-  // came back to the site and was offered "Login / Register" — the site had no
-  // idea who they were, and there was no way back into their own dashboard.
-  const session = await getPlayerSession();
-  const player = session
-    ? await prisma.player.findUnique({
-        where: { id: session.id },
-        select: { nickname: true, photoUrl: true },
-      })
-    : null;
-
-  const account: AccountMenu | null = player
-    ? {
-        nickname: player.nickname,
-        // Rendered here rather than inside the menu: PlayerAvatar falls back to
-        // initials on its own, so a player with no photo still gets a face.
-        avatar: <PlayerAvatar name={player.nickname} photoUrl={player.photoUrl} size={24} />,
-        profileHref: "/player",
-        profileLabel: t("auth.profile"),
-        teamHref: "/player/team",
-        teamLabel: t("auth.team"),
-        logoutLabel: t("auth.logout"),
-        logoutAction: logoutToSite,
-      }
-    : null;
+  // Kimin girdiyi burada oxunmur — bax components/layout/AccountContext.tsx.
+  // Sessiyanı serverdə oxumaq `cookies()` demək idi, o isə marşrutu dinamik edir;
+  // Header hər səhifədə olduğu üçün bütün public sayt keşlənə bilməz qalırdı.
+  // Burada yalnız dəyişməyən hissə qurulur: etiketlər, ünvanlar və çıxış əməliyyatı.
+  const accountLinks: AccountMenu = {
+    profileHref: "/player",
+    profileLabel: t("auth.profile"),
+    teamHref: "/player/team",
+    teamLabel: t("auth.team"),
+    logoutLabel: t("auth.logout"),
+    logoutAction: logoutToSite,
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-border-subtle bg-background/90 backdrop-blur">
@@ -96,7 +80,7 @@ export default async function Header() {
 
         <div className="hidden items-center gap-2 xl:flex">
           <CommandPalette />
-          <AuthMenu icon={PlayerIcon} {...playerAuth} account={account} />
+          <AuthMenu icon={PlayerIcon} {...playerAuth} links={accountLinks} />
           <ThemeToggle />
           <LocaleSwitcher />
         </div>
@@ -107,7 +91,7 @@ export default async function Header() {
             navItems={NAV_ITEMS.map((item) => ({ href: `/${item}`, label: t(`nav.${item}`) }))}
             localItem={{ href: `/${LOCAL_NAV_ITEM}`, label: t(`nav.${LOCAL_NAV_ITEM}`) }}
             playerAuth={playerAuth}
-            account={account}
+            links={accountLinks}
           />
         </div>
       </div>
