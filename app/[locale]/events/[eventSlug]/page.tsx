@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { Link } from "@/i18n/navigation";
 import PageShell from "@/components/layout/PageShell";
@@ -64,7 +65,20 @@ export default async function EventDetailPage({
 
   return (
     <PageShell>
-      <div className="mb-6 rounded-xl border border-border-subtle bg-surface p-6">
+      <div className="mb-6 flex items-start gap-4 rounded-xl border border-border-subtle bg-surface p-6">
+        {/* Loqo admin paneldən yüklənir; indiyə qədər heç yerdə göstərilmirdi.
+            Yoxdursa blok tam əvvəlki kimi görünür. */}
+        {tournament.logoUrl && (
+          <Image
+            src={tournament.logoUrl}
+            alt=""
+            width={56}
+            height={56}
+            unoptimized
+            className="h-14 w-14 shrink-0 rounded-lg object-contain"
+          />
+        )}
+        <div className="min-w-0 flex-1">
         <div className="mb-2 flex items-center gap-2">
           <GameChip name={tournament.game.shortName} color={tournament.game.accentColor} />
           <span className="text-xs text-foreground-muted">{locale === "az" ? "Tier" : "Tier"} {tournament.tier}</span>
@@ -75,6 +89,7 @@ export default async function EventDetailPage({
           {tournament.location ? ` · ${tournament.location}` : ""}
           {tournament.prizePool ? ` · ${tournament.prizePool}` : ""}
         </p>
+        </div>
       </div>
 
       {prizes.length > 0 && (

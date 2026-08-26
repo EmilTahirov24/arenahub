@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { dateStrip, toDateKey } from "@/lib/dates";
@@ -52,7 +53,13 @@ export default async function MatchFilters({
                 : undefined
             }
           >
-            <span className={activeGame === game.slug ? "" : "text-foreground-muted hover:text-foreground"}>
+            <span className={`inline-flex items-center gap-1.5 ${activeGame === game.slug ? "" : "text-foreground-muted hover:text-foreground"}`}>
+              {/* Oyun loqosu admin paneldən yüklənirdi və heç yerdə
+                  görünmürdü. Filtr pili onun yeganə təbii yeridir — GameChip
+                  11 piksellik mətn pilidir, orada loqo səs-küy olardı. */}
+              {game.logoUrl && (
+                <Image src={game.logoUrl} alt="" width={14} height={14} unoptimized className="h-3.5 w-3.5 object-contain" />
+              )}
               {game.shortName}
             </span>
           </Link>

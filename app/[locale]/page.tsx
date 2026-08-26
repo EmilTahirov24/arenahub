@@ -76,7 +76,9 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     }),
     prisma.newsArticle.findMany({
       where: { publishedAt: { not: null } },
-      orderBy: { publishedAt: "desc" },
+      // Seçilmiş xəbər birinci gəlir. Sahə əvvəl yazılırdı, amma heç bir sorğu
+      // ona baxmırdı — admin qutunu işarələyirdi və heç nə dəyişmirdi.
+      orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
       take: 6,
       include: { game: true, translations: true },
     }),
