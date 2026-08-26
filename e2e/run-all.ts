@@ -9,7 +9,7 @@
  */
 import { spawnSync } from "node:child_process";
 
-const SUITES = ["e2e/01-smoke.ts", "e2e/02-lifecycle.ts", "e2e/03-player.ts", "e2e/04-admin.ts", "e2e/05-claim.ts"];
+const SUITES = ["e2e/01-smoke.ts", "e2e/02-lifecycle.ts", "e2e/03-player.ts", "e2e/04-admin.ts", "e2e/05-claim.ts", "e2e/06-widgets.ts"];
 
 const failed: string[] = [];
 for (const suite of SUITES) {
