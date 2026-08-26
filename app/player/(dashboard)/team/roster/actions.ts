@@ -10,7 +10,8 @@ import type { PlayerStatus } from "@/app/generated/prisma/client";
 
 async function requireOwnedTeam() {
   const session = await getPlayerSession();
-  if (!session) throw new Error("Unauthorized");
+  // Bitmiş sessiya adi haldır — xəta ekranı yox, giriş səhifəsi (AGENTS.md).
+  if (!session) redirect("/player/login");
   const team = await prisma.team.findFirst({ where: { ownerId: session.id } });
   if (!team) throw new Error("Forbidden");
   return { team, ownerId: session.id };

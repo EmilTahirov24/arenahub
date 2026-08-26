@@ -19,7 +19,8 @@ export async function resendPlayerVerificationEmail(
   _prevState: { waitSeconds: number; failed?: boolean } | undefined,
 ) {
   const session = await getPlayerSession();
-  if (!session) throw new Error("Unauthorized");
+  // Bitmiş sessiya adi haldır — xəta ekranı yox, giriş səhifəsi (AGENTS.md).
+  if (!session) redirect("/player/login");
 
   const player = await prisma.player.findUnique({ where: { id: session.id } });
   if (!player || !player.email || player.emailVerified) return { waitSeconds: 0 };

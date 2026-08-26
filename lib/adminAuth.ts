@@ -1,4 +1,5 @@
 import "server-only";
+import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth";
 
 /**
@@ -11,7 +12,9 @@ import { getAdminSession } from "@/lib/auth";
  */
 export async function requireAdmin() {
   const session = await getAdminSession();
-  if (!session) throw new Error("Unauthorized");
+  // Sessiyanın bitməsi adi haldır, proqramçı səhvi deyil — adamı xəta ekranına
+  // atmaq əvəzinə girişə göndəririk (AGENTS.md).
+  if (!session) redirect("/admin/login");
   return session;
 }
 
