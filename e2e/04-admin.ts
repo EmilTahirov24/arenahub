@@ -78,6 +78,34 @@ async function main() {
     }
   });
 
+  // İdxal saytın yeganə data mənbəyidir və GitHub Actions-da qaçır. Sınsa və ya
+  // söndürülsə, sayt səssizcə köhnəlir — bu panel həmin sükutu görünən edir.
+  await check("dashboard təzə idxalı sağlam göstərir", async () => {
+    await prisma.importRun.deleteMany({ where: { script: "import-live" } });
+    await prisma.importRun.create({
+      data: { script: "import-live", ok: true, written: 12, note: "12 matç, 3 xəritə", finishedAt: new Date() },
+    });
+    await gotoPage(page, `${BASE}/admin`);
+    const body = await visibleText(page);
+    assert(body.includes("Matç idxalı"), "idxal paneli yoxdur");
+    assert(/son uğurlu qaçış/.test(body), "sağlam vəziyyət göstərilmir");
+    assert(body.includes("12 matç"), "sonuncu qaçışın xülasəsi göstərilmir");
+    assert(!/dayanmış ola bilər/.test(body), "təzə idxal köhnə kimi işarələnib");
+  });
+
+  await check("dashboard dayanmış idxalı xəbərdarlıqla göstərir", async () => {
+    const old = new Date(Date.now() - 6 * 60 * 60_000);
+    await prisma.importRun.deleteMany({ where: { script: "import-live" } });
+    await prisma.importRun.create({
+      data: { script: "import-live", ok: true, written: 4, startedAt: old, finishedAt: old },
+    });
+    await gotoPage(page, `${BASE}/admin`);
+    const body = await visibleText(page);
+    assert(/dayanmış ola bilər/.test(body), "dayanmış idxal üçün xəbərdarlıq yoxdur");
+    assert(/GitHub Actions/.test(body), "hara baxmaq lazım olduğu yazılmayıb");
+    await prisma.importRun.deleteMany({ where: { script: "import-live" } });
+  });
+
   console.log("\nOyunlar — yarat / redaktə et / sil\n");
 
   let gameId = "";
