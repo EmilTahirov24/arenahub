@@ -3,6 +3,7 @@ import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
+import HtmlLang from "./HtmlLang";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 
@@ -40,22 +41,14 @@ export default async function LocaleLayout({
     <NextIntlClientProvider>
       {/*
         The root layout hard-codes lang="az" because it sits above [locale] and
-        cannot see which language was asked for — so every English page claimed
-        to be Azerbaijani, and a screen reader read it aloud with the wrong
-        pronunciation.
-
-        Corrected here rather than by restructuring the app: moving <html> into
-        this layout means giving /player and /admin a second root layout, which
-        is a forty-file move through the routes that carry authentication. This
-        script runs before paint, so assistive technology and any crawler that
-        executes JavaScript see the right value. The served HTML still says "az"
-        until that restructure happens.
+        cannot see which language was asked for. The first paint is corrected by
+        the inline script in app/layout.tsx, which reads the locale out of the
+        URL; this component keeps it correct across client-side navigation, which
+        a script tag inside the tree cannot do. The served HTML still says "az"
+        until <html> moves under [locale] — a forty-file change through the
+        routes that carry authentication.
       */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `document.documentElement.lang=${JSON.stringify(locale)}`,
-        }}
-      />
+      <HtmlLang locale={locale} />
       <Header />
       <main className="flex-1">{children}</main>
       <Footer />
