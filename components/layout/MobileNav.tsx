@@ -5,6 +5,8 @@ import { createPortal } from "react-dom";
 import { Link } from "@/i18n/navigation";
 import ThemeToggle from "./ThemeToggle";
 import LocaleSwitcher from "./LocaleSwitcher";
+import PlayerAvatar from "@/components/common/PlayerAvatar";
+import { useAccount } from "./AccountContext";
 import type { AccountMenu } from "./AuthMenu";
 
 type AuthConfig = {
@@ -19,14 +21,15 @@ export default function MobileNav({
   navItems,
   localItem,
   playerAuth,
-  account,
+  links,
 }: {
   navItems: { href: string; label: string }[];
   localItem: { href: string; label: string };
   playerAuth: AuthConfig;
-  /** Null when nobody is signed in — then the panel offers login and register. */
-  account?: AccountMenu | null;
+  /** Sabit etiketlər və ünvanlar; kim girib — onu useAccount() gətirir. */
+  links: AccountMenu;
 }) {
+  const { account, loading } = useAccount();
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<HTMLButtonElement>(null);
@@ -155,33 +158,37 @@ export default function MobileNav({
                   desktop menu, since on a phone this is the only menu there
                   is. */}
               <div className="mb-3 rounded-lg border border-border-subtle p-3">
-                {account ? (
+                {loading ? (
+                  // Cavab gələnə qədər «Giriş» göstərmirik — girmiş adam üçün bu,
+                  // bir anlıq çıxarılmış kimi görünürdü.
+                  <div aria-hidden className="h-20 animate-pulse rounded-md bg-surface" />
+                ) : account ? (
                   <>
                     <div className="mb-3 flex items-center gap-2">
-                      {account.avatar}
+                      <PlayerAvatar name={account.nickname} photoUrl={account.photoUrl} size={24} />
                       <span className="truncate text-sm font-semibold text-foreground">
                         {account.nickname}
                       </span>
                     </div>
                     <div className="flex flex-col gap-2">
                       <a
-                        href={account.profileHref}
+                        href={links.profileHref}
                         className="rounded-md border border-border-subtle px-3 py-2 text-center text-sm text-foreground hover:bg-surface-raised"
                       >
-                        {account.profileLabel}
+                        {links.profileLabel}
                       </a>
                       <a
-                        href={account.teamHref}
+                        href={links.teamHref}
                         className="rounded-md border border-border-subtle px-3 py-2 text-center text-sm text-foreground hover:bg-surface-raised"
                       >
-                        {account.teamLabel}
+                        {links.teamLabel}
                       </a>
-                      <form action={account.logoutAction}>
+                      <form action={links.logoutAction}>
                         <button
                           type="submit"
                           className="w-full rounded-md border border-border-subtle px-3 py-2 text-center text-sm text-foreground-muted hover:bg-surface-raised hover:text-foreground"
                         >
-                          {account.logoutLabel}
+                          {links.logoutLabel}
                         </button>
                       </form>
                     </div>

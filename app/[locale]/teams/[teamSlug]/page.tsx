@@ -2,11 +2,9 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
-import { getPlayerSession } from "@/lib/auth";
 import { Link } from "@/i18n/navigation";
-// /player sits outside the [locale] segment, so this link must not be prefixed.
-import NextLink from "next/link";
 import PageShell from "@/components/layout/PageShell";
+import OwnerEditLink from "@/components/layout/OwnerEditLink";
 import TeamAvatar from "@/components/common/TeamAvatar";
 import PlayerAvatar from "@/components/common/PlayerAvatar";
 import GameChip from "@/components/common/GameChip";
@@ -14,7 +12,10 @@ import CountryFlag from "@/components/common/CountryFlag";
 import MatchCard from "@/components/matches/MatchCard";
 import { ratingDelta } from "@/lib/elo";
 
-export const dynamic = "force-dynamic";
+// İdxal saatda bir dəfə işləyir, admin dəyişiklikləri isə revalidatePath ilə
+// dərhal ləğv olunur — ona görə 300 saniyəlik pəncərə datanı köhnəltmir, əvəzində
+// hər sorğuda təkrarlanan baza işini aradan qaldırır.
+export const revalidate = 300;
 
 export async function generateMetadata({
   params,
@@ -83,11 +84,6 @@ export default async function TeamProfilePage({
   // Most recent first, as a W/L streak strip.
   const recentForm = finishedMatches.slice(0, 5).map((m) => m.winnerId === team.id);
 
-  // Only the owner can change the team's settings, so only the owner is offered
-  // the link — a member seeing it would be sent to a page that turns them away.
-  const viewer = await getPlayerSession();
-  const isMyTeam = !!viewer && team.ownerId === viewer.id;
-
   return (
     <PageShell>
       <div className="mb-6 rounded-xl border border-border-subtle bg-surface p-6">
@@ -115,16 +111,15 @@ export default async function TeamProfilePage({
             </h1>
           </div>
 
-          {isMyTeam && (
-            // Same idea as the player profile: the owner sees the team as
-            // everyone else does, with editing beside it rather than instead.
-            <NextLink
-              href="/player/team/edit"
-              className="shrink-0 rounded-md border border-border-subtle px-4 py-2 text-sm text-foreground-muted transition-colors hover:border-brand-via/50 hover:text-foreground"
-            >
-              {locale === "az" ? "Redaktə et" : "Edit"}
-            </NextLink>
-          )}
+          {/* Sahib komandanı hamının gördüyü kimi görür, redaktə isə yanındadır.
+              Kimin sahib olduğu client tərəfdə müəyyən edilir ki, səhifə keşlənə
+              bilsin — bax components/layout/OwnerEditLink.tsx. */}
+          <OwnerEditLink
+            href="/player/team/edit"
+            label={locale === "az" ? "Redaktə et" : "Edit"}
+            match={{ kind: "team", slug: team.slug }}
+            className="shrink-0 rounded-md border border-border-subtle px-4 py-2 text-sm text-foreground-muted transition-colors hover:border-brand-via/50 hover:text-foreground"
+          />
 
           {finishedMatches.length > 0 && (
             <div className="flex shrink-0 items-center gap-6">
