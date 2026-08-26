@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { Link } from "@/i18n/navigation";
 import PageShell from "@/components/layout/PageShell";
@@ -62,6 +63,21 @@ export default async function NewsArticlePage({
           <span className="text-xs text-foreground-muted">· {article.author.name}</span>
         </div>
         <h1 className="font-display mb-4 text-3xl font-bold">{tr.title}</h1>
+
+        {/* Üz şəkli admin paneldən yüklənir; indiyə qədər heç yerdə
+            göstərilmirdi. Şəkil yoxdursa məqalə əvvəlki kimi başlıqdan
+            mətnə keçir. */}
+        {article.coverImageUrl && (
+          <Image
+            src={article.coverImageUrl}
+            alt=""
+            width={960}
+            height={540}
+            unoptimized
+            priority
+            className="mb-6 aspect-video w-full rounded-lg object-cover"
+          />
+        )}
 
         {article.relatedTeam && (
           <Link

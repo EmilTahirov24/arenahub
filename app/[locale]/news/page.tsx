@@ -36,7 +36,8 @@ export default async function NewsPage({
       publishedAt: { not: null },
       ...(gameSlug ? { game: { slug: gameSlug } } : {}),
     },
-    orderBy: { publishedAt: "desc" },
+    // Ana səhifə ilə eyni sıra: seçilmiş xəbər əvvəldə.
+    orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
     take: 24,
     include: { game: true, translations: true },
   });

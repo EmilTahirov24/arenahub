@@ -161,6 +161,78 @@ async function main() {
     assert(body.includes("Salam"), "təmiz məzmun da itib");
   });
 
+  // «Seçilmiş» qutusu matçdan silindi (starRating onsuz da var və göstərilir),
+  // xəbərdə isə işə salındı. Bu iki yoxlama hər ikisini yerində saxlayır.
+  await check("matç formasında artıq «Seçilmiş» qutusu yoxdur", async () => {
+    await gotoPage(page, `${BASE}/admin/matches/new`);
+    const box = page.locator('input[name="isFeatured"]');
+    assert((await box.count()) === 0, "matç formasında hələ isFeatured qutusu var");
+    const stars = page.locator('select[name="starRating"]');
+    assert(await stars.count(), "starRating seçimi itib — matçın vaciblik idarəedicisi qalmalıdır");
+  });
+
+  await check("seçilmiş xəbər siyahıda birinci gəlir və nişanı görünür", async () => {
+    const game = await prisma.game.findFirstOrThrow({ where: { slug: "cs2" } });
+    const admin = await prisma.adminUser.findFirstOrThrow();
+    // Köhnə tarixli, amma seçilmiş xəbər: sıralama tarixə görə olsaydı sonda qalardı.
+    const featured = await prisma.newsArticle.create({
+      data: {
+        slug: "e2e-secilmis-" + Date.now(),
+        authorId: admin.id,
+        gameId: game.id,
+        tags: [],
+        isFeatured: true,
+        publishedAt: new Date(Date.now() - 30 * 86_400_000),
+        translations: {
+          create: [
+            { locale: "az", title: "E2E Seçilmiş Xəbər", bodyHtml: "<p>mətn</p>" },
+            { locale: "en", title: "E2E Featured Article", bodyHtml: "<p>text</p>" },
+          ],
+        },
+      },
+    });
+    // Təzə, amma seçilməmiş xəbər.
+    const recent = await prisma.newsArticle.create({
+      data: {
+        slug: "e2e-adi-" + Date.now(),
+        authorId: admin.id,
+        gameId: game.id,
+        tags: [],
+        isFeatured: false,
+        publishedAt: new Date(),
+        translations: {
+          create: [
+            { locale: "az", title: "E2E Adi Xəbər", bodyHtml: "<p>mətn</p>" },
+            { locale: "en", title: "E2E Plain Article", bodyHtml: "<p>text</p>" },
+          ],
+        },
+      },
+    });
+
+    try {
+      // Yoxlama /news-də aparılır, ana səhifədə yox. Ana səhifə ISR ilə 60 saniyə
+      // keşlənir və bu fikstürlər bazaya BİRBAŞA yazılır, yəni admin
+      // əməliyyatlarının çağırdığı revalidatePath işə düşmür. Ana səhifədə
+      // yoxlasaydıq, sıralamanı deyil, keşin vaxtını sınamış olardıq.
+      // /news isə searchParams oxuduğu üçün dinamikdir və həmişə təzədir.
+      await gotoPage(page, `${BASE}/az/news`);
+      const body = await visibleText(page);
+      const posFeatured = body.indexOf("E2E Seçilmiş Xəbər");
+      const posPlain = body.indexOf("E2E Adi Xəbər");
+      assert(posFeatured >= 0, "seçilmiş xəbər siyahıda görünmür");
+      assert(posPlain >= 0, "adi xəbər siyahıda görünmür — müqayisə mümkün deyil");
+      assert(
+        posFeatured < posPlain,
+        "seçilmiş xəbər daha təzə xəbərdən sonra gəlir — sıralama işləmir",
+      );
+      assert(/Seçilmiş/.test(body), "kartda «Seçilmiş» nişanı yoxdur");
+    } finally {
+      await prisma.newsArticleTranslation.deleteMany({ where: { articleId: { in: [featured.id, recent.id] } } });
+      await prisma.newsArticle.deleteMany({ where: { id: { in: [featured.id, recent.id] } } });
+    }
+  });
+
+
   console.log("\nFayl yükləmə qaydaları\n");
 
   await check("düzgün PNG qəbul olunur", async () => {

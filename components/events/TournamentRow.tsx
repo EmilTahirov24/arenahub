@@ -1,4 +1,5 @@
 import { getLocale } from "next-intl/server";
+import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import GameChip from "@/components/common/GameChip";
 import type { Game, Tournament } from "@/app/generated/prisma/client";
@@ -26,6 +27,19 @@ export default async function TournamentRow({ tournament }: { tournament: Tourna
       href={`/events/${tournament.slug}`}
       className="flex items-center gap-3 rounded-lg border border-border-subtle bg-surface p-4 hover:bg-surface-raised"
     >
+      {/* Loqo admin paneldən yüklənirdi və heç yerdə göstərilmirdi. Səviyyə
+          nişanı yerində qalır — o, rənglə birlikdə turnirin çəkisini bildirir və
+          loqo onu əvəz etmir. Loqo yoxdursa sətir tam əvvəlki kimi görünür. */}
+      {tournament.logoUrl && (
+        <Image
+          src={tournament.logoUrl}
+          alt=""
+          width={32}
+          height={32}
+          unoptimized
+          className="h-8 w-8 shrink-0 rounded-md object-contain"
+        />
+      )}
       <span
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md font-display text-sm font-bold"
         style={{ color: TIER_COLOR[tournament.tier], backgroundColor: `${TIER_COLOR[tournament.tier]}1a` }}
