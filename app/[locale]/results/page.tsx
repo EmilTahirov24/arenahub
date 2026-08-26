@@ -6,7 +6,10 @@ import { groupBy } from "@/lib/group";
 import PageShell from "@/components/layout/PageShell";
 import MatchFilters from "@/components/matches/MatchFilters";
 import MatchGroup from "@/components/matches/MatchGroup";
+import Pagination from "@/components/common/Pagination";
 import type { Prisma } from "@/app/generated/prisma/client";
+
+const RESULTS_PER_PAGE = 50;
 
 export async function generateMetadata({
   params,
@@ -23,11 +26,11 @@ export default async function ResultsPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ game?: string; date?: string }>;
+  searchParams: Promise<{ game?: string; date?: string; page?: string }>;
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const { game: gameSlug, date } = await searchParams;
+  const { game: gameSlug, date, page: pageParam } = await searchParams;
   const t = await getTranslations();
 
   const games = await prisma.game.findMany({ where: { isActive: true } });
@@ -39,13 +42,30 @@ export default async function ResultsPage({
     where.scheduledAt = { gte: start, lte: end };
   }
 
+  // Səhifələmə bazada aparılır, yaddaşda yox. Əvvəl bu sorğu BÜTÜN bitmiş
+  // matçları çəkirdi — seed-dəki 23 matçla bu görünmürdü, amma idxal işlədikcə
+  // sətir sayı artdı və səhifə 5 saniyəyə qalxdı. Sayğac artmağa davam edir,
+  // yəni limitsiz variant vaxt keçdikcə yalnız pisləşir.
+  const total = await prisma.match.count({ where });
+  const totalPages = Math.max(1, Math.ceil(total / RESULTS_PER_PAGE));
+  const page = Math.min(Math.max(1, Number(pageParam) || 1), totalPages);
+  const offset = (page - 1) * RESULTS_PER_PAGE;
+
   const matches = await prisma.match.findMany({
     where,
     orderBy: { scheduledAt: "desc" },
     include: { teamA: true, teamB: true, tournament: { include: { game: true } } },
+    take: RESULTS_PER_PAGE,
+    skip: offset,
   });
 
   const groups = groupBy(matches, (m) => m.tournamentId ?? "none");
+
+  // Filtrlər səhifə nömrəsi ilə birlikdə ünvanda qalmalıdır, yoxsa ikinci
+  // səhifəyə keçəndə seçilmiş oyun və tarix itir.
+  const pageQuery: Record<string, string> = {};
+  if (gameSlug) pageQuery.game = gameSlug;
+  if (date) pageQuery.date = date;
 
   return (
     <PageShell>
@@ -61,6 +81,21 @@ export default async function ResultsPage({
       {Array.from(groups.entries()).map(([key, groupMatches]) => (
         <MatchGroup key={key} tournament={groupMatches[0].tournament} matches={groupMatches} />
       ))}
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        pathname="/results"
+        query={pageQuery}
+        labels={{
+          previous: locale === "az" ? "Əvvəlki" : "Previous",
+          next: locale === "az" ? "Növbəti" : "Next",
+          summary:
+            locale === "az"
+              ? `${total} nəticədən ${offset + 1}–${offset + matches.length}`
+              : `${offset + 1}–${offset + matches.length} of ${total}`,
+        }}
+      />
     </PageShell>
   );
 }
