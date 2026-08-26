@@ -111,6 +111,12 @@ export default async function PlayerHomePage() {
         </div>
       </div>
 
+      <p className="mb-6 max-w-lg text-sm">
+        <Link href="/az/predictions" className="text-brand-via hover:underline">
+          Bütün lider cədvəlinə bax →
+        </Link>
+      </p>
+
       {predictions.length === 0 ? (
         <p className="max-w-lg text-sm text-foreground-muted">Hələ heç bir proqnoz verməmisiniz.</p>
       ) : (

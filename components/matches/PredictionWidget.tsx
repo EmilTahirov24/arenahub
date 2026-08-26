@@ -71,6 +71,7 @@ export default function PredictionWidget({
             </form>
           ))}
         </div>
+        <LeaderboardLink locale={locale} isAz={isAz} />
       </div>
     );
   }
@@ -123,6 +124,25 @@ export default function PredictionWidget({
               : "Your prediction was wrong ✗"}
         </p>
       )}
+      <LeaderboardLink locale={locale} isAz={isAz} />
     </div>
+  );
+}
+
+/**
+ * Lider cədvəlinin yeganə giriş nöqtəsi.
+ *
+ * `/[locale]/predictions` səhifəsi tərcüməsi və sitemap qeydi ilə birlikdə hazır
+ * idi, amma nə menyuda, nə də başqa yerdə linki vardı — yalnız ünvanı əl ilə
+ * yazmaqla açılırdı. Menyu xl-də onsuz da doludur, ona görə link proqnozun özünə,
+ * yəni adamın onunla maraqlandığı yerə qoyulub.
+ */
+function LeaderboardLink({ locale, isAz }: { locale: string; isAz: boolean }) {
+  return (
+    <p className="mt-3 text-center text-xs">
+      <Link href={`/${locale}/predictions`} className="text-brand-via hover:underline">
+        {isAz ? "Lider Cədvəli →" : "Leaderboard →"}
+      </Link>
+    </p>
   );
 }
