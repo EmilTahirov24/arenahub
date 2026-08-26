@@ -336,7 +336,6 @@ model Match {
   teamAScore  Int         @default(0)
   teamBScore  Int         @default(0)
   stage       String?
-  isFeatured  Boolean     @default(false)
   starRating  Int         @default(1)
   streamUrl   String?
   createdAt   DateTime    @default(now())

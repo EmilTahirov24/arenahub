@@ -554,10 +554,9 @@ async function main() {
       stage: string;
       scheduledAt: Date;
       starRating: number;
-      isFeatured?: boolean;
       withFullStats?: boolean;
     }) {
-      const { tournamentId, teamA, teamB, status, bestOf, stage, scheduledAt, starRating, isFeatured, withFullStats } = opts;
+      const { tournamentId, teamA, teamB, status, bestOf, stage, scheduledAt, starRating, withFullStats } = opts;
       const mapPool = [...gameDef.maps].sort(() => Math.random() - 0.5);
       const mapsToPlay = status === "UPCOMING" ? 0 : status === "LIVE" ? Math.min(bestOf, 2) : Math.ceil(bestOf / 2) === 1 ? 1 : Math.min(bestOf, 2 + (Math.random() > 0.5 ? 1 : 0));
 
@@ -577,7 +576,6 @@ async function main() {
           bestOf,
           stage,
           starRating,
-          isFeatured: !!isFeatured,
           streamUrl: status !== "UPCOMING" ? "https://twitch.tv/arenahub" : null,
         },
       });
@@ -674,10 +672,10 @@ async function main() {
     await createMatch({ tournamentId: ongoingTournament.id, teamA: teams[0], teamB: teams[5], status: "FINISHED", bestOf: 1, stage: "Group Stage", scheduledAt: daysFromNow(-4), starRating: 3 });
     await createMatch({ tournamentId: ongoingTournament.id, teamA: teams[1], teamB: teams[4], status: "FINISHED", bestOf: 1, stage: "Group Stage", scheduledAt: daysFromNow(-3), starRating: 3 });
     await createMatch({ tournamentId: ongoingTournament.id, teamA: teams[2], teamB: teams[3], status: "FINISHED", bestOf: 1, stage: "Group Stage", scheduledAt: daysFromNow(-2), starRating: 3 });
-    await createMatch({ tournamentId: ongoingTournament.id, teamA: teams[0], teamB: teams[1], status: "LIVE", bestOf: 3, stage: "Quarterfinal", scheduledAt: daysFromNow(0, -0.5), starRating: 5, isFeatured: true, withFullStats: true });
+    await createMatch({ tournamentId: ongoingTournament.id, teamA: teams[0], teamB: teams[1], status: "LIVE", bestOf: 3, stage: "Quarterfinal", scheduledAt: daysFromNow(0, -0.5), starRating: 5, withFullStats: true });
     await createMatch({ tournamentId: ongoingTournament.id, teamA: teams[2], teamB: teams[4], status: "UPCOMING", bestOf: 3, stage: "Quarterfinal", scheduledAt: daysFromNow(0, 4), starRating: 4 });
     await createMatch({ tournamentId: ongoingTournament.id, teamA: teams[3], teamB: teams[5], status: "UPCOMING", bestOf: 3, stage: "Quarterfinal", scheduledAt: daysFromNow(1, 2), starRating: 3 });
-    await createMatch({ tournamentId: ongoingTournament.id, teamA: teams[1], teamB: teams[3], status: "UPCOMING", bestOf: 3, stage: "Semifinal", scheduledAt: daysFromNow(2, 6), starRating: 5, isFeatured: true });
+    await createMatch({ tournamentId: ongoingTournament.id, teamA: teams[1], teamB: teams[3], status: "UPCOMING", bestOf: 3, stage: "Semifinal", scheduledAt: daysFromNow(2, 6), starRating: 5 });
 
     newsPool.push(
       {

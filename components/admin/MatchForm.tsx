@@ -137,10 +137,6 @@ export default function MatchForm({
         <label className={labelClass}>Stream URL</label>
         <input name="streamUrl" defaultValue={match?.streamUrl ?? ""} className={inputClass} />
       </div>
-      <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="isFeatured" defaultChecked={match?.isFeatured ?? false} />
-        Seçilmiş (featured)
-      </label>
       <button type="submit" className={primaryButtonClass}>
         Yadda saxla
       </button>
