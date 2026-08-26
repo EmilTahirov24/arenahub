@@ -47,9 +47,13 @@ export default function ImageUpload({
             —
           </div>
         )}
+        {/* SVG qəsdən yoxdur: server onu rədd edir (aktiv məzmun formatıdır və
+            yüklənən fayllar saytın öz origin-indən verilir). Burada siyahıda
+            saxlamaq adamın faylı seçib yalnız sonra xəta almasına səbəb olurdu —
+            bax app/api/upload/route.ts. */}
         <input
           type="file"
-          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+          accept="image/png,image/jpeg,image/webp"
           onChange={handleChange}
           className="text-sm text-foreground-muted file:mr-3 file:rounded-md file:border-0 file:bg-surface-raised file:px-3 file:py-1.5 file:text-sm file:text-foreground hover:file:bg-border-subtle"
         />
