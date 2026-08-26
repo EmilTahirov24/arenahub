@@ -13,7 +13,10 @@ function adData(formData: FormData) {
 
   return {
     name: String(formData.get("name") ?? ""),
-    placement: String(formData.get("placement") ?? "HEADER") as AdPlacement,
+    // Default HEADER idi, amma o yeri heç bir AdSlot render etmir — belə banner
+    // yaradılırdı və heç yerdə görünmürdü. Formanın öz siyahısındakı birinci
+    // yer götürülür.
+    placement: String(formData.get("placement") ?? "SIDEBAR_LEFT") as AdPlacement,
     imageUrl,
     linkUrl: String(formData.get("linkUrl") ?? ""),
     altText: String(formData.get("altText") ?? "") || null,
