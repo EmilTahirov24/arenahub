@@ -1,12 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getPlayerSession } from "@/lib/auth";
+import { routing } from "@/i18n/routing";
 
 export async function submitPrediction(matchId: string, teamId: string, matchSlug: string) {
   const session = await getPlayerSession();
-  if (!session) throw new Error("Unauthorized");
+  // Sessiyanın bitməsi adi haldır, proqramçı səhvi deyil — bu vidcetin mesaj
+  // göstərəcək yeri olmadığı üçün adamı girişə göndəririk, xəta səhifəsinə yox.
+  if (!session) redirect("/player/login");
 
   const match = await prisma.match.findUniqueOrThrow({ where: { id: matchId } });
   if (match.status !== "UPCOMING") {
@@ -22,5 +26,10 @@ export async function submitPrediction(matchId: string, teamId: string, matchSlu
     create: { matchId, playerId: session.id, predictedWinnerId: teamId },
   });
 
-  revalidatePath(`/[locale]/matches/${matchSlug}`, "page");
+  // Əvvəl burada `/[locale]/matches/${matchSlug}` yazılmışdı — hərfi `[locale]`
+  // ilə həll olunmuş slug qarışdırılmışdı və belə marşrut olmadığı üçün çağırış
+  // boşa gedirdi. Hər dilin öz həqiqi yolu ayrıca göstərilir.
+  for (const locale of routing.locales) {
+    revalidatePath(`/${locale}/matches/${matchSlug}`);
+  }
 }
