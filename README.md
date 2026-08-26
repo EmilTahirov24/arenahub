@@ -83,7 +83,7 @@ quraşdırma tələb etmir. Server əvvəlcədən qaldırılmalıdır:
 
 ```bash
 npm run dev     # bir terminalda
-npm run e2e     # o birində — dörd dəstin hamısı
+npm run e2e     # o birində — beş dəstin hamısı
 ```
 
 Ayrı-ayrılıqda da qaçır: `npx tsx e2e/02-lifecycle.ts`.
@@ -94,6 +94,7 @@ Ayrı-ayrılıqda da qaçır: `npx tsx e2e/02-lifecycle.ts`.
 | [02-lifecycle](e2e/02-lifecycle.ts) | turnir → matç → canlı xəritə hesabı → qalib → Elo → public tərəf |
 | [03-player](e2e/03-player.ts) | qeydiyyat, e-poçt təsdiqi, profil, komanda, matç proqnozu |
 | [04-admin](e2e/04-admin.ts) | CRUD, xəbər sanitizasiyası, yükləmə limitləri, EDITOR rolu, 390px |
+| [05-claim](e2e/05-claim.ts) | profil sahiblənməsi: bloklar, admin təsdiqi, birləşmə, sonrakı giriş |
 
 Bilməli olduğun iki şey: fikstürlərin adı `E2E` ilə başlayır və hər qaçışın
 əvvəlində silinir (uğursuz qaçış datanı yerində qoyur ki, ona baxa biləsən);
