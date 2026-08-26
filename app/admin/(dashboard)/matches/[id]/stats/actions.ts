@@ -3,9 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/adminAuth";
+import type { AdminSaveState } from "@/lib/adminFormState";
 
 
-export async function upsertPlayerStat(matchId: string, formData: FormData) {
+export async function upsertPlayerStat(
+  matchId: string,
+  _prev: AdminSaveState,
+  formData: FormData,
+): Promise<AdminSaveState> {
   await requireAdmin();
   const playerId = String(formData.get("playerId") ?? "");
   const teamId = String(formData.get("teamId") ?? "");
@@ -24,4 +29,5 @@ export async function upsertPlayerStat(matchId: string, formData: FormData) {
 
   revalidatePath(`/admin/matches/${matchId}/stats`);
   revalidatePath("/[locale]", "layout");
+  return { ok: true };
 }

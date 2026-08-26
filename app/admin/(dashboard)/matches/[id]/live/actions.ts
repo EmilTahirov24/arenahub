@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/adminAuth";
 import { awardPredictionPoints } from "@/lib/predictions";
 import { recomputeTeamRatings } from "@/lib/rating";
+import type { AdminSaveState } from "@/lib/adminFormState";
 import type { MatchStatus, MapStatus, VetoAction } from "@/app/generated/prisma/client";
 
 
@@ -68,13 +69,19 @@ export async function setMatchStatus(matchId: string, formData: FormData) {
   }
 }
 
-export async function upsertMap(matchId: string, formData: FormData) {
+export async function upsertMap(
+  matchId: string,
+  _prev: AdminSaveState,
+  formData: FormData,
+): Promise<AdminSaveState> {
   await requireAdmin();
   const mapId = String(formData.get("mapId") ?? "") || null;
   const teamAScore = Number(formData.get("teamAScore") ?? 0);
   const teamBScore = Number(formData.get("teamBScore") ?? 0);
   const status = String(formData.get("status") ?? "LIVE") as MapStatus;
-  const mapName = String(formData.get("mapName") ?? "");
+  const mapName = String(formData.get("mapName") ?? "").trim();
+
+  if (!mapName) return { error: "Xəritə adı boş ola bilməz" };
 
   const match = await prisma.match.findUniqueOrThrow({ where: { id: matchId } });
   let winnerId: string | null = null;
@@ -93,6 +100,7 @@ export async function upsertMap(matchId: string, formData: FormData) {
 
   await recomputeMatchScore(matchId);
   revalidateMatch(matchId);
+  return { ok: true };
 }
 
 export async function deleteMap(matchId: string, mapId: string) {
