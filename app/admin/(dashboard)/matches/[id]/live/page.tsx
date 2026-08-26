@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { inputClass, labelClass, primaryButtonClass, secondaryButtonClass, dangerButtonClass } from "@/components/admin/formStyles";
+import AdminRowForm from "@/components/admin/AdminRowForm";
 import { setMatchStatus, upsertMap, deleteMap, addVetoStep, deleteVetoStep } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -59,7 +60,18 @@ export default async function MatchLiveControlPage({ params }: { params: Promise
       <h2 className="font-display mb-3 text-lg font-bold">Xəritələr</h2>
       <div className="mb-4 space-y-3">
         {match.maps.map((map) => (
-          <form key={map.id} action={saveMap} className="rounded-lg border border-border-subtle bg-surface p-3">
+          <AdminRowForm
+            key={map.id}
+            action={saveMap}
+            submitLabel="Yadda saxla"
+            submitClassName={primaryButtonClass}
+            className="rounded-lg border border-border-subtle bg-surface p-3"
+            trailing={
+              <button type="submit" formAction={removeMap.bind(null, map.id)} className={dangerButtonClass}>
+                Sil
+              </button>
+            }
+          >
             <input type="hidden" name="mapId" value={map.id} />
             <div className="mb-2 flex items-center gap-2">
               <input name="mapName" defaultValue={map.mapName} className={`${inputClass} min-w-0 flex-1`} />
@@ -78,19 +90,16 @@ export default async function MatchLiveControlPage({ params }: { params: Promise
               <input name="teamBScore" type="number" min={0} defaultValue={map.teamBScore} className={`${inputClass} w-20`} />
               <span className="text-xs text-foreground-muted">{match.teamB.name}</span>
             </div>
-            <div className="flex gap-2">
-              <button type="submit" className={primaryButtonClass}>
-                Yadda saxla
-              </button>
-              <button type="submit" formAction={removeMap.bind(null, map.id)} className={dangerButtonClass}>
-                Sil
-              </button>
-            </div>
-          </form>
+          </AdminRowForm>
         ))}
       </div>
 
-      <form action={saveMap} className="mb-8 rounded-lg border border-dashed border-border-subtle p-3">
+      <AdminRowForm
+        action={saveMap}
+        submitLabel="+ Əlavə et"
+        submitClassName={secondaryButtonClass}
+        className="mb-8 rounded-lg border border-dashed border-border-subtle p-3"
+      >
         <p className={labelClass}>Yeni xəritə əlavə et</p>
         <div className="mb-2 flex items-center gap-2">
           <input name="mapName" placeholder="Mirage, Game 1..." required className={`${inputClass} min-w-0 flex-1`} />
@@ -107,10 +116,7 @@ export default async function MatchLiveControlPage({ params }: { params: Promise
           <span className="mx-2 text-foreground-muted">—</span>
           <input name="teamBScore" type="number" min={0} defaultValue={0} className={`${inputClass} w-20`} />
         </div>
-        <button type="submit" className={secondaryButtonClass}>
-          + Əlavə et
-        </button>
-      </form>
+      </AdminRowForm>
 
       <h2 className="font-display mb-3 text-lg font-bold">Veto</h2>
       <div className="mb-4 space-y-1">

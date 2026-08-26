@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, requireSuperAdmin } from "@/lib/adminAuth";
+import type { AdminSaveState } from "@/lib/adminFormState";
 import type { TournamentTier, TournamentStatus } from "@/app/generated/prisma/client";
 
 
@@ -63,15 +64,24 @@ export async function addParticipant(tournamentId: string, formData: FormData) {
 }
 
 /** Placement decides which prize range a team falls into on the public page. */
-export async function setParticipantPlacement(tournamentId: string, participantId: string, formData: FormData) {
+export async function setParticipantPlacement(
+  tournamentId: string,
+  participantId: string,
+  _prev: AdminSaveState,
+  formData: FormData,
+): Promise<AdminSaveState> {
   await requireAdmin();
   const raw = String(formData.get("placement") ?? "").trim();
+  if (raw !== "" && !Number.isFinite(Number(raw))) {
+    return { error: "Yer rəqəm olmalıdır" };
+  }
   await prisma.tournamentParticipant.update({
     where: { id: participantId },
     data: { placement: raw === "" ? null : Number(raw) },
   });
   revalidatePath(`/admin/tournaments/${tournamentId}`);
   revalidatePath("/[locale]", "layout");
+  return { ok: true };
 }
 
 export async function addPrize(tournamentId: string, formData: FormData) {

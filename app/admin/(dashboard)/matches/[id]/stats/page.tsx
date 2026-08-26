@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { inputClass, primaryButtonClass } from "@/components/admin/formStyles";
+import AdminRowForm from "@/components/admin/AdminRowForm";
 import { upsertPlayerStat } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +40,13 @@ export default async function MatchStatsPage({ params }: { params: Promise<{ id:
             {roster.map((m) => {
               const stat = statByPlayer.get(m.playerId);
               return (
-                <form key={m.playerId} action={save} className="flex flex-wrap items-center gap-2 rounded-lg border border-border-subtle bg-surface p-2">
+                <AdminRowForm
+                  key={m.playerId}
+                  action={save}
+                  submitLabel="Saxla"
+                  submitClassName={primaryButtonClass}
+                  className="flex flex-wrap items-center gap-2 rounded-lg border border-border-subtle bg-surface p-2"
+                >
                   <input type="hidden" name="playerId" value={m.playerId} />
                   <input type="hidden" name="teamId" value={team.id} />
                   <span className="w-32 shrink-0 text-sm">{m.player.nickname}</span>
@@ -54,10 +61,7 @@ export default async function MatchStatsPage({ params }: { params: Promise<{ id:
                     defaultValue={stat?.rating ?? ""}
                     className={`${inputClass} w-20`}
                   />
-                  <button type="submit" className={primaryButtonClass}>
-                    Saxla
-                  </button>
-                </form>
+                </AdminRowForm>
               );
             })}
             {roster.length === 0 && <p className="text-sm text-foreground-muted">Tərkib boşdur.</p>}

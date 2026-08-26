@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import TournamentForm from "@/components/admin/TournamentForm";
+import AdminRowForm from "@/components/admin/AdminRowForm";
 import { updateTournament, deleteTournament, addParticipant, removeParticipant, setParticipantPlacement, addPrize, removePrize } from "../actions";
 import { placeRangeLabel, formatMoney } from "@/lib/prizes";
 import { dangerButtonClass, inputClass, labelClass, secondaryButtonClass } from "@/components/admin/formStyles";
@@ -51,7 +52,12 @@ export default async function EditTournamentPage({ params }: { params: Promise<{
                 {p.team.name} {p.seed != null && <span className="text-foreground-muted">· seed {p.seed}</span>}
               </span>
               {/* Placement drives the prize each team is shown, via the breakdown below. */}
-              <form action={setPlacementWithId.bind(null, p.id)} className="flex items-center gap-1">
+              <AdminRowForm
+                action={setPlacementWithId.bind(null, p.id)}
+                submitLabel="yaz"
+                submitClassName="text-xs text-brand-via hover:underline disabled:opacity-60"
+                className="flex items-center gap-1"
+              >
                 <input
                   name="placement"
                   type="number"
@@ -60,10 +66,7 @@ export default async function EditTournamentPage({ params }: { params: Promise<{
                   defaultValue={p.placement ?? ""}
                   className="w-20 rounded-md border border-border-subtle bg-background px-2 py-1 text-sm"
                 />
-                <button type="submit" className="text-xs text-brand-via hover:underline">
-                  yaz
-                </button>
-              </form>
+              </AdminRowForm>
               <form action={removeParticipantWithId.bind(null, p.id)}>
                 <button type="submit" className="text-xs text-live hover:underline">
                   çıxar
