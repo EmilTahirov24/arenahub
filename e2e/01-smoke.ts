@@ -18,7 +18,20 @@ import {
   reportProblems,
   assertNotErrorPage,
   gotoPage,
+  visibleText,
 } from "./_lib";
+import azMessages from "../messages/az.json";
+import enMessages from "../messages/en.json";
+
+/** İç-içə açarları "footer.terms" şəklinə salır. */
+function flatten(obj: Record<string, unknown>, prefix = ""): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v && typeof v === "object") Object.assign(out, flatten(v as Record<string, unknown>, `${prefix}${k}.`));
+    else out[`${prefix}${k}`] = String(v);
+  }
+  return out;
+}
 
 const STATIC_PATHS = [
   "",
@@ -71,6 +84,24 @@ async function main() {
       const res = await gotoPage(page, `${BASE}${target}`);
       assert(res && res.status() === 200, `HTTP ${res?.status()} — ${target}`);
       await assertNotErrorPage(page);
+    });
+  }
+
+  console.log("\nİngilis səhifələrinə azərbaycanca mətn sızmır\n");
+
+  // Hərf üzrə axtarış yalan siqnal verir: real komanda adlarında da «ə» var
+  // (yerli səhnə komandaları). Ona görə ölçü kimi tərcümə faylının özü götürülür
+  // — az.json-dakı hər dəyər /en-də görünürsə, deməli tərcümə sızır.
+  const azOnly = Object.entries(flatten(azMessages))
+    .filter(([key, value]) => flatten(enMessages)[key] !== value)
+    .map(([, value]) => value);
+
+  for (const path of ["", "/matches", "/teams", "/players", "/news", "/terms", "/privacy"]) {
+    await check(`en${path || "/"} azərbaycanca sətir saxlamır`, async () => {
+      await gotoPage(page, `${BASE}/en${path}`);
+      const body = await visibleText(page);
+      const leaked = azOnly.filter((s) => s.length > 3 && body.includes(s));
+      assert(leaked.length === 0, `tərcümə olunmamış: ${leaked.join(" · ")}`);
     });
   }
 

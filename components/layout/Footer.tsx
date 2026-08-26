@@ -36,10 +36,10 @@ export default async function Footer() {
             </a>
           </span>
           <Link href="/terms" className="hover:text-foreground hover:underline">
-            İstifadə Şərtləri
+            {t("footer.terms")}
           </Link>
           <Link href="/privacy" className="hover:text-foreground hover:underline">
-            Məxfilik Siyasəti
+            {t("footer.privacy")}
           </Link>
         </div>
       </div>
