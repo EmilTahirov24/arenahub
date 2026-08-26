@@ -22,6 +22,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { fetchMatchTicker, type LiquipediaOptions, type ParsedMatch } from "../lib/liquipedia";
 import { indexByOrg, orgKey } from "../lib/orgNames";
 import { syncMaps } from "../lib/matchMaps";
+import { recordImportRun } from "../lib/importRun";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -81,7 +82,7 @@ function statusOf(m: ParsedMatch, at: Date): "FINISHED" | "LIVE" | "UPCOMING" | 
   return at.getTime() - started < LIVE_WINDOW_MS ? "LIVE" : null;
 }
 
-async function main() {
+async function main(): Promise<{ written: number; note: string }> {
   const apply = process.argv.includes("--apply");
   console.log(apply ? "REJIM: yazma (--apply)\n" : "REJIM: quru işlətmə — heç nə yazılmır\n");
 
@@ -291,9 +292,18 @@ async function main() {
   if (swept) console.log(`${swept} tərk edilmiş matç ${apply ? "silindi" : "silinəcək"}.`);
   if (problems.length) console.log(`\nProblemlər:\n  ` + problems.join("\n  "));
   if (!apply) console.log("\nTətbiq etmək üçün: --apply");
+
+  return {
+    written,
+    note:
+      `${written} matç, ${mapRows} xəritə, ${swept} təmizləmə` +
+      (problems.length ? `; ${problems.length} problem` : ""),
+  };
 }
 
-main()
+// Qeyd yalnız --apply ilə yazılır: quru işlətmə lokal yoxlamadır və sağlamlıq
+// tarixçəsini korlamamalıdır.
+(process.argv.includes("--apply") ? recordImportRun(prisma, "import-live", main) : main())
   .then(() => prisma.$disconnect())
   .catch(async (e) => {
     console.error(e);

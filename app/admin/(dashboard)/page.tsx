@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { pendingClaimCount } from "@/lib/profileClaims";
+import { importHealth, IMPORT_STALE_AFTER_MINUTES } from "@/lib/importRun";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,8 @@ export default async function AdminDashboardPage() {
     pendingClaimCount(),
   ]);
 
+  const health = await importHealth(prisma);
+
   // Turnirlər və müraciətlər menyuda öz bölmələri olmasına baxmayaraq burada
   // görünmürdü. Müraciətlər xüsusilə vacibdir: gözləyən müraciət insanın
   // cavab gözlədiyi yeganə yerdir, ona görə sıfırdan böyük olanda seçilir.
@@ -33,9 +36,46 @@ export default async function AdminDashboardPage() {
     { label: "Gözləyən müraciətlər", value: claims, href: "/admin/claims", waiting: claims > 0 },
   ];
 
+  const ago = (m: number) =>
+    m < 60 ? `${m} dəqiqə əvvəl` : `${Math.floor(m / 60)} saat ${m % 60} dəqiqə əvvəl`;
+
   return (
     <div>
       <h1 className="font-display mb-6 text-2xl font-bold">Dashboard</h1>
+
+      {/* Saytın bütün dəyəri təzə matç datasıdır, o data isə GitHub Actions-da
+          qaçan bir işdən asılıdır. İş sınsa və ya söndürülsə, sayt səssizcə
+          köhnəlir — səhifələr normal görünür, sadəcə heç nə dəyişmir. Vəziyyət
+          burada göstərilir ki, panelə girən adam onu görməmiş ötüşməsin. */}
+      <div
+        className={`mb-8 rounded-lg border p-4 ${
+          health.stale ? "border-live bg-live/10" : "border-border-subtle bg-surface"
+        }`}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-sm font-semibold">Matç idxalı</span>
+          <span className={`text-sm ${health.stale ? "text-live" : "text-positive"}`}>
+            {health.minutesSinceOk === null
+              ? "heç vaxt qaçmayıb"
+              : health.stale
+                ? `${ago(health.minutesSinceOk)} — dayanmış ola bilər`
+                : `son uğurlu qaçış ${ago(health.minutesSinceOk)}`}
+          </span>
+        </div>
+        {health.lastNote && (
+          <p className="mt-1 text-xs text-foreground-muted">
+            {health.lastOk === false ? "Sonuncu qaçış uğursuz: " : "Sonuncu qaçış: "}
+            {health.lastNote}
+          </p>
+        )}
+        {health.stale && (
+          <p className="mt-2 text-xs text-foreground-muted">
+            {IMPORT_STALE_AFTER_MINUTES} dəqiqədən çoxdur uğurlu idxal yoxdur. GitHub Actions-da
+            «Import live matches» işinə baxın — 60 gün hərəkətsizlikdən sonra GitHub cədvəlli
+            işləri özü söndürür.
+          </p>
+        )}
+      </div>
 
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7">
         {stats.map((s) => (

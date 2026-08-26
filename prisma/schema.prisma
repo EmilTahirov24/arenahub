@@ -524,3 +524,23 @@ model AdminUser {
   newsArticles  NewsArticle[]
   reviewedClaims ProfileClaim[]
 }
+
+/// İdxalın hər qaçışının qeydi.
+///
+/// Matçların `updatedAt`-i ürək döyüntüsü kimi işləmir: idxal yalnız nəyisə
+/// dəyişəndə sətirə toxunur, sakit gecə saatlarında isə heç nə dəyişmir — yəni
+/// "son dəyişiklik 3 saat əvvəldir" normal haldır və həyəcan siqnalı ola bilməz.
+/// Bu cədvəl isə hər qaçışda yazılır, ona görə susmaq həqiqətən problem deməkdir.
+model ImportRun {
+  id         String    @id @default(cuid())
+  script     String
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  ok         Boolean   @default(false)
+  /// Yazılan sətir sayı — "yaşıl qaçdı, amma heç nə gətirmədi" halını tutur.
+  written    Int       @default(0)
+  /// Xəta mətni, yaxud qısa xülasə.
+  note       String?
+
+  @@index([script, startedAt])
+}
