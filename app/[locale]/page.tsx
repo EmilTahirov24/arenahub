@@ -12,7 +12,10 @@ import GameChip from "@/components/common/GameChip";
 import AutoRefresh from "@/components/live/AutoRefresh";
 import { ratingDelta } from "@/lib/elo";
 
-export const dynamic = "force-dynamic";
+// İdxal saatda bir dəfə işləyir, admin dəyişiklikləri isə revalidatePath ilə
+// dərhal ləğv olunur — ona görə 60 saniyəlik pəncərə datanı köhnəltmir, əvəzində
+// hər sorğuda təkrarlanan baza işini aradan qaldırır.
+export const revalidate = 60;
 
 export async function generateMetadata({
   params,

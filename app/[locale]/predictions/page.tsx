@@ -4,7 +4,10 @@ import { prisma } from "@/lib/prisma";
 import PageShell from "@/components/layout/PageShell";
 import CountryFlag from "@/components/common/CountryFlag";
 
-export const dynamic = "force-dynamic";
+// İdxal saatda bir dəfə işləyir, admin dəyişiklikləri isə revalidatePath ilə
+// dərhal ləğv olunur — ona görə 300 saniyəlik pəncərə datanı köhnəltmir, əvəzində
+// hər sorğuda təkrarlanan baza işini aradan qaldırır.
+export const revalidate = 300;
 
 export async function generateMetadata({
   params,
