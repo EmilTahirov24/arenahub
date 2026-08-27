@@ -11,8 +11,6 @@ import SocialLinks from "@/components/players/SocialLinks";
 import PendingInvites from "@/components/team/PendingInvites";
 import { primaryButtonClass, secondaryButtonClass } from "@/components/admin/formStyles";
 
-export const dynamic = "force-dynamic";
-
 /**
  * Your own profile, shown the way a visitor sees it.
  *

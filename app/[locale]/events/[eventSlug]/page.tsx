@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { cacheLife } from "next/cache";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import Image from "next/image";
@@ -12,11 +13,6 @@ import Bracket from "@/components/events/Bracket";
 import { placeRangeLabel, formatMoney, prizeForPlacement } from "@/lib/prizes";
 
 const BRACKET_STAGES = new Set(["round of 16", "quarterfinal", "semifinal", "3rd place decider", "final"]);
-
-// İdxal saatda bir dəfə işləyir, admin dəyişiklikləri isə revalidatePath ilə
-// dərhal ləğv olunur — ona görə 300 saniyəlik pəncərə datanı köhnəltmir, əvəzində
-// hər sorğuda təkrarlanan baza işini aradan qaldırır.
-export const revalidate = 300;
 
 export async function generateMetadata({
   params,
@@ -34,6 +30,11 @@ export default async function EventDetailPage({
 }: {
   params: Promise<{ locale: string; eventSlug: string }>;
 }) {
+  "use cache";
+  // İdxal saatda bir dəfə işləyir, admin dəyişiklikləri isə revalidatePath ilə
+  // dərhal ləğv olunur — ona görə bir dəqiqəlik pəncərə datanı köhnəltmir.
+  cacheLife("minutes");
+
   const { locale, eventSlug } = await params;
   setRequestLocale(locale);
   const t = await getTranslations();

@@ -3,8 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { pendingClaimCount } from "@/lib/profileClaims";
 import { importHealth, IMPORT_STALE_AFTER_MINUTES } from "@/lib/importRun";
 
-export const dynamic = "force-dynamic";
-
 export default async function AdminDashboardPage() {
   const [teams, players, matches, liveMatches, news, ads, tournaments, claims] = await Promise.all([
     prisma.team.count(),

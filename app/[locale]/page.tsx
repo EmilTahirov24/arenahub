@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cacheLife } from "next/cache";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { Link } from "@/i18n/navigation";
@@ -11,11 +12,6 @@ import CountryFlag from "@/components/common/CountryFlag";
 import GameChip from "@/components/common/GameChip";
 import AutoRefresh from "@/components/live/AutoRefresh";
 import { ratingDelta } from "@/lib/elo";
-
-// İdxal saatda bir dəfə işləyir, admin dəyişiklikləri isə revalidatePath ilə
-// dərhal ləğv olunur — ona görə 60 saniyəlik pəncərə datanı köhnəltmir, əvəzində
-// hər sorğuda təkrarlanan baza işini aradan qaldırır.
-export const revalidate = 60;
 
 export async function generateMetadata({
   params,
@@ -40,6 +36,11 @@ function SectionHead({ title, href, label }: { title: string; href: string; labe
 }
 
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
+  "use cache";
+  // İdxal saatda bir dəfə işləyir, admin dəyişiklikləri isə revalidatePath ilə
+  // dərhal ləğv olunur — ona görə bir dəqiqəlik pəncərə datanı köhnəltmir.
+  cacheLife("minutes");
+
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations();

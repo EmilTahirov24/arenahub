@@ -1,4 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { cacheLife } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import PageShell from "@/components/layout/PageShell";
 import TeamAvatar from "@/components/common/TeamAvatar";
@@ -9,11 +10,6 @@ import NewsCard from "@/components/news/NewsCard";
 import MatchCard from "@/components/matches/MatchCard";
 import { Link } from "@/i18n/navigation";
 import type { Metadata } from "next";
-
-// İdxal saatda bir dəfə işləyir, admin dəyişiklikləri isə revalidatePath ilə
-// dərhal ləğv olunur — ona görə 300 saniyəlik pəncərə datanı köhnəltmir, əvəzində
-// hər sorğuda təkrarlanan baza işini aradan qaldırır.
-export const revalidate = 300;
 
 const LOCAL_COUNTRY = "AZ";
 
@@ -32,6 +28,11 @@ export default async function LocalScenePage({
 }: {
   params: Promise<{ locale: string }>;
 }) {
+  "use cache";
+  // İdxal saatda bir dəfə işləyir, admin dəyişiklikləri isə revalidatePath ilə
+  // dərhal ləğv olunur — ona görə bir dəqiqəlik pəncərə datanı köhnəltmir.
+  cacheLife("minutes");
+
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations();

@@ -7,8 +7,6 @@ import { siteUrl } from "@/lib/siteUrl";
 // Without this Next prerenders the sitemap at build time, so every match, news
 // article and player added after a deploy stays invisible to crawlers until the
 // next build. Only crawlers fetch this route, so querying per request is cheap.
-export const dynamic = "force-dynamic";
-
 const STATIC_PATHS = [
   "",
   "/matches",

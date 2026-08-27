@@ -5,8 +5,6 @@ import { Link } from "@/i18n/navigation";
 import PageShell from "@/components/layout/PageShell";
 import NewsCard from "@/components/news/NewsCard";
 
-export const dynamic = "force-dynamic";
-
 export async function generateMetadata({
   params,
 }: {

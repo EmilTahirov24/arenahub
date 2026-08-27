@@ -4,8 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
 import { primaryButtonClass } from "@/components/admin/formStyles";
 
-export const dynamic = "force-dynamic";
-
 export default async function AdminUsersPage() {
   const session = await getAdminSession();
   if (!session || session.role !== "SUPER_ADMIN") redirect("/admin");

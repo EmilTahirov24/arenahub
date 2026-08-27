@@ -2,8 +2,6 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { primaryButtonClass, secondaryButtonClass } from "@/components/admin/formStyles";
 
-export const dynamic = "force-dynamic";
-
 const STATUS_COLOR: Record<string, string> = {
   LIVE: "text-live",
   UPCOMING: "text-foreground-muted",

@@ -5,8 +5,6 @@ import InvitePlayerSearch from "@/components/team/InvitePlayerSearch";
 import OwnPlayerForm from "@/components/team/OwnPlayerForm";
 import { createOwnPlayer } from "../actions";
 
-export const dynamic = "force-dynamic";
-
 export default async function NewOwnPlayerPage() {
   const session = await getPlayerSession();
   if (!session) redirect("/player/login");

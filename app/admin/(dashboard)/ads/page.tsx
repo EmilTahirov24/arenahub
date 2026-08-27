@@ -3,8 +3,6 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { primaryButtonClass } from "@/components/admin/formStyles";
 
-export const dynamic = "force-dynamic";
-
 export default async function AdminAdsPage() {
   const ads = await prisma.adBanner.findMany({ orderBy: { createdAt: "desc" } });
 

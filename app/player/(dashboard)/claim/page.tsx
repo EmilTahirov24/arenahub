@@ -5,8 +5,6 @@ import ClaimProfileSearch from "@/components/player/ClaimProfileSearch";
 import CountryFlag from "@/components/common/CountryFlag";
 import { withdrawProfileClaim } from "./actions";
 
-export const dynamic = "force-dynamic";
-
 const STATUS_LABEL = {
   PENDING: "Baxılır",
   APPROVED: "Təsdiqləndi",

@@ -6,8 +6,6 @@ import { primaryButtonClass } from "@/components/admin/formStyles";
 import CountryFlag from "@/components/common/CountryFlag";
 import { removeOwnPlayer, cancelTeamInvite } from "./actions";
 
-export const dynamic = "force-dynamic";
-
 export default async function PlayerTeamRosterPage() {
   const session = await getPlayerSession();
   if (!session) redirect("/player/login");

@@ -8,6 +8,7 @@ import VerifyEmailBanner from "@/components/auth/VerifyEmailBanner";
 import BackToSite from "@/components/layout/BackToSite";
 import { playerLogout, resendPlayerVerificationEmail } from "./actions";
 
+
 export default async function PlayerDashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getPlayerSession();
   if (!session) redirect("/player/login");

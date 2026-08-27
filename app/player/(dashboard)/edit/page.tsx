@@ -9,8 +9,6 @@ import SocialInputs from "@/components/players/SocialInputs";
 import ProfileForm from "@/components/players/ProfileForm";
 import { inputClass, labelClass } from "@/components/admin/formStyles";
 
-export const dynamic = "force-dynamic";
-
 const STATUSES = ["ACTIVE", "BENCHED", "RETIRED"] as const;
 
 /**

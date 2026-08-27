@@ -10,8 +10,6 @@ import CountryFlag from "@/components/common/CountryFlag";
 import { teamStatRows } from "@/lib/teamStats";
 import { playerStatRows } from "@/lib/playerStats";
 
-export const dynamic = "force-dynamic";
-
 export async function generateMetadata({
   params,
 }: {

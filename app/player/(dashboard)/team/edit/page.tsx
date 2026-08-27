@@ -7,8 +7,6 @@ import CountrySelect from "@/components/forms/CountrySelect";
 import TeamSettingsForm from "@/components/team/TeamSettingsForm";
 import { inputClass, labelClass } from "@/components/admin/formStyles";
 
-export const dynamic = "force-dynamic";
-
 /**
  * Team settings, which used to be the whole of /player/team for an owner.
  *

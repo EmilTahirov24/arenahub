@@ -2,8 +2,6 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { primaryButtonClass } from "@/components/admin/formStyles";
 
-export const dynamic = "force-dynamic";
-
 const TIER_COLOR: Record<string, string> = { S: "#facc15", A: "#22d3ee", B: "#a3a3a3", C: "#78716c" };
 
 export default async function AdminTournamentsPage() {

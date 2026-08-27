@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { cacheLife } from "next/cache";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
@@ -11,11 +12,6 @@ import TeamAvatar from "@/components/common/TeamAvatar";
 import GameChip from "@/components/common/GameChip";
 import CountryFlag from "@/components/common/CountryFlag";
 import SocialLinks from "@/components/players/SocialLinks";
-
-// İdxal saatda bir dəfə işləyir, admin dəyişiklikləri isə revalidatePath ilə
-// dərhal ləğv olunur — ona görə 300 saniyəlik pəncərə datanı köhnəltmir, əvəzində
-// hər sorğuda təkrarlanan baza işini aradan qaldırır.
-export const revalidate = 300;
 
 function average(values: number[]) {
   if (values.length === 0) return null;
@@ -38,6 +34,11 @@ export default async function PlayerProfilePage({
 }: {
   params: Promise<{ locale: string; playerSlug: string }>;
 }) {
+  "use cache";
+  // İdxal saatda bir dəfə işləyir, admin dəyişiklikləri isə revalidatePath ilə
+  // dərhal ləğv olunur — ona görə bir dəqiqəlik pəncərə datanı köhnəltmir.
+  cacheLife("minutes");
+
   const { locale, playerSlug } = await params;
   setRequestLocale(locale);
   const t = await getTranslations();

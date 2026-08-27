@@ -16,8 +16,6 @@ import { getPlayerSession } from "@/lib/auth";
  * oyunçu və komanda səhifələrindəki "Redaktə et" linki üçündür: onlar da eyni
  * səbəbdən sessiyanı serverdə oxumağı dayandırdı.
  */
-export const dynamic = "force-dynamic";
-
 export async function GET() {
   const session = await getPlayerSession();
   if (!session) {

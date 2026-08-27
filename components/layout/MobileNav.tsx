@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "@/i18n/navigation";
 import ThemeToggle from "./ThemeToggle";
@@ -119,7 +119,12 @@ export default function MobileNav({
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <ThemeToggle />
-                  <LocaleSwitcher />
+                  {/* Header-dəki ilə eyni səbəb: LocaleSwitcher usePathname
+                      oxuyur və öz Suspense sərhəddi olmadan səhifənin
+                      prerender olunmasına mane olur. */}
+                  <Suspense fallback={<div aria-hidden className="h-8 w-16 rounded-md bg-surface" />}>
+                    <LocaleSwitcher />
+                  </Suspense>
                 </div>
                 <button
                   type="button"
