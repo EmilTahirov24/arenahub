@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import LocaleSwitcher from "./LocaleSwitcher";
 import ThemeToggle from "./ThemeToggle";
@@ -32,11 +32,18 @@ const LOCAL_NAV_ITEM = "local";
 
 export default async function Header() {
   const t = await getTranslations();
+  const locale = await getLocale();
+
+  // /player [locale] seqmentindən kənardadır, yəni dil ünvandan gəlmir. Onu
+  // linkdə ötürürük ki, ingilis saytdan gələn adam ingilis forma görsün —
+  // xüsusilə şərtlər qutusunun linkləri onun oxuya bildiyi dilə getsin.
+  // Azərbaycanca default olduğu üçün ona parametr əlavə edilmir.
+  const langQuery = locale === "az" ? "" : `?lang=${locale}`;
 
   const playerAuth = {
     label: t("auth.player"),
-    loginHref: "/player/login",
-    registerHref: "/player/register",
+    loginHref: `/player/login${langQuery}`,
+    registerHref: `/player/register${langQuery}`,
     loginLabel: t("auth.login"),
     registerLabel: t("auth.register"),
   };

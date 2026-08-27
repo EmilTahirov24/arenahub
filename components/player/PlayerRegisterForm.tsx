@@ -5,23 +5,33 @@ import Link from "next/link";
 import CountrySelect from "@/components/forms/CountrySelect";
 import { playerRegister } from "@/app/player/register/actions";
 import type { Game } from "@/app/generated/prisma/client";
+import type { AuthLang, AuthText } from "@/lib/authStrings";
 
-export default function PlayerRegisterForm({ games }: { games: Game[] }) {
+export default function PlayerRegisterForm({
+  games,
+  lang,
+  text,
+}: {
+  games: Game[];
+  lang: AuthLang;
+  text: AuthText;
+}) {
   const [state, formAction, pending] = useActionState(playerRegister, undefined);
+  const q = lang === "az" ? "" : `?lang=${lang}`;
 
   return (
     <form action={formAction} className="w-full max-w-sm rounded-xl border border-border-subtle bg-surface p-6">
       <h1 className="font-display mb-1 text-xl font-bold">
-        <span className="brand-gradient-text">ArenaHub</span> Oyunçu
+        <span className="brand-gradient-text">ArenaHub</span> {text.brandSuffix}
       </h1>
-      <p className="mb-6 text-sm text-foreground-muted">Oyunçu kimi qeydiyyatdan keçin</p>
+      <p className="mb-6 text-sm text-foreground-muted">{text.registerSubtitle}</p>
 
-      <label className="mb-1 block text-sm font-medium text-foreground-muted">Nickname</label>
+      <label className="mb-1 block text-sm font-medium text-foreground-muted">{text.nickname}</label>
       <input name="nickname" required className="mb-4 w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via" />
 
-      <label className="mb-1 block text-sm font-medium text-foreground-muted">Oyun</label>
+      <label className="mb-1 block text-sm font-medium text-foreground-muted">{text.game}</label>
       <select name="gameId" required className="mb-4 w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via">
-        <option value="">Seçin</option>
+        <option value="">{text.choose}</option>
         {games.map((g) => (
           <option key={g.id} value={g.id}>
             {g.name}
@@ -29,41 +39,45 @@ export default function PlayerRegisterForm({ games }: { games: Game[] }) {
         ))}
       </select>
 
-      <label className="mb-1 block text-sm font-medium text-foreground-muted">Ölkə</label>
+      <label className="mb-1 block text-sm font-medium text-foreground-muted">{text.country}</label>
       <div className="mb-4">
         <CountrySelect className="w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via" />
       </div>
 
-      <label className="mb-1 block text-sm font-medium text-foreground-muted">Email</label>
+      <label className="mb-1 block text-sm font-medium text-foreground-muted">{text.email}</label>
       <input name="email" type="email" required className="mb-4 w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via" />
 
-      <label className="mb-1 block text-sm font-medium text-foreground-muted">Şifrə</label>
+      <label className="mb-1 block text-sm font-medium text-foreground-muted">{text.password}</label>
       <input name="password" type="password" required minLength={6} className="mb-4 w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via" />
 
       <label className="mb-4 flex items-start gap-2 text-xs text-foreground-muted">
         <input type="checkbox" name="terms" required className="mt-0.5" />
+        {/* Linklər adamın gördüyü dildə açılır. Əvvəl /az/terms-ə sabit
+            bağlanmışdı, yəni ingilis saytdan gələn adamdan oxuya bilmədiyi
+            dildə hüquqi mətni qəbul etməsi istənilirdi. */}
         <span>
-          <a href="/az/terms" target="_blank" rel="noopener noreferrer" className="text-brand-via hover:underline">
-            İstifadə Şərtlərini
-          </a>{" "}
-          və{" "}
-          <a href="/az/privacy" target="_blank" rel="noopener noreferrer" className="text-brand-via hover:underline">
-            Məxfilik Siyasətini
-          </a>{" "}
-          oxudum və qəbul edirəm.
+          {text.termsPrefix}
+          <a href={`/${lang}/terms`} target="_blank" rel="noopener noreferrer" className="text-brand-via hover:underline">
+            {text.termsLink}
+          </a>
+          {text.termsAnd}
+          <a href={`/${lang}/privacy`} target="_blank" rel="noopener noreferrer" className="text-brand-via hover:underline">
+            {text.privacyLink}
+          </a>
+          {text.termsSuffix}
         </span>
       </label>
 
       {state?.error && <p className="mb-4 text-sm text-live">{state.error}</p>}
 
       <button type="submit" disabled={pending} className="brand-gradient-bg w-full rounded-md py-2 text-sm font-semibold text-white disabled:opacity-60">
-        {pending ? "..." : "Qeydiyyatdan keç"}
+        {pending ? text.working : text.registerSubmit}
       </button>
 
       <p className="mt-4 text-center text-xs text-foreground-muted">
-        Artıq hesabınız var?{" "}
-        <Link href="/player/login" className="text-brand-via hover:underline">
-          Daxil olun
+        {text.haveAccount}{" "}
+        <Link href={`/player/login${q}`} className="text-brand-via hover:underline">
+          {text.goLogin}
         </Link>
       </p>
     </form>

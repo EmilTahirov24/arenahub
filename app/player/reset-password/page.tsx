@@ -1,20 +1,24 @@
 import Link from "next/link";
 import PlayerResetPasswordForm from "@/components/player/PlayerResetPasswordForm";
+import { AUTH_TEXT, pickLang } from "@/lib/authStrings";
 
 export default async function PlayerResetPasswordPage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ token?: string; lang?: string }>;
 }) {
-  const { token } = await searchParams;
+  const { token, lang: raw } = await searchParams;
+  const lang = pickLang(raw);
+  const text = AUTH_TEXT[lang];
+  const q = lang === "az" ? "" : `?lang=${lang}`;
 
   if (!token) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
         <div className="w-full max-w-sm rounded-xl border border-border-subtle bg-surface p-6 text-center">
-          <p className="mb-4 text-sm text-live">Sıfırlama linki etibarsızdır.</p>
-          <Link href="/player/forgot-password" className="text-sm text-brand-via hover:underline">
-            Yenidən sorğu göndər
+          <p className="mb-4 text-sm text-live">{text.resetInvalid}</p>
+          <Link href={`/player/forgot-password${q}`} className="text-sm text-brand-via hover:underline">
+            {text.resetRetry}
           </Link>
         </div>
       </div>
@@ -23,7 +27,7 @@ export default async function PlayerResetPasswordPage({
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-10">
-      <PlayerResetPasswordForm token={token} />
+      <PlayerResetPasswordForm token={token} text={text} />
     </div>
   );
 }
