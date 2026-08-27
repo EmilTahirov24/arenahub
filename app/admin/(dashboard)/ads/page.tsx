@@ -3,6 +3,26 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { primaryButtonClass } from "@/components/admin/formStyles";
 
+/**
+ * Reklam yerini satmaq üçün lazım olan yeganə rəqəmlər.
+ *
+ * Sütunlar sxemdə əvvəldən vardı, amma heç yerdə nə yazılır, nə oxunurdu —
+ * yəni "bu banner nə qədər göstərildi?" sualına cavab yox idi. Sayğaclar indi
+ * brauzerdən gəlir (components/ads/AdImpression.tsx) və klik yönləndirmə
+ * marşrutundan (app/api/ads/[id]/click).
+ *
+ * CTR yalnız göstərilmə olanda hesablanır: sıfıra bölmək əvəzinə tire qoyulur,
+ * çünki "0%" yanlış təəssürat yaradır — o, pis nəticə deyil, hələ ölçü yoxdur.
+ */
+function formatCount(n: number) {
+  return n.toLocaleString("az-AZ");
+}
+
+function ctr(impressions: number, clicks: number) {
+  if (impressions === 0) return "—";
+  return `${((clicks / impressions) * 100).toFixed(2)}%`;
+}
+
 export default async function AdminAdsPage() {
   const ads = await prisma.adBanner.findMany({ orderBy: { createdAt: "desc" } });
 
@@ -31,6 +51,15 @@ export default async function AdminAdsPage() {
               className="h-8 w-16 rounded object-cover"
             />
             <span className="flex-1 font-medium">{ad.name}</span>
+            <span className="hidden text-xs tabular-nums text-foreground-muted sm:inline">
+              {formatCount(ad.impressions)} göstərilmə
+            </span>
+            <span className="hidden text-xs tabular-nums text-foreground-muted sm:inline">
+              {formatCount(ad.clicks)} klik
+            </span>
+            <span className="w-14 text-right text-xs tabular-nums text-foreground-muted">
+              {ctr(ad.impressions, ad.clicks)}
+            </span>
             <span className="text-xs text-foreground-muted">{ad.placement}</span>
             {ad.isActive ? (
               <span className="text-xs text-foreground-muted">aktiv</span>
