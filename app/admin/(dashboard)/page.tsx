@@ -68,9 +68,11 @@ export default async function AdminDashboardPage() {
         )}
         {health.stale && (
           <p className="mt-2 text-xs text-foreground-muted">
-            {IMPORT_STALE_AFTER_MINUTES} dəqiqədən çoxdur uğurlu idxal yoxdur. GitHub Actions-da
-            «Import live matches» işinə baxın — 60 gün hərəkətsizlikdən sonra GitHub cədvəlli
-            işləri özü söndürür.
+            {Math.round(IMPORT_STALE_AFTER_MINUTES / 60)} saatdan çoxdur uğurlu idxal yoxdur.
+            GitHub Actions-da «Import live matches» işinə baxın. İki adi səbəb var: iş sınıb
+            (qırmızı qaçış görünəcək), ya da 60 gün hərəkətsizlikdən sonra GitHub cədvəlli işləri
+            özü söndürüb. Bir neçə saatlıq fasilə isə normaldır — pulsuz planda cədvəl növbəyə
+            düşür.
           </p>
         )}
       </div>

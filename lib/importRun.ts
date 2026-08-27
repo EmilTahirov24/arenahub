@@ -1,7 +1,19 @@
 import type { PrismaClient } from "../app/generated/prisma/client";
 
-/** İdxal susanda bunu problem saymaq üçün hədd. */
-export const IMPORT_STALE_AFTER_MINUTES = 180;
+/**
+ * İdxal susanda bunu problem saymaq üçün hədd.
+ *
+ * Əvvəl 3 saat idi və yalan həyəcan verirdi. Səbəb tətbiqdə deyil: GitHub-ın
+ * cədvəlli işləri pulsuz planda növbəyə düşür: hər 20 dəqiqə istənilsə də,
+ * faktiki fasilələr ölçüldü — 45 dəqiqədən 5 saat 11 dəqiqəyə qədər. Yəni dörd saatlıq
+ * sükut normal haldır, problem deyil.
+ *
+ * 6 saat seçildi: müşahidə olunan ən pis normal fasilədən yuxarı, amma həqiqi
+ * nasazlığı (iş sınıb, söndürülüb, sirr itib) hələ də bir iş günü içində
+ * tutacaq qədər aşağı. Panel onsuz da dəqiq rəqəmi göstərir — bu hədd yalnız
+ * qırmızı rəngin nə vaxt yanacağını təyin edir.
+ */
+export const IMPORT_STALE_AFTER_MINUTES = 360;
 
 /** Prisma client-i parametr kimi alırıq: skriptlərin öz bağlantısı var. */
 type Db = Pick<PrismaClient, "importRun">;

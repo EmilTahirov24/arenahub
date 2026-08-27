@@ -193,6 +193,27 @@ export async function visibleText(page: Page): Promise<string> {
 }
 
 /**
+ * Yalnız GÖRÜNƏN uyğun elementləri sayır.
+ *
+ * Stream zamanı React tamamlanmış Suspense hissəsini əvvəlcə gizli bir qutuya
+ * yazır, sonra yerinə köçürür. Həmin an DOM-da eyni siyahının İKİ nüsxəsi olur
+ * və adi `locator.count()` ikisini də sayır — gizli olan da DOM-dadır.
+ *
+ * Bu, `/results` səhifələmə yoxlamasını uydurma şəkildə sındırdı: 50 sətir
+ * limiti qüvvədə idi, lakin sayğac 90 gördü. Dəst tək qaçanda səhifə isti
+ * keşdən dərhal gəlirdi və heç vaxt tutulmurdu; tam qaçışda server yüklü olur,
+ * stream uzanır və ölçü düz ortasına düşür. Yəni bu, testin dəyişkən nəticəsi
+ * idi, tətbiqin qüsuru deyil.
+ *
+ * Yuxarı hədd yoxlayan HƏR sayğac bundan keçməlidir. Varlıq ("ən azı bir dənə
+ * var") və yoxluq ("heç biri yoxdur") yoxlamaları təhlükəsizdir: gizli nüsxə
+ * onlarda nə yalan müsbət, nə yalan mənfi yaradır.
+ */
+export function visibleCount(page: Page, selector: string): Promise<number> {
+  return page.locator(`${selector}:visible`).count();
+}
+
+/**
  * Səhifənin məzmununun həqiqətən çəkilməsini gözləyir.
  *
  * `domcontentloaded` yalnız qabığı verir: qalanı stream ilə gəlir.

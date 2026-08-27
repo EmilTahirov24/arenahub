@@ -18,6 +18,7 @@ import {
   report,
   reportProblems,
   visibleText,
+  visibleCount,
   gotoPage,
 } from "./_lib";
 import { prisma } from "../lib/prisma";
@@ -166,7 +167,11 @@ async function main() {
     // Əsas invariant budur: bir səhifə nə qədər data olsa da 50 matçdan çox
     // göstərməməlidir. Səhifələmə linklərinin özü yalnız 50-dən çox nəticə
     // olanda görünür, ona görə ona bağlanmaq lokal bazada yalan siqnal verərdi.
-    const shown = await page.locator('a[href^="/az/matches/"]').count();
+    //
+    // Sayğac görünən elementlərlə məhdudlaşdırılıb: stream ortasında React eyni
+    // siyahını gizli qutuda da saxlayır və adi count() 50 əvəzinə 90 görürdü.
+    // Ətraflı izah _lib.ts-dəki visibleCount-dadır.
+    const shown = await visibleCount(page, 'a[href^="/az/matches/"]');
     assert(shown <= 50, `bir səhifədə ${shown} matç — sorğu limitsizdir`);
 
     await page.locator('a[href*="game="]').first().click();
