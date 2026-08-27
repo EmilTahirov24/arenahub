@@ -20,6 +20,7 @@ import {
   gotoPage,
   visibleText,
 } from "./_lib";
+import { prisma } from "../lib/prisma";
 import azMessages from "../messages/az.json";
 import enMessages from "../messages/en.json";
 
@@ -145,6 +146,55 @@ async function main() {
       assert(r.href?.startsWith("/az/"), `href dil prefiksi olmadan: ${r.href}`);
       assert(r.label && r.type, "nəticədə label və ya type yoxdur");
     }
+  });
+
+  console.log("\nPaylaşım şəkilləri (Open Graph)\n");
+
+  // Link Telegram, Discord və ya X-ə atılanda görünən şəkil. Əvvəl heç biri yox
+  // idi və paylaşılan hər ünvan çılpaq mətn kimi çıxırdı. Şəkil sınsa bunu heç
+  // kim saytda görmür — yalnız paylaşan adam görür, ona görə testi var.
+  async function assertOgImage(path: string, label: string) {
+    const res = await page.request.get(`${BASE}${path}`);
+    assert(res.status() === 200, `${label}: HTTP ${res.status()}`);
+    const type = res.headers()["content-type"] ?? "";
+    assert(type.includes("image/png"), `${label}: content-type ${type}`);
+    // Boş və ya cırıq PNG-ni ölçü ilə tuturuq: satori sınanda kiçik fayl qaytarır.
+    const bytes = (await res.body()).length;
+    assert(bytes > 5000, `${label}: şəkil çox kiçikdir (${bytes} bayt)`);
+  }
+
+  await check("saytın standart paylaşım şəkli çəkilir", async () => {
+    await assertOgImage("/az/opengraph-image", "standart");
+    await assertOgImage("/en/opengraph-image", "standart (en)");
+  });
+
+  await check("matç səhifəsinin öz paylaşım şəkli var", async () => {
+    const m = await prisma.match.findFirstOrThrow({
+      where: { status: "FINISHED" },
+      select: { slug: true },
+      orderBy: { scheduledAt: "desc" },
+    });
+    await assertOgImage(`/az/matches/${m.slug}/opengraph-image`, "matç");
+  });
+
+  await check("xəbərin öz paylaşım şəkli var", async () => {
+    const a = await prisma.newsArticle.findFirst({
+      where: { publishedAt: { not: null } },
+      select: { slug: true },
+    });
+    if (!a) return; // xəbər yoxdursa yoxlanacaq bir şey də yoxdur
+    await assertOgImage(`/az/news/${a.slug}/opengraph-image`, "xəbər");
+  });
+
+  await check("olmayan matç üçün şəkil sınmır, brend şəkli qaytarır", async () => {
+    await assertOgImage("/az/matches/belke-de-yoxdur-12345/opengraph-image", "olmayan matç");
+  });
+
+  await check("səhifənin HEAD-ində og:image mütləq ünvanla göstərilir", async () => {
+    await gotoPage(page, `${BASE}/az`);
+    const content = await page.locator('meta[property="og:image"]').first().getAttribute("content");
+    assert(content, "og:image meta etiketi yoxdur");
+    assert(content!.startsWith("http"), `og:image nisbi ünvandır: ${content}`);
   });
 
   // Bu qəsdən 404-dür, ona görə problem toplayıcısından kənarda saxlanılır.

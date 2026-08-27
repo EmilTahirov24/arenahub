@@ -311,6 +311,54 @@ async function main() {
     assert(alts.includes("E2E banner alt"), "aktiv banner görünmür");
   });
 
+  // Sayğaclar olmadan reklam yeri satıla bilmir: "bu banner nə qədər
+  // göstərildi?" sualına cavab yoxdursa, danışacaq rəqəm də yoxdur.
+  await check("ekranda görünən banner göstərilmə kimi sayılır", async () => {
+    const ad = await prisma.adBanner.findFirstOrThrow({ where: { name: AD } });
+    await prisma.adBanner.update({ where: { id: ad.id }, data: { impressions: 0 } });
+
+    await gotoPage(page, `${BASE}/az`);
+    // Müşahidəçi sahənin yarısının bir saniyə görünməsini tələb edir, ona görə
+    // banner əvvəlcə görünən sahəyə gətirilir, sonra gözlənilir.
+    await page.locator('img[alt="E2E banner alt"]').first().scrollIntoViewIfNeeded();
+    await page.waitForTimeout(1600);
+
+    // Beacon arxa planda göndərilir, yəni yazının gəlməsi bir az çəkə bilər.
+    let count = 0;
+    for (let i = 0; i < 20 && count === 0; i++) {
+      count = (await prisma.adBanner.findUniqueOrThrow({ where: { id: ad.id } })).impressions;
+      if (count === 0) await page.waitForTimeout(400);
+    }
+    assert(count >= 1, "banner ekranda göründü, amma göstərilmə sayılmadı");
+  });
+
+  await check("klik sayılır və reklamçının ünvanına yönləndirir", async () => {
+    const ad = await prisma.adBanner.findFirstOrThrow({ where: { name: AD } });
+    await prisma.adBanner.update({ where: { id: ad.id }, data: { clicks: 0 } });
+
+    const res = await page.request.get(`${BASE}/api/ads/${ad.id}/click`, { maxRedirects: 0 });
+    assert(res.status() === 307 || res.status() === 308 || res.status() === 302,
+      `yönləndirmə gözlənilirdi, HTTP ${res.status()}`);
+    const location = res.headers()["location"];
+    assert(location === "https://example.com/", `yanlış hədəf: ${location}`);
+
+    let clicks = 0;
+    for (let i = 0; i < 20 && clicks === 0; i++) {
+      clicks = (await prisma.adBanner.findUniqueOrThrow({ where: { id: ad.id } })).clicks;
+      if (clicks === 0) await page.waitForTimeout(300);
+    }
+    assert(clicks === 1, `klik sayılmadı (${clicks})`);
+  });
+
+  // Panel rəqəmləri göstərməlidir, yoxsa saymağın mənası yoxdur.
+  await check("reklam siyahısı göstərilmə, klik və CTR göstərir", async () => {
+    await gotoPage(page, `${BASE}/admin/ads`);
+    const body = await visibleText(page);
+    assert(/göstərilmə/.test(body), "göstərilmə sütunu yoxdur");
+    assert(/klik/.test(body), "klik sütunu yoxdur");
+    assert(/%|—/.test(body), "CTR sütunu yoxdur");
+  });
+
   await check("gələcək tarixli banner gizlənir", async () => {
     const ad = await prisma.adBanner.findFirstOrThrow({ where: { name: AD } });
     const future = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);

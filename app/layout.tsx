@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
+import { siteUrl } from "@/lib/siteUrl";
 import "./globals.css";
 
 const inter = Inter({
@@ -15,6 +16,11 @@ const spaceGrotesk = Space_Grotesk({
 const DESCRIPTION = "CS2, Dota 2, Valorant və LoL üçün matçlar, komandalar, oyunçular, xəbərlər və canlı statistika bir yerdə.";
 
 export const metadata: Metadata = {
+  // Paylaşım şəkillərinin ünvanı MÜTLƏQ olmalıdır — Telegram, Discord və X
+  // nisbi yolu aça bilmir. Bu qoyulmasa Next xəbərdarlıq verir və localhost-a,
+  // ya da Vercel-in hər deploy-da dəyişən müvəqqəti domeninə düşür; yəni
+  // paylaşılan köhnə linkin şəkli bir müddət sonra sınır.
+  metadataBase: new URL(siteUrl()),
   title: { default: "ArenaHub", template: "%s — ArenaHub" },
   description: DESCRIPTION,
   openGraph: {

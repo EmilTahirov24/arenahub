@@ -1,4 +1,5 @@
 import Image from "next/image";
+import AdImpression from "@/components/ads/AdImpression";
 import { getAd } from "@/lib/ads";
 import type { AdPlacement } from "@/app/generated/prisma/client";
 
@@ -26,10 +27,15 @@ export default async function AdSlot({
 
   return (
     <div className={`overflow-hidden rounded-lg border border-border-subtle bg-surface ${className}`}>
+      {/* Göstərilmə sayğacı. Qutunun İÇİNDƏ durur, çünki müşahidəçi öz valideyn
+          elementini izləyir — yəni ölçülən şey məhz bu bannerin sahəsidir. */}
+      <AdImpression adId={ad.id} />
       <span className="block px-2 pt-1 text-[10px] uppercase tracking-wide text-foreground-muted/60">
         Reklam
       </span>
-      <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer sponsored">
+      {/* Link reklamçıya birbaşa yox, sayğac marşrutundan keçir — bax
+          app/api/ads/[id]/click/route.ts. */}
+      <a href={`/api/ads/${ad.id}/click`} target="_blank" rel="noopener noreferrer sponsored">
         <Image
           src={ad.imageUrl}
           alt={ad.altText ?? ad.name}
