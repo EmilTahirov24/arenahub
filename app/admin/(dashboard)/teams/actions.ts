@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePublicContent } from "@/lib/cacheTags";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -50,7 +51,7 @@ export async function createTeam(formData: FormData) {
   await assertOwnerFree(data.ownerId);
   await prisma.team.create({ data });
   revalidatePath("/admin/teams");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/admin/teams");
 }
 
@@ -60,7 +61,7 @@ export async function updateTeam(id: string, formData: FormData) {
   await assertOwnerFree(data.ownerId, id);
   await prisma.team.update({ where: { id }, data });
   revalidatePath("/admin/teams");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/admin/teams");
 }
 
@@ -84,7 +85,7 @@ export async function deleteTeam(id: string) {
   await requireSuperAdmin();
   await prisma.team.delete({ where: { id } });
   revalidatePath("/admin/teams");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/admin/teams");
 }
 
@@ -92,5 +93,5 @@ export async function removeFromRoster(teamId: string, membershipId: string) {
   await requireAdmin();
   await prisma.teamMembership.update({ where: { id: membershipId }, data: { leftAt: new Date() } });
   revalidatePath(`/admin/teams/${teamId}`);
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
 }

@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePublicContent } from "@/lib/cacheTags";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { destroySession, getPlayerSession } from "@/lib/auth";
@@ -84,7 +85,7 @@ export async function updateOwnPlayer(
   }
 
   revalidatePath("/player");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
 
   // Saved, but not everything the person typed survived — say which.
   if (rejected.length) {

@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePublicContent } from "@/lib/cacheTags";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -31,7 +32,7 @@ export async function createAd(formData: FormData) {
   await requireAdmin();
   await prisma.adBanner.create({ data: adData(formData) });
   revalidatePath("/admin/ads");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/admin/ads");
 }
 
@@ -39,7 +40,7 @@ export async function updateAd(id: string, formData: FormData) {
   await requireAdmin();
   await prisma.adBanner.update({ where: { id }, data: adData(formData) });
   revalidatePath("/admin/ads");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/admin/ads");
 }
 
@@ -47,6 +48,6 @@ export async function deleteAd(id: string) {
   await requireSuperAdmin();
   await prisma.adBanner.delete({ where: { id } });
   revalidatePath("/admin/ads");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/admin/ads");
 }

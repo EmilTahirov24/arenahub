@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
+import { activeGames, teamsForGame } from "@/lib/cachedQueries";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { prisma } from "@/lib/prisma";
 import { Link } from "@/i18n/navigation";
 import PageShell from "@/components/layout/PageShell";
 import TeamAvatar from "@/components/common/TeamAvatar";
@@ -37,27 +37,10 @@ export default async function TeamsPage({
   const t = await getTranslations();
   const az = locale === "az";
 
-  const games = await prisma.game.findMany({ where: { isActive: true } });
+  const games = await activeGames();
   const activeGame = gameSlug ?? games[0]?.slug;
 
-  const teams = await prisma.team.findMany({
-    where: { isActive: true, game: { slug: activeGame } },
-    orderBy: [{ rating: "desc" }, { name: "asc" }],
-    include: {
-      memberships: {
-        where: { leftAt: null },
-        orderBy: { joinedAt: "asc" },
-        include: { player: { select: { nickname: true, slug: true } } },
-      },
-      _count: {
-        select: {
-          wonMatches: true,
-          homeMatches: { where: { status: "FINISHED" } },
-          awayMatches: { where: { status: "FINISHED" } },
-        },
-      },
-    },
-  });
+  const teams = await teamsForGame(activeGame);
 
   // A team with no finished match has no evidence behind its rating, so it is
   // listed separately instead of sitting in the table on the default value —

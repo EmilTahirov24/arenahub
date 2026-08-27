@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePublicContent } from "@/lib/cacheTags";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getPlayerSession } from "@/lib/auth";
@@ -40,7 +41,7 @@ export async function createTeam(formData: FormData) {
   await prisma.teamMembership.create({ data: { teamId: team.id, playerId: player.id } });
 
   revalidatePath("/player/team");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/player/team");
 }
 
@@ -87,6 +88,6 @@ export async function updateOwnTeam(
   }
 
   revalidatePath("/player/team");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   return { ok: true };
 }

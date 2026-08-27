@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePublicContent } from "@/lib/cacheTags";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -39,7 +40,7 @@ export async function createMatch(formData: FormData) {
   });
   await recomputeTeamRatings();
   revalidatePath("/admin/matches");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect(`/admin/matches/${match.id}`);
 }
 
@@ -48,7 +49,7 @@ export async function updateMatch(id: string, formData: FormData) {
   await prisma.match.update({ where: { id }, data: matchData(formData) });
   await recomputeTeamRatings();
   revalidatePath("/admin/matches");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/admin/matches");
 }
 
@@ -57,6 +58,6 @@ export async function deleteMatch(id: string) {
   await prisma.match.delete({ where: { id } });
   await recomputeTeamRatings();
   revalidatePath("/admin/matches");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/admin/matches");
 }

@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePublicContent } from "@/lib/cacheTags";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -125,7 +126,7 @@ export async function createOwnPlayer(_prevState: CreatePlayerState, formData: F
   await prisma.teamMembership.create({ data: { teamId: team.id, playerId: player.id } });
 
   revalidatePath("/player/team/roster");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/player/team/roster");
 }
 
@@ -173,7 +174,7 @@ export async function updateShellPlayer(
   await updateMembershipFields(team.id, playerId, formData);
 
   revalidatePath("/player/team/roster");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/player/team/roster");
 }
 
@@ -184,7 +185,7 @@ export async function updateMembership(playerId: string, formData: FormData) {
   await updateMembershipFields(team.id, playerId, formData);
 
   revalidatePath("/player/team/roster");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/player/team/roster");
 }
 
@@ -211,5 +212,5 @@ export async function removeOwnPlayer(playerId: string) {
   });
 
   revalidatePath("/player/team/roster");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
 }
