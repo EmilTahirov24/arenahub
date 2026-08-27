@@ -13,6 +13,8 @@ import CountryFlag from "@/components/common/CountryFlag";
 import MatchCard from "@/components/matches/MatchCard";
 import { ratingDelta } from "@/lib/elo";
 import { localeAlternates } from "@/lib/localeAlternates";
+import JsonLd from "@/components/seo/JsonLd";
+import { teamJsonLd } from "@/lib/structuredData";
 
 export async function generateMetadata({
   params,
@@ -89,6 +91,7 @@ export default async function TeamProfilePage({
 
   return (
     <PageShell>
+      <JsonLd data={teamJsonLd(locale, team)} />
       <div className="mb-6 rounded-xl border border-border-subtle bg-surface p-6">
         <div className="flex flex-wrap items-center gap-4">
           <TeamAvatar name={team.name} logoUrl={team.logoUrl} color={team.primaryColor} size={72} />

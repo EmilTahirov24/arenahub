@@ -17,6 +17,8 @@ import MapCard from "@/components/matches/MapCard";
 import PredictionWidget from "@/components/matches/PredictionWidget";
 import { Link } from "@/i18n/navigation";
 import { localeAlternates } from "@/lib/localeAlternates";
+import JsonLd from "@/components/seo/JsonLd";
+import { matchJsonLd } from "@/lib/structuredData";
 
 // Qəsdən dinamik: Canlı matçda AutoRefresh 8 saniyədən bir yeniləyir; keş həmin yeniləməyə köhnə hesab qaytarardı.
 /**
@@ -156,6 +158,7 @@ export default async function MatchDetailPage({
 
   return (
     <PageShell showDefaultWidgets={false}>
+      <JsonLd data={matchJsonLd(locale, match)} />
       {isLive && <AutoRefresh intervalMs={8000} />}
       <div className="mb-4 flex justify-center">
         <AdSlot placement="MATCH_PAGE_TOP" />

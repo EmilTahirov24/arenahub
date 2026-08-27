@@ -148,6 +148,60 @@ async function main() {
     }
   });
 
+  console.log("\nStrukturlaşdırılmış data (JSON-LD)\n");
+
+  // Saytda 2000-dən çox matç var, amma onlar maşın üçün oxunmurdu. Bu
+  // etiketlər sınsa səhifədə heç nə dəyişmir — yalnız axtarış sistemi itirir,
+  // ona görə testi var.
+  async function jsonLd(url: string) {
+    await gotoPage(page, url);
+    const raw = await page
+      .locator('script[type="application/ld+json"]')
+      .first()
+      .textContent();
+    assert(raw, "JSON-LD etiketi yoxdur");
+    try {
+      return JSON.parse(raw!) as Record<string, unknown>;
+    } catch {
+      throw new Error(`JSON-LD parse olunmur: ${raw!.slice(0, 120)}`);
+    }
+  }
+
+  await check("matç səhifəsi SportsEvent kimi təsvir olunur", async () => {
+    const m = await prisma.match.findFirstOrThrow({
+      select: { slug: true },
+      orderBy: { scheduledAt: "desc" },
+    });
+    const d = await jsonLd(`${BASE}/az/matches/${m.slug}`);
+    assert(d["@type"] === "SportsEvent", `yanlış tip: ${d["@type"]}`);
+    assert(typeof d.name === "string" && d.name.includes("vs"), "ad qarşıdurmanı göstərmir");
+    assert(typeof d.startDate === "string", "başlama vaxtı yoxdur");
+    const c = d.competitor as unknown[];
+    assert(Array.isArray(c) && c.length === 2, "iki komanda göstərilməyib");
+  });
+
+  // Uydurma məlumat verməmək qaydası buraya da aiddir: naməlum sahə
+  // ümumiyyətlə yazılmamalıdır, boş sətir kimi yox.
+  await check("naməlum sahələr JSON-LD-ə boş dəyərlə düşmür", async () => {
+    const m = await prisma.match.findFirstOrThrow({
+      select: { slug: true },
+      orderBy: { scheduledAt: "desc" },
+    });
+    const d = await jsonLd(`${BASE}/az/matches/${m.slug}`);
+    for (const [k, v] of Object.entries(d)) {
+      assert(v !== null && v !== "" && v !== undefined, `${k} boş dəyərlə yazılıb`);
+    }
+  });
+
+  await check("komanda SportsTeam, oyunçu Person kimi təsvir olunur", async () => {
+    const t = await prisma.team.findFirstOrThrow({ select: { slug: true } });
+    const td = await jsonLd(`${BASE}/az/teams/${t.slug}`);
+    assert(td["@type"] === "SportsTeam", `komanda tipi yanlışdır: ${td["@type"]}`);
+
+    const p = await prisma.player.findFirstOrThrow({ select: { slug: true } });
+    const pd = await jsonLd(`${BASE}/az/players/${p.slug}`);
+    assert(pd["@type"] === "Person", `oyunçu tipi yanlışdır: ${pd["@type"]}`);
+  });
   console.log("\nKanonik ünvan və dil qarşılıqları\n");
 
   // Sayt eyni məzmunu iki dildə verir və siyahılar sorğu parametrləri ilə

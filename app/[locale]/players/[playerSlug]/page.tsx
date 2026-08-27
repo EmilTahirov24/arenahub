@@ -13,6 +13,8 @@ import GameChip from "@/components/common/GameChip";
 import CountryFlag from "@/components/common/CountryFlag";
 import SocialLinks from "@/components/players/SocialLinks";
 import { localeAlternates } from "@/lib/localeAlternates";
+import JsonLd from "@/components/seo/JsonLd";
+import { playerJsonLd } from "@/lib/structuredData";
 
 function average(values: number[]) {
   if (values.length === 0) return null;
@@ -82,6 +84,7 @@ export default async function PlayerProfilePage({
 
   return (
     <PageShell>
+      <JsonLd data={playerJsonLd(locale, player, currentMembership?.team)} />
       <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl border border-border-subtle bg-surface p-6">
         <PlayerAvatar name={player.nickname} photoUrl={player.photoUrl} color={currentMembership?.team.primaryColor} size={72} />
         <div className="flex-1">
