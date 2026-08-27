@@ -1,3 +1,4 @@
+import { cacheLife, cacheTag } from "next/cache";
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { publiclyListedPlayer } from "@/lib/publicPlayers";
@@ -28,6 +29,11 @@ export type PlayerStatRow = {
  * "—" rather than as zeros they did not earn.
  */
 export async function playerStatRows(gameId: string, opts: { take?: number } = {}): Promise<PlayerStatRow[]> {
+  // Bütün ziyarətçilər üçün eynidir və oyun sayı dörddür, yəni açar sayı azdır —
+  // hər oyunçunun matç statistikası yenidən yığılır. Keşin niyə `remote` olduğu barədə: lib/cachedQueries.ts.
+  "use cache: remote";
+  cacheLife("minutes");
+  cacheTag("players", "matches");
   const players = await prisma.player.findMany({
     where: { AND: [publiclyListedPlayer, { status: "ACTIVE", gameId }] },
     orderBy: { nickname: "asc" },

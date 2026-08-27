@@ -1,3 +1,4 @@
+import { cacheLife, cacheTag } from "next/cache";
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Team } from "@/app/generated/prisma/client";
@@ -25,6 +26,11 @@ export type TeamStatRow = {
  * sits on the default rating and would otherwise outrank teams with a real record.
  */
 export async function teamStatRows(gameId: string): Promise<TeamStatRow[]> {
+  // Bütün ziyarətçilər üçün eynidir və oyun sayı dörddür, yəni açar sayı azdır —
+  // bütün bitmiş matçlar və xəritələr oxunur. Keşin niyə `remote` olduğu barədə: lib/cachedQueries.ts.
+  "use cache: remote";
+  cacheLife("minutes");
+  cacheTag("teams", "matches");
   const [teams, matches, maps] = await Promise.all([
     prisma.team.findMany({ where: { gameId, isActive: true } }),
     prisma.match.findMany({
