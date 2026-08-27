@@ -23,6 +23,7 @@ import {
   gotoPage,
 } from "./_lib";
 import { prisma } from "../lib/prisma";
+import { IMPORT_STALE_AFTER_MINUTES } from "../lib/importRun";
 import bcrypt from "bcryptjs";
 
 const GAME = "E2E Sınaq Oyunu";
@@ -94,7 +95,11 @@ async function main() {
   });
 
   await check("dashboard dayanmış idxalı xəbərdarlıqla göstərir", async () => {
-    const old = new Date(Date.now() - 6 * 60 * 60_000);
+    // Həddin özündən hesablayırıq. Əvvəl sabit 6 saat yazılmışdı; hədd 3 saatdan
+    // 6-ya qalxanda fikstur tam sərhədə düşdü, yəni test bir dəqiqəlik fərqlə
+    // yalan yaşıl verə bilərdi. Bir saat ehtiyat qoyuruq ki, hədd yenə dəyişsə
+    // sınaq özü uyğunlaşsın.
+    const old = new Date(Date.now() - (IMPORT_STALE_AFTER_MINUTES + 60) * 60_000);
     await prisma.importRun.deleteMany({ where: { script: "import-live" } });
     await prisma.importRun.create({
       data: { script: "import-live", ok: true, written: 4, startedAt: old, finishedAt: old },
