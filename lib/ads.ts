@@ -1,7 +1,24 @@
+import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import type { AdPlacement } from "@/app/generated/prisma/client";
 
+/**
+ * Bir yer üçün göstəriləcək banner.
+ *
+ * Keşlənir, çünki AdSlot hər public səhifədədir: keşdən kənarda qalsa, tam statik
+ * səhifə belə hər sorğuda bazaya bağlanır.
+ *
+ * Bunun bir nəticəsi var və qəsdən qəbul edilib: çəkiyə görə rotasiya artıq hər
+ * SORĞUDA deyil, hər keş pəncərəsində bir dəfə baş verir. `new Date()` və
+ * `Math.random()` prerender üçün qeyri-sabit dəyərlərdir — onları hər sorğuda
+ * saxlamaq bütün səhifənin keşlənməsindən imtina etmək demək olardı. Bir neçə
+ * bannerlik inventar üçün dəqiqədə bir dəfə fırlanmaq kifayətdir.
+ */
 export async function getAd(placement: AdPlacement) {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("ads");
+
   const now = new Date();
   const candidates = await prisma.adBanner.findMany({
     where: {

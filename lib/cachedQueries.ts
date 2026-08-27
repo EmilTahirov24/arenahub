@@ -1,6 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { dayRange } from "@/lib/dates";
+import { publiclyListedPlayer } from "@/lib/publicPlayers";
 import type { Prisma } from "@/app/generated/prisma/client";
 
 /**
@@ -102,4 +103,51 @@ export async function finishedMatches(gameSlug: string | undefined, date: string
   ]);
 
   return { total, matches };
+}
+
+/**
+ * Səhifə qabığının sayğacları.
+ *
+ * PageShell hər public səhifədədir və yalnız yan panelləri göstərib-göstərməmək
+ * üçün üç sayğac çəkirdi. Ölçmə göstərdi ki, siyahı sorğularını keşləmək tək
+ * başına kifayət etmir: bu sayğaclar keşdən kənarda qaldığı üçün səhifə yenə də
+ * bazaya bağlanırdı və hər dinamik səhifədə ~0.8 saniyəlik döşəmə yaranırdı.
+ */
+export async function railCounts(showDefaultWidgets: boolean) {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("ads", "news", "players");
+
+  const [ads, transfers, articles] = await Promise.all([
+    prisma.adBanner.count({ where: { isActive: true } }),
+    showDefaultWidgets ? prisma.teamMembership.count({ where: { team: { isActive: true } } }) : 0,
+    showDefaultWidgets ? prisma.newsArticle.count({ where: { publishedAt: { not: null } } }) : 0,
+  ]);
+  return { ads, transfers, articles };
+}
+
+/** Yan paneldəki son xəbərlər. */
+export async function recentNews(locale: string) {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("news");
+  return prisma.newsArticle.findMany({
+    where: { publishedAt: { not: null } },
+    orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
+    take: 6,
+    include: { game: true, translations: { where: { locale } } },
+  });
+}
+
+/** Yan paneldəki son transferlər. */
+export async function recentTransfers() {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("players", "teams");
+  return prisma.teamMembership.findMany({
+    where: { player: publiclyListedPlayer, team: { isActive: true } },
+    orderBy: { joinedAt: "desc" },
+    take: 6,
+    include: { team: true, player: true },
+  });
 }

@@ -1,7 +1,7 @@
 import AdSlot from "@/components/ads/AdSlot";
 import RecentNews from "@/components/layout/sidebar/RecentNews";
 import TopTransfers from "@/components/layout/sidebar/TopTransfers";
-import { prisma } from "@/lib/prisma";
+import { railCounts } from "@/lib/cachedQueries";
 
 /**
  * Three-column shell: an ad rail, the page, and a widget rail.
@@ -23,11 +23,7 @@ export default async function PageShell({
   rightRail?: React.ReactNode;
   showDefaultWidgets?: boolean;
 }) {
-  const [ads, transfers, articles] = await Promise.all([
-    prisma.adBanner.count({ where: { isActive: true } }),
-    showDefaultWidgets ? prisma.teamMembership.count({ where: { team: { isActive: true } } }) : 0,
-    showDefaultWidgets ? prisma.newsArticle.count({ where: { publishedAt: { not: null } } }) : 0,
-  ]);
+  const { ads, transfers, articles } = await railCounts(showDefaultWidgets);
 
   const hasAds = ads > 0;
   const showLeft = hasAds;
