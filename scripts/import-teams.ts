@@ -27,7 +27,7 @@ import {
   type LiquipediaOptions,
   type SquadMember,
 } from "../lib/liquipedia";
-import { COUNTRIES } from "../lib/countries";
+import { COUNTRIES, countryCode } from "../lib/countries";
 import { indexByOrg, orgKey } from "../lib/orgNames";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
@@ -106,14 +106,7 @@ const GAMES: { slug: string; wiki: string; renderedRoster: boolean; rosterSize: 
   },
 ];
 
-const CODE_BY_NAME = new Map(COUNTRIES.map((c) => [c.name.toLowerCase(), c.code]));
 const VALID_CODE = new Set(COUNTRIES.map((c) => c.code));
-
-/** "France" into "FR"; unknown names stay null rather than being guessed. */
-function countryCode(location: string | null): string | null {
-  if (!location) return null;
-  return CODE_BY_NAME.get(location.trim().toLowerCase()) ?? null;
-}
 
 function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");

@@ -139,3 +139,23 @@ export function countryName(code?: string | null): string | null {
   if (!code) return null;
   return COUNTRIES.find((c) => c.code === code.toUpperCase())?.name ?? code;
 }
+
+const CODE_BY_NAME = new Map(COUNTRIES.map((c) => [c.name.toLowerCase(), c.code]));
+const VALID_CODE = new Set(COUNTRIES.map((c) => c.code));
+
+/**
+ * Liquipedia-nın yazdığı ölkə adını ISO koduna çevirir: "France" → "FR".
+ *
+ * Naməlum ad TƏXMİN EDİLMİR, null qaytarılır. Bunlar real təşkilatlardır —
+ * səhv ölkə yazmaq ölkə yazmamaqdan pisdir. Eyni səbəbdən nəticə COUNTRIES
+ * siyahısına qarşı da yoxlanılır, yəni saxlanan kod həmişə bayraq ikonu olan
+ * koddur.
+ *
+ * Əvvəl bu funksiya scripts/import-teams.ts-in içində gizli idi; ikinci idxal
+ * skripti eyni çevirməyə ehtiyac duyanda təkrar yazmaq əvəzinə bura çıxarıldı.
+ */
+export function countryCode(location: string | null | undefined): string | null {
+  if (!location) return null;
+  const code = CODE_BY_NAME.get(location.trim().toLowerCase());
+  return code && VALID_CODE.has(code) ? code : null;
+}

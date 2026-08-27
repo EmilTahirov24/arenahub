@@ -155,6 +155,7 @@ sayğac yaddaşda olduğu üçün `npm run dev`-i yenidən başlatmaq onu sıfı
 | `npx tsx scripts/import-tournaments.ts` | turnirlər |
 | `npx tsx scripts/import-teams.ts` | komandalar |
 | `npx tsx scripts/import-rosters.ts` | tərkiblər (bayraqlar, tam adlar, rollar) |
+| `npx tsx scripts/import-team-countries.ts --apply` | ölkəsi olmayan komandaların ölkəsini Liquipedia-dan doldurur |
 | `npx tsx scripts/dedupe-matches.ts` | təkrar düşmüş matçları birləşdirir |
 | `npx tsx scripts/merge-duplicate-tournaments.ts` | təkrar turnirləri birləşdirir |
 

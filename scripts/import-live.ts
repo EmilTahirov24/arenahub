@@ -23,18 +23,12 @@ import { fetchMatchTicker, type LiquipediaOptions, type ParsedMatch } from "../l
 import { indexByOrg, orgKey } from "../lib/orgNames";
 import { syncMaps } from "../lib/matchMaps";
 import { recordImportRun } from "../lib/importRun";
+import { WIKIS } from "../lib/wikis";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 const USER_AGENT = "ArenaHub/0.1 (esports site; contact: emil.tahirov24@gmail.com)";
-
-const WIKIS: { slug: string; wiki: string }[] = [
-  { slug: "cs2", wiki: "counterstrike" },
-  { slug: "dota2", wiki: "dota2" },
-  { slug: "valorant", wiki: "valorant" },
-  { slug: "lol", wiki: "leagueoflegends" },
-];
 
 /**
  * How long a started-but-unfinished match stays LIVE.
