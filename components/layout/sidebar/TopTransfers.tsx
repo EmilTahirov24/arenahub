@@ -1,18 +1,12 @@
 import { getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { prisma } from "@/lib/prisma";
+import { recentTransfers } from "@/lib/cachedQueries";
 import TeamAvatar from "@/components/common/TeamAvatar";
-import { publiclyListedPlayer } from "@/lib/publicPlayers";
 
 export default async function TopTransfers() {
   const locale = await getLocale();
 
-  const memberships = await prisma.teamMembership.findMany({
-    where: { player: publiclyListedPlayer, team: { isActive: true } },
-    orderBy: { joinedAt: "desc" },
-    take: 6,
-    include: { team: true, player: true },
-  });
+  const memberships = await recentTransfers();
 
   if (memberships.length === 0) return null;
 

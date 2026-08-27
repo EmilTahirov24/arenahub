@@ -1,18 +1,13 @@
 import { getTranslations, getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { prisma } from "@/lib/prisma";
+import { recentNews } from "@/lib/cachedQueries";
 import GameChip from "@/components/common/GameChip";
 
 export default async function RecentNews() {
   const t = await getTranslations();
   const locale = await getLocale();
 
-  const articles = await prisma.newsArticle.findMany({
-    where: { publishedAt: { not: null } },
-    orderBy: { publishedAt: "desc" },
-    take: 6,
-    include: { game: true, translations: { where: { locale } } },
-  });
+  const articles = await recentNews(locale);
 
   if (articles.length === 0) return null;
 
