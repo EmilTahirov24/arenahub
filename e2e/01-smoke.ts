@@ -290,6 +290,24 @@ async function main() {
     await assertOgImage(`/az/news/${a.slug}/opengraph-image`, "xəbər");
   });
 
+  await check("komanda və oyunçunun öz paylaşım şəkli var", async () => {
+    const t = await prisma.team.findFirstOrThrow({ select: { slug: true } });
+    await assertOgImage(`/az/teams/${t.slug}/opengraph-image`, "komanda");
+
+    const p = await prisma.player.findFirstOrThrow({ select: { slug: true } });
+    await assertOgImage(`/az/players/${p.slug}/opengraph-image`, "oyunçu");
+  });
+
+  // Loqo və şəkil qəsdən çəkilmir (855 komandadan birinin loqosu var), yəni
+  // şəkil uzaq bir sorğudan asılı olmamalıdır. Loqosuz komanda da işləməlidir.
+  await check("loqosuz komandanın şəkli də çəkilir", async () => {
+    const t = await prisma.team.findFirst({
+      where: { logoUrl: null },
+      select: { slug: true },
+    });
+    if (!t) return;
+    await assertOgImage(`/az/teams/${t.slug}/opengraph-image`, "loqosuz komanda");
+  });
   await check("olmayan matç üçün şəkil sınmır, brend şəkli qaytarır", async () => {
     await assertOgImage("/az/matches/belke-de-yoxdur-12345/opengraph-image", "olmayan matç");
   });
