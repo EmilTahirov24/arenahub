@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import PageShell from "@/components/layout/PageShell";
+import { localeAlternates } from "@/lib/localeAlternates";
 
 // Bax ../terms/page.tsx: header artıq sessiyanı serverdə oxumadığı üçün bu
 // səhifənin dinamik qalmasına ehtiyac yoxdur.
@@ -82,7 +83,10 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return { title: locale === "en" ? CONTENT.en.title : CONTENT.az.title };
+  return {
+    alternates: localeAlternates(locale, "/privacy"),
+    title: locale === "en" ? CONTENT.en.title : CONTENT.az.title,
+  };
 }
 
 export default async function PrivacyPage({

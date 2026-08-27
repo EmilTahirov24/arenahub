@@ -11,18 +11,20 @@ import GameChip from "@/components/common/GameChip";
 import MatchCard from "@/components/matches/MatchCard";
 import Bracket from "@/components/events/Bracket";
 import { placeRangeLabel, formatMoney, prizeForPlacement } from "@/lib/prizes";
+import { localeAlternates } from "@/lib/localeAlternates";
 
 const BRACKET_STAGES = new Set(["round of 16", "quarterfinal", "semifinal", "3rd place decider", "final"]);
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ eventSlug: string }>;
+  params: Promise<{ locale: string; eventSlug: string }>;
 }): Promise<Metadata> {
-  const { eventSlug } = await params;
+  const { locale, eventSlug } = await params;
   const tournament = await prisma.tournament.findUnique({ where: { slug: eventSlug }, include: { game: true } });
   if (!tournament) return {};
-  return { title: `${tournament.name} — ${tournament.game.name}` };
+  return {
+    alternates: localeAlternates(locale, `/events/${eventSlug}`), title: `${tournament.name} — ${tournament.game.name}` };
 }
 
 export default async function EventDetailPage({

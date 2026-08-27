@@ -8,6 +8,7 @@ import CountryFlag from "@/components/common/CountryFlag";
 import GameAccent from "@/components/common/GameAccent";
 import { countryName } from "@/lib/countries";
 import { ratingDelta } from "@/lib/elo";
+import { localeAlternates } from "@/lib/localeAlternates";
 
 export async function generateMetadata({
   params,
@@ -16,7 +17,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale });
-  return { title: t("nav.teams") };
+  return {
+    alternates: localeAlternates(locale, "/teams"),
+    title: t("nav.teams"),
+  };
 }
 
 function formatEarnings(amount: number | null) {

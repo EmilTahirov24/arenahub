@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Link } from "@/i18n/navigation";
 import PageShell from "@/components/layout/PageShell";
 import TournamentRow from "@/components/events/TournamentRow";
+import { localeAlternates } from "@/lib/localeAlternates";
 
 export async function generateMetadata({
   params,
@@ -13,7 +14,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale });
-  return { title: t("nav.events") };
+  return {
+    alternates: localeAlternates(locale, "/events"),
+    title: t("nav.events"),
+  };
 }
 export default async function EventsPage({
   params,

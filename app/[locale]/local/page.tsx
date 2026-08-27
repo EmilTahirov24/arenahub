@@ -10,6 +10,7 @@ import NewsCard from "@/components/news/NewsCard";
 import MatchCard from "@/components/matches/MatchCard";
 import { Link } from "@/i18n/navigation";
 import type { Metadata } from "next";
+import { localeAlternates } from "@/lib/localeAlternates";
 
 const LOCAL_COUNTRY = "AZ";
 
@@ -20,7 +21,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale });
-  return { title: t("nav.local") };
+  return {
+    alternates: localeAlternates(locale, "/local"),
+    title: t("nav.local"),
+  };
 }
 
 export default async function LocalScenePage({

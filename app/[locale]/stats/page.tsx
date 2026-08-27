@@ -9,6 +9,7 @@ import TeamAvatar from "@/components/common/TeamAvatar";
 import CountryFlag from "@/components/common/CountryFlag";
 import { teamStatRows } from "@/lib/teamStats";
 import { playerStatRows } from "@/lib/playerStats";
+import { localeAlternates } from "@/lib/localeAlternates";
 
 export async function generateMetadata({
   params,
@@ -17,7 +18,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale });
-  return { title: t("nav.stats") };
+  return {
+    alternates: localeAlternates(locale, "/stats"),
+    title: t("nav.stats"),
+  };
 }
 
 export default async function StatsPage({

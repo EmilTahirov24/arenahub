@@ -12,19 +12,21 @@ import GameChip from "@/components/common/GameChip";
 import CountryFlag from "@/components/common/CountryFlag";
 import MatchCard from "@/components/matches/MatchCard";
 import { ratingDelta } from "@/lib/elo";
+import { localeAlternates } from "@/lib/localeAlternates";
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ teamSlug: string }>;
+  params: Promise<{ locale: string; teamSlug: string }>;
 }): Promise<Metadata> {
-  const { teamSlug } = await params;
+  const { locale, teamSlug } = await params;
   const team = await prisma.team.findUnique({ where: { slug: teamSlug }, include: { game: true } });
   if (!team) return {};
 
   const title = `${team.name} — ${team.game.name}`;
   const description = team.description ?? `${team.name} ${team.game.name} komandasının profili, tərkibi və matçları.`;
   return {
+    alternates: localeAlternates(locale, `/teams/${teamSlug}`),
     title,
     description,
     openGraph: { title, description, type: "profile" },
