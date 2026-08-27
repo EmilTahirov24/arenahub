@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePublicContent } from "@/lib/cacheTags";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/adminAuth";
@@ -43,7 +44,7 @@ async function recomputeMatchScore(matchId: string) {
 function revalidateMatch(matchId: string) {
   revalidatePath(`/admin/matches/${matchId}/live`);
   revalidatePath("/admin/matches");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
 }
 
 export async function setMatchStatus(matchId: string, formData: FormData) {

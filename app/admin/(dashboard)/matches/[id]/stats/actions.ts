@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePublicContent } from "@/lib/cacheTags";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/adminAuth";
@@ -28,6 +29,6 @@ export async function upsertPlayerStat(
   }
 
   revalidatePath(`/admin/matches/${matchId}/stats`);
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   return { ok: true };
 }

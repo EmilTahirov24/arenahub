@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePublicContent } from "@/lib/cacheTags";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -33,7 +34,7 @@ export async function createTournament(formData: FormData) {
   await requireAdmin();
   await prisma.tournament.create({ data: tournamentData(formData) });
   revalidatePath("/admin/tournaments");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/admin/tournaments");
 }
 
@@ -41,7 +42,7 @@ export async function updateTournament(id: string, formData: FormData) {
   await requireAdmin();
   await prisma.tournament.update({ where: { id }, data: tournamentData(formData) });
   revalidatePath("/admin/tournaments");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/admin/tournaments");
 }
 
@@ -49,7 +50,7 @@ export async function deleteTournament(id: string) {
   await requireSuperAdmin();
   await prisma.tournament.delete({ where: { id } });
   revalidatePath("/admin/tournaments");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/admin/tournaments");
 }
 
@@ -60,7 +61,7 @@ export async function addParticipant(tournamentId: string, formData: FormData) {
   const seed = formData.get("seed") ? Number(formData.get("seed")) : null;
   await prisma.tournamentParticipant.create({ data: { tournamentId, teamId, seed } });
   revalidatePath(`/admin/tournaments/${tournamentId}`);
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
 }
 
 /** Placement decides which prize range a team falls into on the public page. */
@@ -80,7 +81,7 @@ export async function setParticipantPlacement(
     data: { placement: raw === "" ? null : Number(raw) },
   });
   revalidatePath(`/admin/tournaments/${tournamentId}`);
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   return { ok: true };
 }
 
@@ -100,19 +101,19 @@ export async function addPrize(tournamentId: string, formData: FormData) {
   });
 
   revalidatePath(`/admin/tournaments/${tournamentId}`);
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
 }
 
 export async function removePrize(tournamentId: string, prizeId: string) {
   await requireAdmin();
   await prisma.tournamentPrize.delete({ where: { id: prizeId } });
   revalidatePath(`/admin/tournaments/${tournamentId}`);
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
 }
 
 export async function removeParticipant(tournamentId: string, participantId: string) {
   await requireAdmin();
   await prisma.tournamentParticipant.delete({ where: { id: participantId } });
   revalidatePath(`/admin/tournaments/${tournamentId}`);
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
 }

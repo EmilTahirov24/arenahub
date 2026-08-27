@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
+import { activeGames, upcomingMatches } from "@/lib/cachedQueries";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { prisma } from "@/lib/prisma";
-import { dayRange } from "@/lib/dates";
 import { groupBy } from "@/lib/group";
 import PageShell from "@/components/layout/PageShell";
 import MatchFilters from "@/components/matches/MatchFilters";
 import MatchGroup from "@/components/matches/MatchGroup";
 import NextUp from "@/components/matches/NextUp";
-import type { Prisma } from "@/app/generated/prisma/client";
 
 export async function generateMetadata({
   params,
@@ -31,22 +29,9 @@ export default async function MatchesPage({
   const { game: gameSlug, date } = await searchParams;
   const t = await getTranslations();
 
-  const games = await prisma.game.findMany({ where: { isActive: true } });
+  const games = await activeGames();
 
-  const where: Prisma.MatchWhereInput = {
-    status: { in: ["UPCOMING", "LIVE"] },
-  };
-  if (gameSlug) where.game = { slug: gameSlug };
-  if (date) {
-    const { start, end } = dayRange(date);
-    where.scheduledAt = { gte: start, lte: end };
-  }
-
-  const matches = await prisma.match.findMany({
-    where,
-    orderBy: [{ status: "asc" }, { scheduledAt: "asc" }],
-    include: { teamA: true, teamB: true, tournament: { include: { game: true } } },
-  });
+  const matches = await upcomingMatches(gameSlug, date);
 
   const groups = groupBy(matches, (m) => m.tournamentId ?? "none");
 

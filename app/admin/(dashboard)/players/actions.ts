@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePublicContent } from "@/lib/cacheTags";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -57,7 +58,7 @@ export async function createPlayer(formData: FormData) {
     await prisma.teamMembership.create({ data: { teamId, playerId: player.id } });
   }
   revalidatePath("/admin/players");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect(teamId ? `/admin/teams/${teamId}` : "/admin/players");
 }
 
@@ -77,7 +78,7 @@ export async function updatePlayer(id: string, formData: FormData) {
   }
 
   revalidatePath("/admin/players");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/admin/players");
 }
 
@@ -87,6 +88,6 @@ export async function deletePlayer(id: string) {
   await prisma.playerMatchStat.deleteMany({ where: { playerId: id } });
   await prisma.player.delete({ where: { id } });
   revalidatePath("/admin/players");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/admin/players");
 }

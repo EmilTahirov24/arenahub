@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { activeGames } from "@/lib/cachedQueries";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { Link } from "@/i18n/navigation";
@@ -25,7 +26,7 @@ export default async function EventsPage({
   setRequestLocale(locale);
   const { game: gameSlug } = await searchParams;
   const t = await getTranslations();
-  const games = await prisma.game.findMany({ where: { isActive: true } });
+  const games = await activeGames();
   const tournaments = await prisma.tournament.findMany({
     where: gameSlug ? { game: { slug: gameSlug } } : {},
     orderBy: { startDate: "desc" },

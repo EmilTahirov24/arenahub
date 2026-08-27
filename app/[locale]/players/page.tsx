@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
+import { activeGames } from "@/lib/cachedQueries";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { prisma } from "@/lib/prisma";
 import { Link } from "@/i18n/navigation";
 import PageShell from "@/components/layout/PageShell";
 import GameAccent from "@/components/common/GameAccent";
@@ -43,7 +43,7 @@ export default async function PlayersPage({
   const t = await getTranslations();
   const az = locale === "az";
 
-  const games = await prisma.game.findMany({ where: { isActive: true } });
+  const games = await activeGames();
   const activeGame = gameSlug ?? games[0]?.slug;
 
   // Shared with the stats leaderboard so a player never shows a different

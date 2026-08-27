@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { activeGames } from "@/lib/cachedQueries";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { dayRange } from "@/lib/dates";
@@ -33,7 +34,7 @@ export default async function ResultsPage({
   const { game: gameSlug, date, page: pageParam } = await searchParams;
   const t = await getTranslations();
 
-  const games = await prisma.game.findMany({ where: { isActive: true } });
+  const games = await activeGames();
 
   const where: Prisma.MatchWhereInput = { status: "FINISHED" };
   if (gameSlug) where.game = { slug: gameSlug };

@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePublicContent } from "@/lib/cacheTags";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
@@ -52,7 +53,7 @@ export async function acceptTeamInvite(inviteId: string) {
   revalidatePath("/player/team");
   // Joining a roster makes a self-registered profile publicly listed
   // (lib/publicPlayers.ts), so the public pages need rebuilding too.
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
 }
 
 export async function declineTeamInvite(inviteId: string) {
@@ -87,5 +88,5 @@ export async function leaveTeam() {
 
   revalidatePath("/player");
   revalidatePath("/player/team");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
 }

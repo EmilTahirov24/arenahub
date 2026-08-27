@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePublicContent } from "@/lib/cacheTags";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -58,7 +59,7 @@ export async function createNews(formData: FormData) {
   });
 
   revalidatePath("/admin/news");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/admin/news");
 }
 
@@ -86,7 +87,7 @@ export async function updateNews(id: string, formData: FormData) {
   }
 
   revalidatePath("/admin/news");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/admin/news");
 }
 
@@ -94,6 +95,6 @@ export async function deleteNews(id: string) {
   await requireSuperAdmin();
   await prisma.newsArticle.delete({ where: { id } });
   revalidatePath("/admin/news");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/admin/news");
 }

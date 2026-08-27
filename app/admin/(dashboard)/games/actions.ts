@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePublicContent } from "@/lib/cacheTags";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -24,7 +25,7 @@ export async function createGame(formData: FormData) {
     },
   });
   revalidatePath("/admin/games");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/admin/games");
 }
 
@@ -43,7 +44,7 @@ export async function updateGame(id: string, formData: FormData) {
     },
   });
   revalidatePath("/admin/games");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   redirect("/admin/games");
 }
 
@@ -51,7 +52,7 @@ export async function deleteGame(id: string) {
   await requireSuperAdmin();
   await prisma.game.delete({ where: { id } });
   revalidatePath("/admin/games");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
   // Every other delete in the admin sends you back to the list; this one did
   // not, leaving the browser on the detail page of a game that no longer
   // exists. Deleting looked like nothing happening, then broke on reload.

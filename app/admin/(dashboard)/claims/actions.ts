@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePublicContent } from "@/lib/cacheTags";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/adminAuth";
 import { approveProfileClaim, rejectProfileClaim } from "@/lib/profileClaims";
@@ -9,7 +10,7 @@ export async function approveClaim(claimId: string, formData: FormData) {
   await approveProfileClaim(claimId, admin.id, String(formData.get("note") ?? ""));
   revalidatePath("/admin/claims");
   revalidatePath("/admin/players");
-  revalidatePath("/[locale]", "layout");
+  revalidatePublicContent();
 }
 
 export async function rejectClaim(claimId: string, formData: FormData) {
