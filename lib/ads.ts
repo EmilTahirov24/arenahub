@@ -15,7 +15,7 @@ import type { AdPlacement } from "@/app/generated/prisma/client";
  * bannerlik inventar üçün dəqiqədə bir dəfə fırlanmaq kifayətdir.
  */
 export async function getAd(placement: AdPlacement) {
-  "use cache";
+  "use cache: remote";
   cacheLife("minutes");
   cacheTag("ads");
 

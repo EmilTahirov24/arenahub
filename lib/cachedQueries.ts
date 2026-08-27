@@ -21,7 +21,7 @@ import type { Prisma } from "@/app/generated/prisma/client";
 
 /** Bütün siyahı səhifələri eyni sorğu ilə başlayırdı — dörd sətir, hər dəfə. */
 export async function activeGames() {
-  "use cache";
+  "use cache: remote";
   cacheLife("hours");
   cacheTag("games");
   return prisma.game.findMany({ where: { isActive: true } });
@@ -35,7 +35,7 @@ export async function activeGames() {
  * "teams", həm də "matches" teqi ilə işarələnir.
  */
 export async function teamsForGame(gameSlug: string) {
-  "use cache";
+  "use cache: remote";
   cacheLife("minutes");
   cacheTag("teams", "matches");
   return prisma.team.findMany({
@@ -60,7 +60,7 @@ export async function teamsForGame(gameSlug: string) {
 
 /** Qarşıdakı və canlı matçlar. Filtrlər arqumentdir, yəni hər kombinasiyanın öz qeydi olur. */
 export async function upcomingMatches(gameSlug?: string, date?: string) {
-  "use cache";
+  "use cache: remote";
   cacheLife("minutes");
   cacheTag("matches");
 
@@ -80,7 +80,7 @@ export async function upcomingMatches(gameSlug?: string, date?: string) {
 
 /** Bitmiş matçlar, səhifələnmiş. */
 export async function finishedMatches(gameSlug: string | undefined, date: string | undefined, skip: number, take: number) {
-  "use cache";
+  "use cache: remote";
   cacheLife("minutes");
   cacheTag("matches");
 
@@ -114,7 +114,7 @@ export async function finishedMatches(gameSlug: string | undefined, date: string
  * bazaya bağlanırdı və hər dinamik səhifədə ~0.8 saniyəlik döşəmə yaranırdı.
  */
 export async function railCounts(showDefaultWidgets: boolean) {
-  "use cache";
+  "use cache: remote";
   cacheLife("minutes");
   cacheTag("ads", "news", "players");
 
@@ -128,7 +128,7 @@ export async function railCounts(showDefaultWidgets: boolean) {
 
 /** Yan paneldəki son xəbərlər. */
 export async function recentNews(locale: string) {
-  "use cache";
+  "use cache: remote";
   cacheLife("minutes");
   cacheTag("news");
   return prisma.newsArticle.findMany({
@@ -141,7 +141,7 @@ export async function recentNews(locale: string) {
 
 /** Yan paneldəki son transferlər. */
 export async function recentTransfers() {
-  "use cache";
+  "use cache: remote";
   cacheLife("minutes");
   cacheTag("players", "teams");
   return prisma.teamMembership.findMany({
