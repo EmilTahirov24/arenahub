@@ -133,12 +133,29 @@ export const COUNTRIES: Country[] = [
   { code: "DO", name: "Dominican Republic" },
   { code: "JM", name: "Jamaica" },
   { code: "TT", name: "Trinidad and Tobago" },
+  { code: "CW", name: "Curaçao" },
+  { code: "PR", name: "Puerto Rico" },
 ];
 
 export function countryName(code?: string | null): string | null {
   if (!code) return null;
   return COUNTRIES.find((c) => c.code === code.toUpperCase())?.name ?? code;
 }
+
+/**
+ * Mənbələrin eyni ölkəyə verdiyi başqa adlar.
+ *
+ * COUNTRIES siyahısına YAZILMIR, çünki o siyahı formalardakı ölkə seçimini
+ * qidalandırır — eyni ölkənin iki adı orada dublikat seçim yaradardı. Ləqəb
+ * yalnız axtarışda tanınır.
+ *
+ * Siyahı təxminlə deyil, ölçmə ilə qurulur: idxal skripti tanımadığı adları
+ * təkrarına görə sıralayıb yazır. «Czech Republic» real qaçışda 8 komandaya
+ * mane oldu — Liquipedia bu adı işlədir, bizim siyahıda isə «Czechia» var.
+ */
+const ALIASES: Record<string, string> = {
+  "czech republic": "CZ",
+};
 
 const CODE_BY_NAME = new Map(COUNTRIES.map((c) => [c.name.toLowerCase(), c.code]));
 const VALID_CODE = new Set(COUNTRIES.map((c) => c.code));
@@ -156,6 +173,7 @@ const VALID_CODE = new Set(COUNTRIES.map((c) => c.code));
  */
 export function countryCode(location: string | null | undefined): string | null {
   if (!location) return null;
-  const code = CODE_BY_NAME.get(location.trim().toLowerCase());
+  const key = location.trim().toLowerCase();
+  const code = CODE_BY_NAME.get(key) ?? ALIASES[key];
   return code && VALID_CODE.has(code) ? code : null;
 }
