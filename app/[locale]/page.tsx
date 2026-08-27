@@ -13,6 +13,8 @@ import GameChip from "@/components/common/GameChip";
 import AutoRefresh from "@/components/live/AutoRefresh";
 import { ratingDelta } from "@/lib/elo";
 import { localeAlternates } from "@/lib/localeAlternates";
+import JsonLd from "@/components/seo/JsonLd";
+import { siteJsonLd } from "@/lib/structuredData";
 
 export async function generateMetadata({
   params,
@@ -112,6 +114,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   return (
     <>
       {live.length > 0 && <AutoRefresh intervalMs={60000} />}
+      <JsonLd data={siteJsonLd(locale)} />
 
       {/* No background of its own — the ambient light in globals.css shows
           through here, which is where it is strongest. */}
