@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
-import { activeGames } from "@/lib/cachedQueries";
+import { activeGames, finishedMatches } from "@/lib/cachedQueries";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { prisma } from "@/lib/prisma";
-import { dayRange } from "@/lib/dates";
 import { groupBy } from "@/lib/group";
 import PageShell from "@/components/layout/PageShell";
 import MatchFilters from "@/components/matches/MatchFilters";
 import MatchGroup from "@/components/matches/MatchGroup";
 import Pagination from "@/components/common/Pagination";
-import type { Prisma } from "@/app/generated/prisma/client";
 import { localeAlternates } from "@/lib/localeAlternates";
 
 const RESULTS_PER_PAGE = 50;
@@ -40,29 +37,39 @@ export default async function ResultsPage({
 
   const games = await activeGames();
 
-  const where: Prisma.MatchWhereInput = { status: "FINISHED" };
-  if (gameSlug) where.game = { slug: gameSlug };
-  if (date) {
-    const { start, end } = dayRange(date);
-    where.scheduledAt = { gte: start, lte: end };
-  }
-
   // Səhifələmə bazada aparılır, yaddaşda yox. Əvvəl bu sorğu BÜTÜN bitmiş
   // matçları çəkirdi — seed-dəki 23 matçla bu görünmürdü, amma idxal işlədikcə
   // sətir sayı artdı və səhifə 5 saniyəyə qalxdı. Sayğac artmağa davam edir,
   // yəni limitsiz variant vaxt keçdikcə yalnız pisləşir.
-  const total = await prisma.match.count({ where });
-  const totalPages = Math.max(1, Math.ceil(total / RESULTS_PER_PAGE));
-  const page = Math.min(Math.max(1, Number(pageParam) || 1), totalPages);
-  const offset = (page - 1) * RESULTS_PER_PAGE;
+  //
+  // Sorğu `lib/cachedQueries.ts`-dəki keşlənən köməkçidən keçir. Əvvəl eyni
+  // məntiq burada keşsiz təkrarlanırdı və ölçmə bunun bahasını göstərdi: qabıq
+  // 0.26 saniyəyə gəlirdi, amma axın hissəsi 1–2 saniyə çəkirdi, çünki hər
+  // sorğuda sayğac və siyahı yenidən bazadan oxunurdu.
+  const requested = Math.max(1, Number(pageParam) || 1);
+  const first = await finishedMatches(
+    gameSlug,
+    date,
+    (requested - 1) * RESULTS_PER_PAGE,
+    RESULTS_PER_PAGE,
+  );
+  const total = first.total;
+  let matches = first.matches;
 
-  const matches = await prisma.match.findMany({
-    where,
-    orderBy: { scheduledAt: "desc" },
-    include: { teamA: true, teamB: true, tournament: { include: { game: true } } },
-    take: RESULTS_PER_PAGE,
-    skip: offset,
-  });
+  const totalPages = Math.max(1, Math.ceil(total / RESULTS_PER_PAGE));
+  // Diapazondan kənar səhifə 404 vermir, sonuncuya sıxılır — siyahı kiçiləndə
+  // 7-ci səhifədə dayanmış adama xəta yox, son səhifə göstərilməlidir. Bu
+  // nadir haldır, ona görə ikinci çağırışın bahası yoxdur; o da keşlənir.
+  const page = Math.min(requested, totalPages);
+  if (page !== requested) {
+    ({ matches } = await finishedMatches(
+      gameSlug,
+      date,
+      (page - 1) * RESULTS_PER_PAGE,
+      RESULTS_PER_PAGE,
+    ));
+  }
+  const offset = (page - 1) * RESULTS_PER_PAGE;
 
   const groups = groupBy(matches, (m) => m.tournamentId ?? "none");
 

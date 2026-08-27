@@ -76,6 +76,43 @@ prisma/schema.prisma   məlumat modeli · prisma/migrations/ əl ilə yazılmı�
 - **Migration-lar əl ilə yazılır:** `prisma migrate dev` bu mühitdə interaktivdir və işləmir. SQL faylını özün yaz, sonra `prisma migrate deploy`.
 - **Rate limiter yaddaşdadır** ([lib/rateLimit.ts](lib/rateLimit.ts)) — çoxinstansiyalı deploy-da hər instansiyanın öz sayğacı olur. İndiki miqyas üçün kifayətdir; dəqiqlik lazım olsa Upstash/Redis.
 
+## Oyunçu statistikası — data mənbəyi
+
+`PlayerMatchStat` production-da **boşdur** və bu, qüsur deyil: matçlar
+Liquipedia-dan gəlir, orada isə hər oyunçunun öldürmə/ölüm rəqəmləri yoxdur.
+Siyahı səhifəsi bunu açıq yazır — «uydurma rəqəm yazılmır» — və boş sütun
+sınıq cədvəl kimi deyil, qeydə alınmamış məlumat kimi oxunur.
+
+Mənbə axtarışı 2026-08-27-də aparıldı. Ölçülmüş nəticələr:
+
+| mənbə | oyunlar | qiymət | bizim matçların əhatəsi |
+|---|---|---|---|
+| **GRID Open Access** | CS2 + Dota 2 | pulsuz (müstəqil developer / tələbə / pre-revenue) | **~49%** |
+| OpenDota | Dota 2 | pulsuz, açar lazım deyil, 50k sorğu/ay | ~8.7% |
+| PandaScore | 4-ü də | €1600–4000/ay | 100% |
+| Riot (LoL + Valorant) | LoL + Valorant | pulsuz açar, production təsdiqi | ~51% |
+
+Bitmiş matçların oyunlara görə bölgüsü (2225 matç): CS2 38.0%, LoL 35.2%,
+Valorant 15.6%, Dota 2 11.1%.
+
+**HLTV istifadə olunmur** — rəsmi API-si yoxdur və bütün «HLTV API» paketləri
+onların şərtlərinə zidd scraper-lərdir.
+
+OpenDota-nın əhatəsi fərz edilmədi, ölçüldü: son 184 Dota 2 matçımızdan **135-i
+(73.4%)** komanda adları + 6 saatlıq vaxt pəncərəsi ilə dəqiq uyğunlaşdı, 9-u adı uyğun
+gəldi amma vaxt kənarda qaldı, 40-ı tapılmadı. Uyğunlaşmayanların çoxu OpenDota-nın
+~2 günlük gecikməsindəndir, əhatə boşluğundan yox.
+
+**Qərar:** əvvəlcə GRID Open Access-ə müraciət
+(`grid.gg/open-access`), çünki o, CS2-ni də əhatə edir və CS2 matçların ən böyük
+hissəsidir. OpenDota yalnız Dota 2 verir və GRID təsdiqlənərsə həmin hissə onsuz da
+əvəzlənəcək.
+
+Hansı mənbə seçilirsə seçilsin, iki qayda dəyişmir: **oyunçu yalnız həm adı, həm də
+həmin matçdakı komandası uyğun gələndə** eyniləşdirilməlidir (tək ad kifayət deyil —
+yanlış insana statistika yazmaq statistika olmamasından pisdir), və admin əl ilə
+yazdığı rəqəmlər idxal tərəfindən üstündən yazılmamalıdır.
+
 ## Testlər
 
 Brauzer yoxlamaları [e2e/](e2e/) qovluğundadır — `playwright` ilə yazılıb, ayrıca
