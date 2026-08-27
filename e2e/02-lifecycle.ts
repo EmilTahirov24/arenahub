@@ -25,6 +25,7 @@ import {
   assertNotErrorPage,
   visibleText,
   gotoPage,
+  clickAndSettle,
 } from "./_lib";
 import { prisma } from "../lib/prisma";
 
@@ -140,8 +141,7 @@ async function main() {
     const row = page.locator(`div:has(> span:text-is("${teamAName} "))`).first();
     const form = (await row.count()) ? row.locator(FORM.placement) : page.locator(FORM.placement).first();
     await form.locator('input[name="placement"]').fill("1");
-    await form.locator('button[type="submit"]').click();
-    await page.waitForLoadState("networkidle", { timeout: 30_000 });
+    await clickAndSettle(page, form.locator('button[type="submit"]'));
     const body = await visibleText(page);
     assert(/yazıldı|saxlanıldı|✓/i.test(body), "yer yazıldı, amma ekranda heç bir təsdiq yoxdur");
   });
@@ -231,8 +231,7 @@ async function main() {
     await form.locator('input[name="kills"]').fill("20");
     await form.locator('input[name="deaths"]').fill("14");
     await form.locator('input[name="rating"]').fill("1.25");
-    await form.locator('button[type="submit"]').click();
-    await page.waitForLoadState("networkidle", { timeout: 30_000 });
+    await clickAndSettle(page, form.locator('button[type="submit"]'));
     const body = await visibleText(page);
     assert(/saxlanıldı|yeniləndi|✓/i.test(body), "statistika saxlanıldı, amma ekranda təsdiq yoxdur");
   });

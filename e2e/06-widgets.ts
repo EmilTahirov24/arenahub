@@ -30,6 +30,11 @@ async function main() {
 
   await check("Ctrl+K paleti açır, Escape bağlayır", async () => {
     await gotoPage(page, `${BASE}/az`);
+    // Palet öz <Suspense> sərhəddindədir və stream ilə gəlir — klaviatura
+    // dinləyicisi komponentlə birlikdə yüklənir. Düymənin görünməsini
+    // gözləmək onun hidrasiya olunduğunu bildirir; əks halda Ctrl+K boşa gedir.
+    await page.locator('button[aria-label="Search"]').first().waitFor({ state: "visible", timeout: 15_000 });
+
     const input = page.locator('input[placeholder*="axtar"]');
     assert((await input.count()) === 0, "palet əvvəlcədən açıqdır");
 

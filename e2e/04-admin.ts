@@ -239,6 +239,10 @@ async function main() {
     const res = await page.request.post(`${BASE}/api/upload`, {
       multipart: { file: { name: "e2e.png", mimeType: "image/png", buffer: PNG } },
     });
+    // Yükləmə saatda 20 ilə məhduddur (lib/rateLimit.ts) və sayğac server
+    // prosesinin yaddaşındadır. Dəst arda-arda qaçırılanda dolur — bu, tətbiqin
+    // səhvi deyil, ona görə səbəbi açıq yazırıq.
+    assert(res.status() !== 429, "yükləmə limiti dolub (saatda 20). Serveri yenidən başladın.");
     assert(res.ok(), `HTTP ${res.status()}`);
     const json = await res.json();
     assert(typeof json.url === "string" && json.url.length > 0, "cavabda url yoxdur");
@@ -274,8 +278,14 @@ async function main() {
 
   console.log("\nReklamın görünmə qaydası\n");
 
+  // Banner Prisma ilə yaradılır, amma public tərəfə çıxması üçün admin
+  // formasından saxlanılır. Səbəb: public səhifələr indi keşlənir və keşi ləğv
+  // edən `revalidatePath` məhz admin əməliyyatının içindədir. Yandan yazıb
+  // birbaşa yoxlasaq, reklamın görünmə qaydasını deyil, keşin vaxtını sınamış
+  // olardıq. Şəkil yükləməsi bu axına salınmır — o, saatda 20 ilə məhduddur və
+  // dəstin başqa yerində onsuz da yoxlanılır.
   await check("aktiv banner public saytda görünür", async () => {
-    await prisma.adBanner.create({
+    const ad = await prisma.adBanner.create({
       data: {
         name: AD,
         placement: "SIDEBAR_RIGHT_TOP",
@@ -287,20 +297,27 @@ async function main() {
         weight: 1000,
       },
     });
+    // Formanı olduğu kimi saxlamaq updateAd-i işə salır, o da keşi ləğv edir.
+    await gotoPage(page, `${BASE}/admin/ads/${ad.id}`);
+    await submitForm(page, 'form:has(input[name="linkUrl"])');
+
     await gotoPage(page, `${BASE}/az`);
     const alts = await page.$$eval("img[alt]", (imgs) => imgs.map((i) => i.getAttribute("alt") ?? ""));
     assert(alts.includes("E2E banner alt"), "aktiv banner görünmür");
   });
 
   await check("gələcək tarixli banner gizlənir", async () => {
-    await prisma.adBanner.updateMany({
-      where: { name: AD },
-      data: { startDate: new Date(Date.now() + 7 * 86_400_000) },
-    });
+    const ad = await prisma.adBanner.findFirstOrThrow({ where: { name: AD } });
+    const future = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
+    await gotoPage(page, `${BASE}/admin/ads/${ad.id}`);
+    await page.fill('input[name="startDate"]', future);
+    await submitForm(page, 'form:has(input[name="linkUrl"])');
+
     await gotoPage(page, `${BASE}/az`);
     const alts = await page.$$eval("img[alt]", (imgs) => imgs.map((i) => i.getAttribute("alt") ?? ""));
     assert(!alts.includes("E2E banner alt"), "gələcək tarixli banner hələ görünür");
   });
+
 
   console.log("\nEDITOR rolunun sərhədləri\n");
 
