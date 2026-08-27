@@ -9,6 +9,7 @@ import PageShell from "@/components/layout/PageShell";
 import AdSlot from "@/components/ads/AdSlot";
 import GameChip from "@/components/common/GameChip";
 import TeamAvatar from "@/components/common/TeamAvatar";
+import { localeAlternates } from "@/lib/localeAlternates";
 
 export async function generateMetadata({
   params,
@@ -24,6 +25,7 @@ export async function generateMetadata({
   if (!tr) return {};
 
   return {
+    alternates: localeAlternates(locale, `/news/${articleSlug}`),
     title: tr.title,
     description: tr.excerpt ?? undefined,
     openGraph: { title: tr.title, description: tr.excerpt ?? undefined, type: "article" },

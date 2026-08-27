@@ -9,6 +9,7 @@ import MatchFilters from "@/components/matches/MatchFilters";
 import MatchGroup from "@/components/matches/MatchGroup";
 import Pagination from "@/components/common/Pagination";
 import type { Prisma } from "@/app/generated/prisma/client";
+import { localeAlternates } from "@/lib/localeAlternates";
 
 const RESULTS_PER_PAGE = 50;
 
@@ -19,7 +20,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale });
-  return { title: t("nav.results") };
+  return {
+    alternates: localeAlternates(locale, "/results"),
+    title: t("nav.results"),
+  };
 }
 
 export default async function ResultsPage({

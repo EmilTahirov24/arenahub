@@ -16,6 +16,7 @@ import Countdown from "@/components/matches/Countdown";
 import MapCard from "@/components/matches/MapCard";
 import PredictionWidget from "@/components/matches/PredictionWidget";
 import { Link } from "@/i18n/navigation";
+import { localeAlternates } from "@/lib/localeAlternates";
 
 // Qəsdən dinamik: Canlı matçda AutoRefresh 8 saniyədən bir yeniləyir; keş həmin yeniləməyə köhnə hesab qaytarardı.
 /**
@@ -50,9 +51,9 @@ function mapScoreLabel(
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ matchSlug: string }>;
+  params: Promise<{ locale: string; matchSlug: string }>;
 }): Promise<Metadata> {
-  const { matchSlug } = await params;
+  const { locale, matchSlug } = await params;
   const match = await prisma.match.findUnique({
     where: { slug: matchSlug },
     include: { teamA: true, teamB: true, tournament: true },
@@ -66,6 +67,7 @@ export async function generateMetadata({
       : `BO${match.bestOf} · ${match.status}`;
 
   return {
+    alternates: localeAlternates(locale, `/matches/${matchSlug}`),
     title,
     description,
     openGraph: { title, description, type: "website" },

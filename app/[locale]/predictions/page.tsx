@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import PageShell from "@/components/layout/PageShell";
 import CountryFlag from "@/components/common/CountryFlag";
+import { localeAlternates } from "@/lib/localeAlternates";
 
 export async function generateMetadata({
   params,
@@ -12,7 +13,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale });
-  return { title: t("predictions.title") };
+  return {
+    alternates: localeAlternates(locale, "/predictions"),
+    title: t("predictions.title"),
+  };
 }
 
 export default async function PredictionsLeaderboardPage({

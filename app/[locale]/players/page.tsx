@@ -12,6 +12,7 @@ import SortableHeader from "@/components/common/SortableHeader";
 import Pagination from "@/components/common/Pagination";
 import { scoreBarFraction } from "@/lib/playerScore";
 import { playerStatRows } from "@/lib/playerStats";
+import { localeAlternates } from "@/lib/localeAlternates";
 import {
   PLAYERS_PER_PAGE,
   defaultDirection,
@@ -27,7 +28,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale });
-  return { title: t("nav.players") };
+  return {
+    alternates: localeAlternates(locale, "/players"),
+    title: t("nav.players"),
+  };
 }
 
 export default async function PlayersPage({

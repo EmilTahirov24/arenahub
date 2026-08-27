@@ -12,6 +12,7 @@ import CountryFlag from "@/components/common/CountryFlag";
 import GameChip from "@/components/common/GameChip";
 import AutoRefresh from "@/components/live/AutoRefresh";
 import { ratingDelta } from "@/lib/elo";
+import { localeAlternates } from "@/lib/localeAlternates";
 
 export async function generateMetadata({
   params,
@@ -20,7 +21,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale });
-  return { title: { absolute: t("site.name") } };
+  return {
+    alternates: localeAlternates(locale, ""),
+    title: { absolute: t("site.name") },
+  };
 }
 
 /** Heading with its "see all" link, repeated by every section below. */

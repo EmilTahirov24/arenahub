@@ -148,6 +148,56 @@ async function main() {
     }
   });
 
+  console.log("\nKanonik ünvan və dil qarşılıqları\n");
+
+  // Sayt eyni məzmunu iki dildə verir və siyahılar sorğu parametrləri ilə
+  // işləyir. Bu etiketlər olmasa axtarış sistemi hər filtr kombinasiyasını
+  // ayrı səhifə, iki dili isə təkrar məzmun kimi görür.
+  async function links(url: string) {
+    await gotoPage(page, url);
+    const canonical = await page
+      .locator('link[rel="canonical"]')
+      .first()
+      .getAttribute("href");
+    const alts = await page
+      .locator('link[rel="alternate"][hreflang]')
+      .evaluateAll((ns) =>
+        ns.map((n) => [n.getAttribute("hreflang"), n.getAttribute("href")] as const),
+      );
+    return { canonical, alts: Object.fromEntries(alts) as Record<string, string> };
+  }
+
+  await check("siyahı səhifəsinin kanonik ünvanı və hər iki dili var", async () => {
+    const { canonical, alts } = await links(`${BASE}/az/matches`);
+    assert(canonical?.endsWith("/az/matches"), `kanonik yanlışdır: ${canonical}`);
+    assert(alts["az"]?.endsWith("/az/matches"), "az qarşılığı yoxdur");
+    assert(alts["en"]?.endsWith("/en/matches"), "en qarşılığı yoxdur");
+    assert(alts["x-default"]?.endsWith("/az/matches"), "x-default yoxdur");
+  });
+
+  // Əsas məqsəd budur: filtr və səhifə variantları bir ünvanda toplanmalıdır,
+  // yoxsa eyni məzmun onlarla nüsxədə indekslənir.
+  await check("filtrli və səhifələnmiş ünvan parametrsiz yola yığılır", async () => {
+    const { canonical } = await links(`${BASE}/az/results?game=cs2&page=3`);
+    assert(canonical?.endsWith("/az/results"), `parametrlər kanonikdə qalıb: ${canonical}`);
+  });
+
+  await check("ingilis tərəf qarşılıqlıdır", async () => {
+    const { canonical, alts } = await links(`${BASE}/en/teams`);
+    assert(canonical?.endsWith("/en/teams"), `kanonik yanlışdır: ${canonical}`);
+    assert(alts["az"]?.endsWith("/az/teams"), "az qarşılığı yoxdur");
+    assert(alts["en"]?.endsWith("/en/teams"), "en qarşılığı yoxdur");
+  });
+
+  await check("detal səhifəsinin kanonik ünvanı öz slug-ını saxlayır", async () => {
+    const m = await prisma.match.findFirstOrThrow({
+      select: { slug: true },
+      orderBy: { scheduledAt: "desc" },
+    });
+    const { canonical, alts } = await links(`${BASE}/az/matches/${m.slug}`);
+    assert(canonical?.endsWith(`/az/matches/${m.slug}`), `kanonik yanlışdır: ${canonical}`);
+    assert(alts["en"]?.endsWith(`/en/matches/${m.slug}`), "en qarşılığı slug saxlamır");
+  });
   console.log("\nPaylaşım şəkilləri (Open Graph)\n");
 
   // Link Telegram, Discord və ya X-ə atılanda görünən şəkil. Əvvəl heç biri yox

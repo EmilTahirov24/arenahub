@@ -12,6 +12,7 @@ import TeamAvatar from "@/components/common/TeamAvatar";
 import GameChip from "@/components/common/GameChip";
 import CountryFlag from "@/components/common/CountryFlag";
 import SocialLinks from "@/components/players/SocialLinks";
+import { localeAlternates } from "@/lib/localeAlternates";
 
 function average(values: number[]) {
   if (values.length === 0) return null;
@@ -21,12 +22,13 @@ function average(values: number[]) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ playerSlug: string }>;
+  params: Promise<{ locale: string; playerSlug: string }>;
 }): Promise<Metadata> {
-  const { playerSlug } = await params;
+  const { locale, playerSlug } = await params;
   const player = await prisma.player.findUnique({ where: { slug: playerSlug }, include: { game: true } });
   if (!player) return {};
-  return { title: `${player.nickname} — ${player.game.name}` };
+  return {
+    alternates: localeAlternates(locale, `/players/${playerSlug}`), title: `${player.nickname} — ${player.game.name}` };
 }
 
 export default async function PlayerProfilePage({

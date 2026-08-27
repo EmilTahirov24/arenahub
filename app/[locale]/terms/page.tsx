@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import PageShell from "@/components/layout/PageShell";
+import { localeAlternates } from "@/lib/localeAlternates";
 
 // Əvvəl burada force-dynamic vardı: header sessiyanı serverdə oxuyurdu, statik
 // render isə `cookies()`-i boş qaytarır və girmiş adama məhz bu səhifədə
@@ -92,7 +93,10 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return { title: locale === "en" ? CONTENT.en.title : CONTENT.az.title };
+  return {
+    alternates: localeAlternates(locale, "/terms"),
+    title: locale === "en" ? CONTENT.en.title : CONTENT.az.title,
+  };
 }
 
 export default async function TermsPage({

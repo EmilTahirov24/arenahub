@@ -5,6 +5,7 @@ import PageShell from "@/components/layout/PageShell";
 import MatchCard from "@/components/matches/MatchCard";
 import NextUp from "@/components/matches/NextUp";
 import AutoRefresh from "@/components/live/AutoRefresh";
+import { localeAlternates } from "@/lib/localeAlternates";
 
 // Qəsdən dinamik: Bu səhifənin bütün mənası indi baş verənləri göstərməkdir.
 export async function generateMetadata({
@@ -14,7 +15,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale });
-  return { title: t("nav.live") };
+  return {
+    alternates: localeAlternates(locale, "/live"),
+    title: t("nav.live"),
+  };
 }
 
 export default async function LivePage({

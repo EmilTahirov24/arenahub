@@ -6,6 +6,7 @@ import PageShell from "@/components/layout/PageShell";
 import MatchFilters from "@/components/matches/MatchFilters";
 import MatchGroup from "@/components/matches/MatchGroup";
 import NextUp from "@/components/matches/NextUp";
+import { localeAlternates } from "@/lib/localeAlternates";
 
 export async function generateMetadata({
   params,
@@ -14,7 +15,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale });
-  return { title: t("nav.matches") };
+  return {
+    alternates: localeAlternates(locale, "/matches"),
+    title: t("nav.matches"),
+  };
 }
 
 export default async function MatchesPage({

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Link } from "@/i18n/navigation";
 import PageShell from "@/components/layout/PageShell";
 import NewsCard from "@/components/news/NewsCard";
+import { localeAlternates } from "@/lib/localeAlternates";
 
 export async function generateMetadata({
   params,
@@ -13,7 +14,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale });
-  return { title: t("nav.news") };
+  return {
+    alternates: localeAlternates(locale, "/news"),
+    title: t("nav.news"),
+  };
 }
 
 export default async function NewsPage({
