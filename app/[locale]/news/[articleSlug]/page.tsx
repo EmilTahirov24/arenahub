@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { cacheLife } from "next/cache";
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import Image from "next/image";
@@ -8,11 +9,6 @@ import PageShell from "@/components/layout/PageShell";
 import AdSlot from "@/components/ads/AdSlot";
 import GameChip from "@/components/common/GameChip";
 import TeamAvatar from "@/components/common/TeamAvatar";
-
-// İdxal saatda bir dəfə işləyir, admin dəyişiklikləri isə revalidatePath ilə
-// dərhal ləğv olunur — ona görə 300 saniyəlik pəncərə datanı köhnəltmir, əvəzində
-// hər sorğuda təkrarlanan baza işini aradan qaldırır.
-export const revalidate = 300;
 
 export async function generateMetadata({
   params,
@@ -40,6 +36,11 @@ export default async function NewsArticlePage({
 }: {
   params: Promise<{ locale: string; articleSlug: string }>;
 }) {
+  "use cache";
+  // İdxal saatda bir dəfə işləyir, admin dəyişiklikləri isə revalidatePath ilə
+  // dərhal ləğv olunur — ona görə bir dəqiqəlik pəncərə datanı köhnəltmir.
+  cacheLife("minutes");
+
   const { locale, articleSlug } = await params;
   setRequestLocale(locale);
 

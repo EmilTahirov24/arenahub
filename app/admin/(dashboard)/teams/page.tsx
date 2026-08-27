@@ -3,8 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { primaryButtonClass } from "@/components/admin/formStyles";
 import CountryFlag from "@/components/common/CountryFlag";
 
-export const dynamic = "force-dynamic";
-
 export default async function AdminTeamsPage() {
   const teams = await prisma.team.findMany({ orderBy: { name: "asc" }, include: { game: true, owner: true } });
 

@@ -15,8 +15,6 @@ import {
 import { leaveTeam } from "../invites/actions";
 import { createTeam } from "./actions";
 
-export const dynamic = "force-dynamic";
-
 export default async function PlayerTeamPage() {
   const session = await getPlayerSession();
   if (!session) redirect("/player/login");

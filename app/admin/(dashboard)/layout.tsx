@@ -6,6 +6,7 @@ import BackToSite from "@/components/layout/BackToSite";
 import AdminNav from "@/components/admin/AdminNav";
 import { adminLogout } from "./actions";
 
+
 const NAV = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/games", label: "Oyunlar" },

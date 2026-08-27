@@ -1,4 +1,5 @@
 import ImageUpload from "@/components/forms/ImageUpload";
+import { todayInputValue } from "@/lib/today";
 import { inputClass, labelClass, primaryButtonClass } from "@/components/admin/formStyles";
 import type { AdBanner, AdPlacement } from "@/app/generated/prisma/client";
 
@@ -15,13 +16,15 @@ function toDateInputValue(date?: Date | null) {
   return new Date(date).toISOString().slice(0, 10);
 }
 
-export default function AdForm({
+export default async function AdForm({
   ad,
   action,
 }: {
   ad?: AdBanner;
   action: (formData: FormData) => Promise<void>;
 }) {
+  const today = await todayInputValue();
+
   return (
     <form action={action} className="max-w-lg space-y-4">
       <div>
@@ -54,7 +57,7 @@ export default function AdForm({
             name="startDate"
             type="date"
             required
-            defaultValue={toDateInputValue(ad?.startDate) || new Date().toISOString().slice(0, 10)}
+            defaultValue={toDateInputValue(ad?.startDate) || today}
             className={inputClass}
           />
         </div>

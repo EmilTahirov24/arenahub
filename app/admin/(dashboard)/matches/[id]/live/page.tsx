@@ -4,8 +4,6 @@ import { inputClass, labelClass, primaryButtonClass, secondaryButtonClass, dange
 import AdminRowForm from "@/components/admin/AdminRowForm";
 import { setMatchStatus, upsertMap, deleteMap, addVetoStep, deleteVetoStep } from "./actions";
 
-export const dynamic = "force-dynamic";
-
 const STATUS_ACTIONS: { status: string; label: string }[] = [
   { status: "LIVE", label: "Canlı et" },
   { status: "FINISHED", label: "Bitir" },

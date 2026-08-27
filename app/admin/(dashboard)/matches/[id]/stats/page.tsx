@@ -4,8 +4,6 @@ import { inputClass, primaryButtonClass } from "@/components/admin/formStyles";
 import AdminRowForm from "@/components/admin/AdminRowForm";
 import { upsertPlayerStat } from "./actions";
 
-export const dynamic = "force-dynamic";
-
 export default async function MatchStatsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const match = await prisma.match.findUnique({

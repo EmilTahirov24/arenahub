@@ -8,8 +8,6 @@ import PlayerAvatar from "@/components/common/PlayerAvatar";
 import { updateShellPlayer, updateMembership, removeOwnPlayer } from "../actions";
 import { dangerButtonClass, primaryButtonClass } from "@/components/admin/formStyles";
 
-export const dynamic = "force-dynamic";
-
 export default async function EditOwnPlayerPage({ params }: { params: Promise<{ playerId: string }> }) {
   const { playerId } = await params;
   const session = await getPlayerSession();

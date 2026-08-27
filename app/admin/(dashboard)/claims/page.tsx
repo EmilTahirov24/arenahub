@@ -6,8 +6,6 @@ import CountryFlag from "@/components/common/CountryFlag";
 import { inputClass, primaryButtonClass, dangerButtonClass } from "@/components/admin/formStyles";
 import { approveClaim, rejectClaim } from "./actions";
 
-export const dynamic = "force-dynamic";
-
 export default async function AdminClaimsPage() {
   await requireAdmin();
 

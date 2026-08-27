@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import LocaleSwitcher from "./LocaleSwitcher";
@@ -79,14 +80,31 @@ export default async function Header() {
         </nav>
 
         <div className="hidden items-center gap-2 xl:flex">
-          <CommandPalette />
+          {/* CommandPalette `useRouter()` işlədir, o isə cari ünvanı oxuyur —
+              sorğu vaxtı məlum olan məlumatdır və öz sərhəddi olmasa bütün
+              səhifənin prerender olunmasına mane olur. */}
+          <Suspense fallback={<div aria-hidden className="h-8 w-8 rounded-full border border-border-subtle bg-surface sm:w-20" />}>
+            <CommandPalette />
+          </Suspense>
           <AuthMenu icon={PlayerIcon} {...playerAuth} links={accountLinks} />
           <ThemeToggle />
-          <LocaleSwitcher />
+          {/* LocaleSwitcher cari ünvanı oxuyur (usePathname) ki, dil dəyişəndə
+              eyni səhifədə qalsın. Bu, sorğu vaxtı məlum olan məlumatdır, ona
+              görə öz sərhəddi olmalıdır — əks halda bütün səhifə prerender
+              oluna bilmir. Yer tutucu düymənin ölçüsündədir ki, header
+              sıçramasın. */}
+          <Suspense fallback={<div aria-hidden className="h-8 w-16 rounded-md bg-surface" />}>
+            <LocaleSwitcher />
+          </Suspense>
         </div>
 
         <div className="flex items-center gap-2 xl:hidden">
-          <CommandPalette />
+          {/* CommandPalette `useRouter()` işlədir, o isə cari ünvanı oxuyur —
+              sorğu vaxtı məlum olan məlumatdır və öz sərhəddi olmasa bütün
+              səhifənin prerender olunmasına mane olur. */}
+          <Suspense fallback={<div aria-hidden className="h-8 w-8 rounded-full border border-border-subtle bg-surface sm:w-20" />}>
+            <CommandPalette />
+          </Suspense>
           <MobileNav
             navItems={NAV_ITEMS.map((item) => ({ href: `/${item}`, label: t(`nav.${item}`) }))}
             localItem={{ href: `/${LOCAL_NAV_ITEM}`, label: t(`nav.${LOCAL_NAV_ITEM}`) }}
