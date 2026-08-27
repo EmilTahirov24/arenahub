@@ -14,7 +14,7 @@
  * Server əvvəlcədən qaldırılmalıdır: `npm run dev`.
  */
 import "dotenv/config";
-import { chromium, type Browser, type Page, type Response } from "playwright";
+import { chromium, type Browser, type Locator, type Page, type Response } from "playwright";
 
 export const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 
@@ -127,7 +127,7 @@ export async function loginAdmin(page: Page): Promise<void> {
   // Yönləndirmə server action-dan sonra client tərəfdə baş verir, ona görə
   // URL-i deyil, panelin özünü gözləyirik.
   await page.waitForURL((u) => !u.pathname.startsWith("/admin/login"), { timeout: 30_000 });
-  await page.waitForLoadState("networkidle", { timeout: 30_000 });
+  await page.waitForLoadState("load", { timeout: 30_000 }).catch(() => {});
   assert(
     !new URL(page.url()).pathname.startsWith("/admin/login"),
     `admin girişi alınmadı, indi: ${page.url()}`,
@@ -135,12 +135,19 @@ export async function loginAdmin(page: Page): Promise<void> {
 }
 
 /**
- * Formanı göndərir.
+ * Formanı göndərir və server action-ın bitməsini gözləyir.
  *
- * Səhifədə həmişə birdən çox submit düyməsi olur — admin layout-un «Çıxış»
- * düyməsi DOM-da hər səhifə formasından əvvəl gəlir, ona görə seçilməmiş
+ * İki tələ var.
+ *
+ * Birincisi: səhifədə həmişə birdən çox submit düyməsi olur — admin layout-un
+ * «Çıxış» düyməsi DOM-da hər səhifə formasından əvvəl gəlir, ona görə seçilməmiş
  * `button[type="submit"]` istifadəçini sistemdən çıxarır. Hər göndəriş öz
  * formasına bağlanmalıdır.
+ *
+ * İkincisi: server action naviqasiya yaratmır, ona görə `load` hadisəsi baş
+ * vermir; `networkidle` isə Partial Prerendering-lə heç vaxt gəlmir, çünki
+ * dinamik hissə açıq bağlantı üzərindən axır. Etibarlı siqnal action-ın öz POST
+ * cavabıdır.
  */
 export async function submitForm(page: Page, formSelector: string, buttonText?: string): Promise<void> {
   const form = page.locator(formSelector).first();
@@ -148,8 +155,29 @@ export async function submitForm(page: Page, formSelector: string, buttonText?: 
   const button = buttonText
     ? form.locator(`button:has-text("${buttonText}")`).first()
     : form.locator('button[type="submit"]').first();
-  await button.click();
-  await page.waitForLoadState("networkidle", { timeout: 30_000 });
+
+  await Promise.all([
+    page.waitForResponse((r) => r.request().method() === "POST", { timeout: 30_000 }).catch(() => null),
+    button.click(),
+  ]);
+  // POST qayıtdı; React-ın nəticəni çəkməsi üçün qısa fasilə.
+  await page.waitForTimeout(300);
+  await waitForContent(page);
+}
+
+/**
+ * Düyməyə basır və server action-ın POST cavabını gözləyir.
+ *
+ * `submitForm` bütöv formanı seçəndə işlədilir; bu isə artıq əlində olan
+ * locator üçündür. Səbəb eynidir: action naviqasiya yaratmır, ona görə `load`
+ * gəlmir, `networkidle` isə stream olunan cavabla heç vaxt baş vermir.
+ */
+export async function clickAndSettle(page: Page, locator: Locator): Promise<void> {
+  await Promise.all([
+    page.waitForResponse((r) => r.request().method() === "POST", { timeout: 30_000 }).catch(() => null),
+    locator.click(),
+  ]);
+  await page.waitForTimeout(300);
   await waitForContent(page);
 }
 
@@ -167,10 +195,11 @@ export async function visibleText(page: Page): Promise<string> {
 /**
  * Səhifənin məzmununun həqiqətən çəkilməsini gözləyir.
  *
- * `domcontentloaded` yalnız header və footer-i verir: qalanı stream ilə gəlir.
- * `networkidle` də bəs etmir — dev serverin HMR soketi fasilələr yaradır və
- * gözləmə məzmun oturmamış qayıdır. Ölçü kimi əsas sahənin həm hündürlüyünün,
- * həm də mətninin olması götürülür.
+ * `domcontentloaded` yalnız qabığı verir: qalanı stream ilə gəlir.
+ * `networkidle` isə ÜMUMİYYƏTLƏ yaramır — Partial Prerendering qabığı dərhal
+ * göndərir və dinamik hissəni açıq bağlantı üzərindən axıdır, yəni şəbəkə heç
+ * vaxt "sakit" olmur. Ölçü kimi əsas sahənin həm hündürlüyünün, həm də mətninin
+ * olması götürülür; bu, stream bitəndə doğru olur.
  */
 export async function waitForContent(page: Page, timeout = 30_000): Promise<void> {
   await page.waitForFunction(

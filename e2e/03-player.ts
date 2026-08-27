@@ -29,6 +29,7 @@ import {
   assertNotErrorPage,
   visibleText,
   gotoPage,
+  clickAndSettle,
 } from "./_lib";
 import { prisma } from "../lib/prisma";
 import { createVerifyToken } from "../lib/emailVerification";
@@ -129,15 +130,27 @@ async function main() {
     await p2.fill('input[name="email"]', EMAIL);
     await p2.fill('input[name="password"]', PASSWORD);
     await p2.check('input[name="terms"]');
-    await p2.click('form button[type="submit"]');
-    await p2.waitForLoadState("networkidle", { timeout: 30_000 });
+    // Server action naviqasiya yaratmır, ona görə `load` gəlmir — action-ın öz
+    // POST cavabını gözləyirik.
+    await Promise.all([
+      p2.waitForResponse((r) => r.request().method() === "POST", { timeout: 30_000 }).catch(() => null),
+      p2.click('form button[type="submit"]'),
+    ]);
+    // Mesaj client tərəfdə render olunur — anlıq şəkil əvəzinə elementi
+    // gözləyirik, yoxsa test öz vaxtlamasına görə yanılır.
+    const shown = await p2
+      .locator("text=/artıq qeydiyyatdan keçib|Çox sayda qeydiyyat/")
+      .first()
+      .waitFor({ timeout: 15_000 })
+      .then(() => true)
+      .catch(() => false);
     const body = await p2.locator("body").innerText();
     await ctx.close();
     assert(
       !/Çox sayda qeydiyyat/i.test(body),
-      "qeydiyyat limiti dolub (saatda 5). Dev serveri yenidən başladın — sayğac yaddaşdadır.",
+      "qeydiyyat limiti dolub (saatda 5). Serveri yenidən başladın — sayğac yaddaşdadır.",
     );
-    assert(/artıq qeydiyyatdan keçib/i.test(body), "təkrar e-poçt üçün xəbərdarlıq yoxdur");
+    assert(shown && /artıq qeydiyyatdan keçib/i.test(body), "təkrar e-poçt üçün xəbərdarlıq yoxdur");
   });
 
   console.log("\nE-poçt təsdiqi\n");
@@ -260,8 +273,7 @@ async function main() {
 
     const button = page.locator(`form button:has-text("${match.teamA.name}")`).first();
     assert(await button.count(), "proqnoz düyməsi tapılmadı");
-    await button.click();
-    await page.waitForLoadState("networkidle", { timeout: 30_000 });
+    await clickAndSettle(page, button);
 
     // Səhifəni ƏL İLƏ yeniləmirik: düzgün revalidate olsa ✓ elə burada görünür.
     const marked = await page
