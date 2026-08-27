@@ -72,6 +72,45 @@ async function main() {
   const browser = await launch();
   const { page, problems } = await newPage(browser);
 
+  // /en-dən gələn adam azərbaycanca forma görürdü və şərtlər qutusunun linkləri
+  // /az/terms-ə gedirdi — yəni ondan oxuya bilmədiyi dildə hüquqi mətni qəbul
+  // etməsi istənilirdi. Bu iki yoxlama həmin yolu qoruyur.
+  await check("ingilis saytdan qeydiyyata keçid ingilis forma açır", async () => {
+    await gotoPage(page, `${BASE}/en`);
+    // Qeydiyyat linki hesab menyusunun içindədir və menyu açılana qədər DOM-da
+    // olmur; üstəlik menyu özü /api/me cavabını gözləyir.
+    const authButton = page.locator('button[aria-haspopup="menu"]').first();
+    await authButton.waitFor({ state: "visible", timeout: 15_000 });
+    await authButton.click();
+
+    const register = page.locator('a[href*="/player/register"]').first();
+    await register.waitFor({ state: "visible", timeout: 10_000 });
+    const href = await register.getAttribute("href");
+    assert(href?.includes("lang=en"), `link dili daşımır: ${href}`);
+
+    await gotoPage(page, `${BASE}${href}`);
+    const body = await visibleText(page);
+    assert(/Create a player account/i.test(body), "ingilis mətn görünmür");
+    assert(!/Oyunçu kimi qeydiyyatdan/.test(body), "azərbaycanca mətn qalıb");
+  });
+
+  await check("ingilis formada hüquqi linklər ingilis səhifəyə gedir", async () => {
+    await gotoPage(page, `${BASE}/player/register?lang=en`);
+    const terms = await page.locator('a[href$="/terms"]').first().getAttribute("href");
+    const privacy = await page.locator('a[href$="/privacy"]').first().getAttribute("href");
+    assert(terms === "/en/terms", `şərtlər linki: ${terms}`);
+    assert(privacy === "/en/privacy", `məxfilik linki: ${privacy}`);
+  });
+
+  await check("azərbaycanca default olaraq qalır", async () => {
+    await gotoPage(page, `${BASE}/player/register`);
+    const body = await visibleText(page);
+    assert(/Oyunçu kimi qeydiyyatdan/.test(body), "default dil azərbaycanca olmalıdır");
+    const terms = await page.locator('a[href$="/terms"]').first().getAttribute("href");
+    assert(terms === "/az/terms", `şərtlər linki: ${terms}`);
+  });
+
+
   console.log("Qeydiyyat\n");
 
   await check("6 simvoldan qısa şifrə rədd olunur", async () => {
