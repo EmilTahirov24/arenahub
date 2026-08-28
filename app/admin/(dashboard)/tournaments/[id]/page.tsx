@@ -79,8 +79,8 @@ export default async function EditTournamentPage({ params }: { params: Promise<{
 
         <form action={addParticipantWithId} className="mt-4 flex items-end gap-2">
           <div className="flex-1">
-            <label className={labelClass}>Komanda</label>
-            <select name="teamId" required className={inputClass}>
+            <label htmlFor="tournaments-id-teamId" className={labelClass}>Komanda</label>
+            <select id="tournaments-id-teamId" name="teamId" required className={inputClass}>
               <option value="">Seçin</option>
               {availableTeams.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -90,8 +90,8 @@ export default async function EditTournamentPage({ params }: { params: Promise<{
             </select>
           </div>
           <div className="w-24">
-            <label className={labelClass}>Seed</label>
-            <input name="seed" type="number" className={inputClass} />
+            <label htmlFor="tournaments-id-seed" className={labelClass}>Seed</label>
+            <input id="tournaments-id-seed" name="seed" type="number" className={inputClass} />
           </div>
           <button type="submit" className={secondaryButtonClass}>
             Əlavə et
@@ -127,20 +127,20 @@ export default async function EditTournamentPage({ params }: { params: Promise<{
 
         <form action={addPrizeWithId} className="mt-4 flex flex-wrap items-end gap-2">
           <div className="w-20">
-            <label className={labelClass}>Yerdən</label>
-            <input name="placeFrom" type="number" min="1" required className={inputClass} />
+            <label htmlFor="tournaments-id-placeFrom" className={labelClass}>Yerdən</label>
+            <input id="tournaments-id-placeFrom" name="placeFrom" type="number" min="1" required className={inputClass} />
           </div>
           <div className="w-20">
-            <label className={labelClass}>Yerə</label>
-            <input name="placeTo" type="number" min="1" required className={inputClass} />
+            <label htmlFor="tournaments-id-placeTo" className={labelClass}>Yerə</label>
+            <input id="tournaments-id-placeTo" name="placeTo" type="number" min="1" required className={inputClass} />
           </div>
           <div className="w-32">
-            <label className={labelClass}>Məbləğ ($)</label>
-            <input name="amount" type="number" min="0" required className={inputClass} />
+            <label htmlFor="tournaments-id-amount" className={labelClass}>Məbləğ ($)</label>
+            <input id="tournaments-id-amount" name="amount" type="number" min="0" required className={inputClass} />
           </div>
           <div className="w-28">
-            <label className={labelClass}>Qeyd</label>
-            <input name="label" placeholder="Winner" className={inputClass} />
+            <label htmlFor="tournaments-id-label" className={labelClass}>Qeyd</label>
+            <input id="tournaments-id-label" name="label" placeholder="Winner" className={inputClass} />
           </div>
           <button type="submit" className={secondaryButtonClass}>
             Əlavə et

@@ -14,16 +14,18 @@ export default function AdminLoginPage() {
         </h1>
         <p className="mb-6 text-sm text-foreground-muted">Admin panelə giriş</p>
 
-        <label className="mb-1 block text-sm font-medium text-foreground-muted">Email</label>
+        <label htmlFor="admin-login-email" className="mb-1 block text-sm font-medium text-foreground-muted">Email</label>
         <input
+          id="admin-login-email"
           name="email"
           type="email"
           required
           className="mb-4 w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via"
         />
 
-        <label className="mb-1 block text-sm font-medium text-foreground-muted">Şifrə</label>
+        <label htmlFor="admin-login-password" className="mb-1 block text-sm font-medium text-foreground-muted">Şifrə</label>
         <input
+          id="admin-login-password"
           name="password"
           type="password"
           required

@@ -22,8 +22,8 @@ export default function NewsForm({
     <form action={action} className="max-w-3xl space-y-6">
       <div className="max-w-lg space-y-4">
         <div>
-          <label className={labelClass}>Oyun</label>
-          <select name="gameId" defaultValue={article?.gameId ?? ""} className={inputClass}>
+          <label htmlFor="news-gameId" className={labelClass}>Oyun</label>
+          <select id="news-gameId" name="gameId" defaultValue={article?.gameId ?? ""} className={inputClass}>
             <option value="">— bütün oyunlar —</option>
             {games.map((g) => (
               <option key={g.id} value={g.id}>
@@ -33,8 +33,8 @@ export default function NewsForm({
           </select>
         </div>
         <div>
-          <label className={labelClass}>Əlaqəli komanda</label>
-          <select name="relatedTeamId" defaultValue={article?.relatedTeamId ?? ""} className={inputClass}>
+          <label htmlFor="news-relatedTeamId" className={labelClass}>Əlaqəli komanda</label>
+          <select id="news-relatedTeamId" name="relatedTeamId" defaultValue={article?.relatedTeamId ?? ""} className={inputClass}>
             <option value="">— yoxdur —</option>
             {teams.map((t) => (
               <option key={t.id} value={t.id}>
@@ -45,8 +45,8 @@ export default function NewsForm({
         </div>
         <ImageUpload name="coverImageUrl" label="Üz şəkli" defaultValue={article?.coverImageUrl} />
         <div>
-          <label className={labelClass}>Teqlər (vergüllə ayrılmış)</label>
-          <input name="tags" defaultValue={article?.tags?.join(", ") ?? ""} className={inputClass} placeholder="turnir, transfer" />
+          <label htmlFor="news-tags" className={labelClass}>Teqlər (vergüllə ayrılmış)</label>
+          <input id="news-tags" name="tags" defaultValue={article?.tags?.join(", ") ?? ""} className={inputClass} placeholder="turnir, transfer" />
         </div>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="isFeatured" defaultChecked={article?.isFeatured ?? false} />
@@ -62,32 +62,32 @@ export default function NewsForm({
         <div className="space-y-3 rounded-lg border border-border-subtle p-4">
           <h2 className="font-display text-sm font-bold uppercase tracking-wide text-foreground-muted">Azərbaycan</h2>
           <div>
-            <label className={labelClass}>Başlıq</label>
-            <input name="title_az" required defaultValue={az?.title} className={inputClass} />
+            <label htmlFor="news-title_az" className={labelClass}>Başlıq</label>
+            <input id="news-title_az" name="title_az" required defaultValue={az?.title} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Qısa məzmun</label>
-            <input name="excerpt_az" defaultValue={az?.excerpt ?? ""} className={inputClass} />
+            <label htmlFor="news-excerpt_az" className={labelClass}>Qısa məzmun</label>
+            <input id="news-excerpt_az" name="excerpt_az" defaultValue={az?.excerpt ?? ""} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Mətn</label>
-            <textarea name="bodyHtml_az" required rows={8} defaultValue={az?.bodyHtml} className={inputClass} />
+            <label htmlFor="news-bodyHtml_az" className={labelClass}>Mətn</label>
+            <textarea id="news-bodyHtml_az" name="bodyHtml_az" required rows={8} defaultValue={az?.bodyHtml} className={inputClass} />
           </div>
         </div>
 
         <div className="space-y-3 rounded-lg border border-border-subtle p-4">
           <h2 className="font-display text-sm font-bold uppercase tracking-wide text-foreground-muted">English</h2>
           <div>
-            <label className={labelClass}>Title</label>
-            <input name="title_en" required defaultValue={en?.title} className={inputClass} />
+            <label htmlFor="news-title_en" className={labelClass}>Title</label>
+            <input id="news-title_en" name="title_en" required defaultValue={en?.title} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Excerpt</label>
-            <input name="excerpt_en" defaultValue={en?.excerpt ?? ""} className={inputClass} />
+            <label htmlFor="news-excerpt_en" className={labelClass}>Excerpt</label>
+            <input id="news-excerpt_en" name="excerpt_en" defaultValue={en?.excerpt ?? ""} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Body</label>
-            <textarea name="bodyHtml_en" required rows={8} defaultValue={en?.bodyHtml} className={inputClass} />
+            <label htmlFor="news-bodyHtml_en" className={labelClass}>Body</label>
+            <textarea id="news-bodyHtml_en" name="bodyHtml_en" required rows={8} defaultValue={en?.bodyHtml} className={inputClass} />
           </div>
         </div>
       </div>

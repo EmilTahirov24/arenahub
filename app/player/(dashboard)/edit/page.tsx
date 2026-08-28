@@ -38,25 +38,25 @@ export default async function EditProfilePage() {
             gave each name field 165px, which is narrower than most surnames. */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label className={labelClass}>Ad</label>
-            <input name="firstName" defaultValue={player.firstName ?? ""} className={inputClass} />
+            <label htmlFor="dashboard-edit-firstName" className={labelClass}>Ad</label>
+            <input id="dashboard-edit-firstName" name="firstName" defaultValue={player.firstName ?? ""} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Soyad</label>
-            <input name="lastName" defaultValue={player.lastName ?? ""} className={inputClass} />
+            <label htmlFor="dashboard-edit-lastName" className={labelClass}>Soyad</label>
+            <input id="dashboard-edit-lastName" name="lastName" defaultValue={player.lastName ?? ""} className={inputClass} />
           </div>
         </div>
         <div>
-          <label className={labelClass}>Rol</label>
-          <input name="role" defaultValue={player.role ?? ""} className={inputClass} placeholder="IGL, AWPer..." />
+          <label htmlFor="dashboard-edit-role" className={labelClass}>Rol</label>
+          <input id="dashboard-edit-role" name="role" defaultValue={player.role ?? ""} className={inputClass} placeholder="IGL, AWPer..." />
         </div>
         <div>
-          <label className={labelClass}>Ölkə</label>
-          <CountrySelect defaultValue={player.country} className={inputClass} />
+          <label htmlFor="dashboard-edit-country" className={labelClass}>Ölkə</label>
+          <CountrySelect id="dashboard-edit-country" defaultValue={player.country} className={inputClass} />
         </div>
         <div>
-          <label className={labelClass}>Status</label>
-          <select name="status" defaultValue={player.status} className={inputClass}>
+          <label htmlFor="dashboard-edit-status" className={labelClass}>Status</label>
+          <select id="dashboard-edit-status" name="status" defaultValue={player.status} className={inputClass}>
             {STATUSES.map((s) => (
               <option key={s} value={s}>
                 {s}

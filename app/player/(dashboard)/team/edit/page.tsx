@@ -30,17 +30,18 @@ export default async function EditTeamPage() {
 
       <TeamSettingsForm>
         <div>
-          <label className={labelClass}>Ad</label>
-          <input name="name" required defaultValue={team.name} className={inputClass} />
+          <label htmlFor="team-edit-name" className={labelClass}>Ad</label>
+          <input id="team-edit-name" name="name" required defaultValue={team.name} className={inputClass} />
         </div>
         <div>
-          <label className={labelClass}>Ölkə</label>
-          <CountrySelect defaultValue={team.country} className={inputClass} />
+          <label htmlFor="team-edit-country" className={labelClass}>Ölkə</label>
+          <CountrySelect id="team-edit-country" defaultValue={team.country} className={inputClass} />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label className={labelClass}>Əsas rəng</label>
+            <label htmlFor="team-edit-primaryColor" className={labelClass}>Əsas rəng</label>
             <input
+              id="team-edit-primaryColor"
               name="primaryColor"
               type="color"
               defaultValue={team.primaryColor ?? "#7c3aed"}
@@ -48,8 +49,9 @@ export default async function EditTeamPage() {
             />
           </div>
           <div>
-            <label className={labelClass}>İkinci rəng</label>
+            <label htmlFor="team-edit-secondaryColor" className={labelClass}>İkinci rəng</label>
             <input
+              id="team-edit-secondaryColor"
               name="secondaryColor"
               type="color"
               defaultValue={team.secondaryColor ?? "#0a0b10"}
@@ -59,8 +61,8 @@ export default async function EditTeamPage() {
         </div>
         <ImageUpload name="logoUrl" label="Loqo" defaultValue={team.logoUrl} />
         <div>
-          <label className={labelClass}>Təsvir</label>
-          <textarea name="description" defaultValue={team.description ?? ""} rows={4} className={inputClass} />
+          <label htmlFor="team-edit-description" className={labelClass}>Təsvir</label>
+          <textarea id="team-edit-description" name="description" defaultValue={team.description ?? ""} rows={4} className={inputClass} />
         </div>
       </TeamSettingsForm>
     </div>

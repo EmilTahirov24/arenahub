@@ -35,8 +35,9 @@ export default function MatchForm({
   return (
     <form action={action} className="max-w-lg space-y-4">
       <div>
-        <label className={labelClass}>Oyun</label>
+        <label htmlFor="match-gameId" className={labelClass}>Oyun</label>
         <select
+          id="match-gameId"
           name="gameId"
           required
           value={gameId}
@@ -52,8 +53,8 @@ export default function MatchForm({
         </select>
       </div>
       <div>
-        <label className={labelClass}>Turnir (istəyə bağlı)</label>
-        <select name="tournamentId" defaultValue={match?.tournamentId ?? ""} className={inputClass} disabled={!gameId}>
+        <label htmlFor="match-tournamentId" className={labelClass}>Turnir (istəyə bağlı)</label>
+        <select id="match-tournamentId" name="tournamentId" defaultValue={match?.tournamentId ?? ""} className={inputClass} disabled={!gameId}>
           <option value="">— yoxdur —</option>
           {tournamentsForGame.map((t) => (
             <option key={t.id} value={t.id}>
@@ -65,8 +66,8 @@ export default function MatchForm({
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className={labelClass}>Komanda A</label>
-          <select name="teamAId" required defaultValue={match?.teamAId} className={inputClass} disabled={!gameId}>
+          <label htmlFor="match-teamAId" className={labelClass}>Komanda A</label>
+          <select id="match-teamAId" name="teamAId" required defaultValue={match?.teamAId} className={inputClass} disabled={!gameId}>
             <option value="">Seçin</option>
             {teamsForGame.map((t) => (
               <option key={t.id} value={t.id}>
@@ -76,8 +77,8 @@ export default function MatchForm({
           </select>
         </div>
         <div>
-          <label className={labelClass}>Komanda B</label>
-          <select name="teamBId" required defaultValue={match?.teamBId} className={inputClass} disabled={!gameId}>
+          <label htmlFor="match-teamBId" className={labelClass}>Komanda B</label>
+          <select id="match-teamBId" name="teamBId" required defaultValue={match?.teamBId} className={inputClass} disabled={!gameId}>
             <option value="">Seçin</option>
             {teamsForGame.map((t) => (
               <option key={t.id} value={t.id}>
@@ -88,8 +89,9 @@ export default function MatchForm({
         </div>
       </div>
       <div>
-        <label className={labelClass}>Tarix/vaxt</label>
+        <label htmlFor="match-scheduledAt" className={labelClass}>Tarix/vaxt</label>
         <input
+          id="match-scheduledAt"
           name="scheduledAt"
           type="datetime-local"
           required
@@ -99,8 +101,8 @@ export default function MatchForm({
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className={labelClass}>Best of</label>
-          <select name="bestOf" defaultValue={match?.bestOf ?? 3} className={inputClass}>
+          <label htmlFor="match-bestOf" className={labelClass}>Best of</label>
+          <select id="match-bestOf" name="bestOf" defaultValue={match?.bestOf ?? 3} className={inputClass}>
             {[1, 3, 5].map((n) => (
               <option key={n} value={n}>
                 BO{n}
@@ -109,8 +111,8 @@ export default function MatchForm({
           </select>
         </div>
         <div>
-          <label className={labelClass}>Ulduz reytinqi</label>
-          <select name="starRating" defaultValue={match?.starRating ?? 3} className={inputClass}>
+          <label htmlFor="match-starRating" className={labelClass}>Ulduz reytinqi</label>
+          <select id="match-starRating" name="starRating" defaultValue={match?.starRating ?? 3} className={inputClass}>
             {[1, 2, 3, 4, 5].map((n) => (
               <option key={n} value={n}>
                 {n}
@@ -120,12 +122,12 @@ export default function MatchForm({
         </div>
       </div>
       <div>
-        <label className={labelClass}>Mərhələ</label>
-        <input name="stage" defaultValue={match?.stage ?? ""} className={inputClass} placeholder="Final, Semifinal..." />
+        <label htmlFor="match-stage" className={labelClass}>Mərhələ</label>
+        <input id="match-stage" name="stage" defaultValue={match?.stage ?? ""} className={inputClass} placeholder="Final, Semifinal..." />
       </div>
       <div>
-        <label className={labelClass}>Status</label>
-        <select name="status" defaultValue={match?.status ?? "UPCOMING"} className={inputClass}>
+        <label htmlFor="match-status" className={labelClass}>Status</label>
+        <select id="match-status" name="status" defaultValue={match?.status ?? "UPCOMING"} className={inputClass}>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
               {s}
@@ -134,8 +136,8 @@ export default function MatchForm({
         </select>
       </div>
       <div>
-        <label className={labelClass}>Stream URL</label>
-        <input name="streamUrl" defaultValue={match?.streamUrl ?? ""} className={inputClass} />
+        <label htmlFor="match-streamUrl" className={labelClass}>Stream URL</label>
+        <input id="match-streamUrl" name="streamUrl" defaultValue={match?.streamUrl ?? ""} className={inputClass} />
       </div>
       <button type="submit" className={primaryButtonClass}>
         Yadda saxla

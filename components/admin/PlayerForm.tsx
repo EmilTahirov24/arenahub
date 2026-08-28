@@ -25,22 +25,22 @@ export default function PlayerForm({
   return (
     <form action={action} className="max-w-lg space-y-4">
       <div>
-        <label className={labelClass}>Nickname</label>
-        <input name="nickname" required defaultValue={player?.nickname} className={inputClass} />
+        <label htmlFor="player-nickname" className={labelClass}>Nickname</label>
+        <input id="player-nickname" name="nickname" required defaultValue={player?.nickname} className={inputClass} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className={labelClass}>Ad</label>
-          <input name="firstName" defaultValue={player?.firstName ?? ""} className={inputClass} />
+          <label htmlFor="player-firstName" className={labelClass}>Ad</label>
+          <input id="player-firstName" name="firstName" defaultValue={player?.firstName ?? ""} className={inputClass} />
         </div>
         <div>
-          <label className={labelClass}>Soyad</label>
-          <input name="lastName" defaultValue={player?.lastName ?? ""} className={inputClass} />
+          <label htmlFor="player-lastName" className={labelClass}>Soyad</label>
+          <input id="player-lastName" name="lastName" defaultValue={player?.lastName ?? ""} className={inputClass} />
         </div>
       </div>
       <div>
-        <label className={labelClass}>Komanda</label>
-        <select name="teamId" defaultValue={currentTeamId ?? ""} className={inputClass}>
+        <label htmlFor="player-teamId" className={labelClass}>Komanda</label>
+        <select id="player-teamId" name="teamId" defaultValue={currentTeamId ?? ""} className={inputClass}>
           <option value="">— komandasız —</option>
           {teams.map((t) => (
             <option key={t.id} value={t.id}>
@@ -50,8 +50,8 @@ export default function PlayerForm({
         </select>
       </div>
       <div>
-        <label className={labelClass}>Oyun (komandasız oyunçu üçün)</label>
-        <select name="gameId" defaultValue={player?.gameId ?? ""} className={inputClass}>
+        <label htmlFor="player-gameId" className={labelClass}>Oyun (komandasız oyunçu üçün)</label>
+        <select id="player-gameId" name="gameId" defaultValue={player?.gameId ?? ""} className={inputClass}>
           <option value="">Seçin</option>
           {games.map((g) => (
             <option key={g.id} value={g.id}>
@@ -61,16 +61,16 @@ export default function PlayerForm({
         </select>
       </div>
       <div>
-        <label className={labelClass}>Rol</label>
-        <input name="role" defaultValue={player?.role ?? ""} className={inputClass} placeholder="IGL, AWPer..." />
+        <label htmlFor="player-role" className={labelClass}>Rol</label>
+        <input id="player-role" name="role" defaultValue={player?.role ?? ""} className={inputClass} placeholder="IGL, AWPer..." />
       </div>
       <div>
-        <label className={labelClass}>Ölkə</label>
-        <CountrySelect defaultValue={player?.country} className={inputClass} />
+        <label htmlFor="player-country" className={labelClass}>Ölkə</label>
+        <CountrySelect id="player-country" defaultValue={player?.country} className={inputClass} />
       </div>
       <div>
-        <label className={labelClass}>Status</label>
-        <select name="status" defaultValue={player?.status ?? "ACTIVE"} className={inputClass}>
+        <label htmlFor="player-status" className={labelClass}>Status</label>
+        <select id="player-status" name="status" defaultValue={player?.status ?? "ACTIVE"} className={inputClass}>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
               {s}
@@ -88,20 +88,20 @@ export default function PlayerForm({
         </p>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className={labelClass}>Xəritə sayı</label>
-            <input name="statMaps" type="number" min="0" defaultValue={player?.statMaps ?? ""} className={inputClass} />
+            <label htmlFor="player-statMaps" className={labelClass}>Xəritə sayı</label>
+            <input id="player-statMaps" name="statMaps" type="number" min="0" defaultValue={player?.statMaps ?? ""} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Öldürmə / raund</label>
-            <input name="statKillsPerRound" type="number" step="0.01" min="0" defaultValue={player?.statKillsPerRound ?? ""} className={inputClass} />
+            <label htmlFor="player-statKillsPerRound" className={labelClass}>Öldürmə / raund</label>
+            <input id="player-statKillsPerRound" name="statKillsPerRound" type="number" step="0.01" min="0" defaultValue={player?.statKillsPerRound ?? ""} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Ölüm / raund</label>
-            <input name="statDeathsPerRound" type="number" step="0.01" min="0" defaultValue={player?.statDeathsPerRound ?? ""} className={inputClass} />
+            <label htmlFor="player-statDeathsPerRound" className={labelClass}>Ölüm / raund</label>
+            <input id="player-statDeathsPerRound" name="statDeathsPerRound" type="number" step="0.01" min="0" defaultValue={player?.statDeathsPerRound ?? ""} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Zərər / raund (ADR)</label>
-            <input name="statDamagePerRound" type="number" step="0.01" min="0" defaultValue={player?.statDamagePerRound ?? ""} className={inputClass} />
+            <label htmlFor="player-statDamagePerRound" className={labelClass}>Zərər / raund (ADR)</label>
+            <input id="player-statDamagePerRound" name="statDamagePerRound" type="number" step="0.01" min="0" defaultValue={player?.statDamagePerRound ?? ""} className={inputClass} />
           </div>
         </div>
       </fieldset>
