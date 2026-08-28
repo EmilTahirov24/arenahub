@@ -35,7 +35,7 @@ import {
 } from "../lib/liquipedia";
 import { orgKey } from "../lib/orgNames";
 import { syncMaps } from "../lib/matchMaps";
-import { signalWrote } from "./_ciSignal";
+import { signalRatingsStale } from "./_ciSignal";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -276,15 +276,18 @@ async function main() {
   if (skipped.length) console.log("Buraxıldı: " + skipped.join(", ") + ".");
   if (!apply) console.log("\nTətbiq etmək üçün: --apply");
 
-  // Yazılan xəritə sayı: iş axını reytinqi yalnız bu sıfırdan böyük olanda
-  // yenidən hesablayır. Xəritə hesabı matçın qalibini dəyişə bilir, ona görə
-  // burada da siqnal lazımdır.
+  // Yazılan xəritə sayı. Burada ehtiyatlı davranılır: xəritə hesabı seriyanın
+  // qalibini dəyişə bilir, ona görə hər xəritə yazılışı reytinqi şübhəli edir.
+  // Praktikada bu sayğac çox vaxt sıfır olur — idxal qeydlərində «0 xəritə»
+  // yazıları buna görədir — yəni qənaət yenə də real qalır.
+  // İş axını reytinqi yalnız bu sıfırdan böyük olanda
+  // yenidən hesablayır.
   return mapRows;
 }
 
 main()
   .then((written) => {
-    signalWrote(written);
+    signalRatingsStale(written);
     return prisma.$disconnect();
   })
   .catch(async (e) => {
