@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { primaryButtonClass, secondaryButtonClass } from "@/components/admin/formStyles";
+import AdminSearch from "@/components/admin/AdminSearch";
+import AdminPagination from "@/components/admin/AdminPagination";
+import type { Prisma } from "@/app/generated/prisma/client";
 
 const STATUS_COLOR: Record<string, string> = {
   LIVE: "text-live",
@@ -10,11 +13,39 @@ const STATUS_COLOR: Record<string, string> = {
   CANCELLED: "text-foreground-muted",
 };
 
-export default async function AdminMatchesPage() {
+const PER_PAGE = 50;
+
+export default async function AdminMatchesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; page?: string }>;
+}) {
+  const { q, page: pageParam } = await searchParams;
+  const search = (q ?? "").trim();
+
+  // Əvvəl burada yalnız `take: 100` vardı və səhifələmə yox idi — yəni ən təzə
+  // 100 matçdan başqa heç birinə çatmaq mümkün deyildi. Production-da 2349 matç
+  // var, yəni 2249-u admin üçün əlçatmaz idi. Bu, limitsiz sorğudan da pisdir:
+  // orada heç olmasa data görünürdü.
+  const where: Prisma.MatchWhereInput = search
+    ? {
+        OR: [
+          { teamA: { name: { contains: search, mode: "insensitive" } } },
+          { teamB: { name: { contains: search, mode: "insensitive" } } },
+        ],
+      }
+    : {};
+
+  const total = await prisma.match.count({ where });
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+  const page = Math.min(Math.max(1, Number(pageParam) || 1), totalPages);
+
   const matches = await prisma.match.findMany({
+    where,
     orderBy: { scheduledAt: "desc" },
-    take: 100,
     include: { teamA: true, teamB: true, game: true },
+    take: PER_PAGE,
+    skip: (page - 1) * PER_PAGE,
   });
 
   return (
@@ -25,6 +56,8 @@ export default async function AdminMatchesPage() {
           + Yeni matç
         </Link>
       </div>
+
+      <AdminSearch action="/admin/matches" defaultValue={search} placeholder="Komanda adı ilə axtar..." />
 
       <div className="overflow-hidden rounded-lg border border-border-subtle">
         {matches.map((m) => (
@@ -40,8 +73,20 @@ export default async function AdminMatchesPage() {
             </Link>
           </div>
         ))}
-        {matches.length === 0 && <p className="p-6 text-center text-sm text-foreground-muted">Matç yoxdur.</p>}
+        {matches.length === 0 && (
+          <p className="p-6 text-center text-sm text-foreground-muted">
+            {search ? `«${search}» üçün matç tapılmadı.` : "Matç yoxdur."}
+          </p>
+        )}
       </div>
+
+      <AdminPagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        pathname="/admin/matches"
+        query={{ q: search || undefined }}
+      />
     </div>
   );
 }
