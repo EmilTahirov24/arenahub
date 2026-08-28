@@ -1,12 +1,16 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useId } from "react";
 import Link from "next/link";
 import { resetPlayerPassword } from "@/app/player/reset-password/actions";
 import type { AuthText } from "@/lib/authStrings";
 
 export default function PlayerResetPasswordForm({ token, text }: { token: string; text: AuthText }) {
   const [state, formAction, pending] = useActionState(resetPlayerPassword, undefined);
+  // Etiketi sahəyə bağlayır. Bunsuz ekran oxuyucusu sahəni adsız oxuyur,
+  // parol meneceri onu tanımır, etiketə klik isə sahəni fokuslamır.
+  // useId seçildi ki, səhifədə ikinci form olsa id-lər toqquşmasın.
+  const fieldId = useId();
 
   return (
     <form action={formAction} className="w-full max-w-sm rounded-xl border border-border-subtle bg-surface p-6">
@@ -17,8 +21,9 @@ export default function PlayerResetPasswordForm({ token, text }: { token: string
       </h1>
       <p className="mb-6 text-sm text-foreground-muted">{text.resetSubtitle}</p>
 
-      <label className="mb-1 block text-sm font-medium text-foreground-muted">{text.newPassword}</label>
+      <label htmlFor={`${fieldId}-password`} className="mb-1 block text-sm font-medium text-foreground-muted">{text.newPassword}</label>
       <input
+        id={`${fieldId}-password`}
         name="password"
         type="password"
         required
@@ -26,8 +31,9 @@ export default function PlayerResetPasswordForm({ token, text }: { token: string
         className="mb-4 w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via"
       />
 
-      <label className="mb-1 block text-sm font-medium text-foreground-muted">{text.confirmPassword}</label>
+      <label htmlFor={`${fieldId}-confirmPassword`} className="mb-1 block text-sm font-medium text-foreground-muted">{text.confirmPassword}</label>
       <input
+        id={`${fieldId}-confirmPassword`}
         name="confirmPassword"
         type="password"
         required

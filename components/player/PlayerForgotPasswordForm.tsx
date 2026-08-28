@@ -1,12 +1,16 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useId } from "react";
 import Link from "next/link";
 import { requestPlayerPasswordReset } from "@/app/player/forgot-password/actions";
 import type { AuthLang, AuthText } from "@/lib/authStrings";
 
 export default function PlayerForgotPasswordForm({ lang, text }: { lang: AuthLang; text: AuthText }) {
   const [state, formAction, pending] = useActionState(requestPlayerPasswordReset, undefined);
+  // Etiketi sahəyə bağlayır. Bunsuz ekran oxuyucusu sahəni adsız oxuyur,
+  // parol meneceri onu tanımır, etiketə klik isə sahəni fokuslamır.
+  // useId seçildi ki, səhifədə ikinci form olsa id-lər toqquşmasın.
+  const fieldId = useId();
   const q = lang === "az" ? "" : `?lang=${lang}`;
 
   return (
@@ -20,8 +24,9 @@ export default function PlayerForgotPasswordForm({ lang, text }: { lang: AuthLan
         <p className="mb-4 text-sm text-foreground">{text.forgotSent}</p>
       ) : (
         <>
-          <label className="mb-1 block text-sm font-medium text-foreground-muted">{text.email}</label>
+          <label htmlFor={`${fieldId}-email`} className="mb-1 block text-sm font-medium text-foreground-muted">{text.email}</label>
           <input
+            id={`${fieldId}-email`}
             name="email"
             type="email"
             required

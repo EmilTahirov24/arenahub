@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useActionState } from "react";
+import { Suspense, useActionState, useId } from "react";
 import Link from "next/link";
 import VerifyStatusBanner from "@/components/auth/VerifyStatusBanner";
 import { playerLogin } from "@/app/player/login/actions";
@@ -15,6 +15,10 @@ import type { AuthLang, AuthText } from "@/lib/authStrings";
  */
 export default function PlayerLoginForm({ lang, text }: { lang: AuthLang; text: AuthText }) {
   const [state, formAction, pending] = useActionState(playerLogin, undefined);
+  // Etiketi sahəyə bağlayır. Bunsuz ekran oxuyucusu sahəni adsız oxuyur,
+  // parol meneceri onu tanımır, etiketə klik isə sahəni fokuslamır.
+  // useId seçildi ki, səhifədə ikinci form olsa id-lər toqquşmasın.
+  const fieldId = useId();
   const q = lang === "az" ? "" : `?lang=${lang}`;
 
   return (
@@ -28,11 +32,11 @@ export default function PlayerLoginForm({ lang, text }: { lang: AuthLang; text: 
         <VerifyStatusBanner />
       </Suspense>
 
-      <label className="mb-1 block text-sm font-medium text-foreground-muted">{text.email}</label>
-      <input name="email" type="email" required className="mb-4 w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via" />
+      <label htmlFor={`${fieldId}-email`} className="mb-1 block text-sm font-medium text-foreground-muted">{text.email}</label>
+      <input id={`${fieldId}-email`} name="email" type="email" required className="mb-4 w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via" />
 
-      <label className="mb-1 block text-sm font-medium text-foreground-muted">{text.password}</label>
-      <input name="password" type="password" required className="mb-1 w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via" />
+      <label htmlFor={`${fieldId}-password`} className="mb-1 block text-sm font-medium text-foreground-muted">{text.password}</label>
+      <input id={`${fieldId}-password`} name="password" type="password" required className="mb-1 w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via" />
 
       <p className="mb-4 text-right text-xs">
         <Link href={`/player/forgot-password${q}`} className="text-brand-via hover:underline">

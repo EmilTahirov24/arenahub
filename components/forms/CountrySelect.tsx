@@ -8,10 +8,13 @@ export default function CountrySelect({
   defaultValue,
   className,
   required = false,
+  id,
 }: {
   defaultValue?: string | null;
   className?: string;
   required?: boolean;
+  /** Xarici <label htmlFor> ilə bağlamaq üçün. Verilməsə sahə adsız qalır. */
+  id?: string;
 }) {
   const [value, setValue] = useState(defaultValue ?? "");
 
@@ -19,6 +22,7 @@ export default function CountrySelect({
     <div className="flex items-center gap-2">
       <CountryFlag code={value} size={20} />
       <select
+        id={id}
         name="country"
         required={required}
         value={value}
