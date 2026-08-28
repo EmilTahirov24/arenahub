@@ -112,8 +112,8 @@ jobs:
       # Halving the job matters beyond speed here: this schedule asks for 72 runs
       # a day of a nine-minute job on free shared runners, and GitHub has been
       # delivering fewer and fewer of them. A cheaper job is a better-behaved one.
-      - if: steps.live.outputs.wrote == 'true' || steps.maps.outputs.wrote == 'true'
+      - if: steps.live.outputs.ratings_stale == 'true' || steps.maps.outputs.ratings_stale == 'true'
         run: npx tsx scripts/recompute-ratings.ts
 
-      - if: steps.live.outputs.wrote != 'true' && steps.maps.outputs.wrote != 'true'
+      - if: steps.live.outputs.ratings_stale != 'true' && steps.maps.outputs.ratings_stale != 'true'
         run: echo "Heç nə yazılmadı — reytinq yenidən hesablanmadı."

@@ -23,7 +23,7 @@ import { fetchMatchTicker, type LiquipediaOptions, type ParsedMatch } from "../l
 import { indexByOrg, orgKey } from "../lib/orgNames";
 import { syncMaps } from "../lib/matchMaps";
 import { recordImportRun } from "../lib/importRun";
-import { signalWrote } from "./_ciSignal";
+import { signalRatingsStale } from "./_ciSignal";
 import { WIKIS } from "../lib/wikis";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
@@ -77,12 +77,16 @@ function statusOf(m: ParsedMatch, at: Date): "FINISHED" | "LIVE" | "UPCOMING" | 
   return at.getTime() - started < LIVE_WINDOW_MS ? "LIVE" : null;
 }
 
-async function main(): Promise<{ written: number; note: string }> {
+async function main(): Promise<{ written: number; note: string; ratingsStale: number }> {
   const apply = process.argv.includes("--apply");
   console.log(apply ? "REJIM: yazma (--apply)\n" : "REJIM: quru işlətmə — heç nə yazılmır\n");
 
   const now = new Date();
   let written = 0;
+  // Reytinqə təsir edən dəyişikliklərin sayı. `written` bunun üçün yaramır:
+  // o, toxunulan hər matçı sayır və bilet hər qaçışda təxminən eyni 260 matçı
+  // qaytarır, yəni həmişə sıfırdan böyük olur.
+  let ratingsStale = 0;
   let mapRows = 0;
   let swept = 0;
   let newTeams = 0;
@@ -208,14 +212,19 @@ async function main(): Promise<{ written: number; note: string }> {
 
       const existing = await prisma.match.findFirst({
         where: { gameId: game.id, teamAId: a.id, teamBId: b.id, scheduledAt },
-        select: { id: true },
+        // Status və qalib də çəkilir: Elo yalnız bunlar dəyişəndə köhnəlir,
+        // müqayisə üçün isə əvvəlki dəyər lazımdır.
+        select: { id: true, status: true, winnerId: true },
       });
 
       let matchId: string;
       if (existing) {
+        if (existing.status !== status || existing.winnerId !== winnerId) ratingsStale++;
         await prisma.match.update({ where: { id: existing.id }, data });
         matchId = existing.id;
       } else {
+        // Yeni matç yalnız bitmiş və qalibi olan halda reytinqə düşür.
+        if (status === "FINISHED" && winnerId) ratingsStale++;
         const created = await prisma.match.create({
           data: { slug: await freeSlug("match", `${def.slug}-${a.name}-vs-${b.name}-${m.date!.slice(0, 10)}`), ...data },
           select: { id: true },
@@ -290,8 +299,12 @@ async function main(): Promise<{ written: number; note: string }> {
 
   return {
     written,
+    ratingsStale,
     note:
       `${written} matç, ${mapRows} xəritə, ${swept} təmizləmə` +
+      // Nəticəsi dəyişən matçların sayı qeydə də düşür: reytinqin nə vaxt və
+      // niyə yenidən hesablandığı sonradan bu sətirdən oxunur.
+      `, ${ratingsStale} nəticə dəyişdi` +
       (problems.length ? `; ${problems.length} problem` : ""),
   };
 }
@@ -300,7 +313,7 @@ async function main(): Promise<{ written: number; note: string }> {
 // tarixçəsini korlamamalıdır.
 (process.argv.includes("--apply") ? recordImportRun(prisma, "import-live", main) : main())
   .then((result) => {
-    signalWrote(result.written);
+    signalRatingsStale(result.ratingsStale);
     return prisma.$disconnect();
   })
   .catch(async (e) => {
