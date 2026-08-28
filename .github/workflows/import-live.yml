@@ -89,15 +89,31 @@ jobs:
           fi
           echo "DATABASE_URL is present (${#DATABASE_URL} characters)."
 
-      - run: npx tsx scripts/import-live.ts --apply
+      - id: live
+        run: npx tsx scripts/import-live.ts --apply
 
       # The match list carries a series score and no map breakdown, so the maps
       # come from the tournament pages afterwards. Capped per run: an event whose
       # games are held in Liquipedia's match database can only be read from the
       # rendered page, and that endpoint allows one request every 31s. Six pages
       # is about three minutes, and the backlog shrinks every hour.
-      - run: npx tsx scripts/import-maps.ts --apply --limit 6
+      - id: maps
+        run: npx tsx scripts/import-maps.ts --apply --limit 6
 
       # Ratings are a full replay of every finished match, so they have to be
       # rebuilt after new results land — see lib/elo.ts.
-      - run: npx tsx scripts/recompute-ratings.ts
+      #
+      # Only when something was actually written. Measured across two runs, the
+      # replay took 108s and 278s of a 387s and 475s job — between a quarter and
+      # well over half of it — and it grows with every match added. Most passes
+      # write nothing at all, and replaying an unchanged history cannot change a
+      # rating, so that time was pure waste.
+      #
+      # Halving the job matters beyond speed here: this schedule asks for 72 runs
+      # a day of a nine-minute job on free shared runners, and GitHub has been
+      # delivering fewer and fewer of them. A cheaper job is a better-behaved one.
+      - if: steps.live.outputs.wrote == 'true' || steps.maps.outputs.wrote == 'true'
+        run: npx tsx scripts/recompute-ratings.ts
+
+      - if: steps.live.outputs.wrote != 'true' && steps.maps.outputs.wrote != 'true'
+        run: echo "Heç nə yazılmadı — reytinq yenidən hesablanmadı."

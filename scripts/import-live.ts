@@ -23,6 +23,7 @@ import { fetchMatchTicker, type LiquipediaOptions, type ParsedMatch } from "../l
 import { indexByOrg, orgKey } from "../lib/orgNames";
 import { syncMaps } from "../lib/matchMaps";
 import { recordImportRun } from "../lib/importRun";
+import { signalWrote } from "./_ciSignal";
 import { WIKIS } from "../lib/wikis";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
@@ -298,7 +299,10 @@ async function main(): Promise<{ written: number; note: string }> {
 // Qeyd yalnız --apply ilə yazılır: quru işlətmə lokal yoxlamadır və sağlamlıq
 // tarixçəsini korlamamalıdır.
 (process.argv.includes("--apply") ? recordImportRun(prisma, "import-live", main) : main())
-  .then(() => prisma.$disconnect())
+  .then((result) => {
+    signalWrote(result.written);
+    return prisma.$disconnect();
+  })
   .catch(async (e) => {
     console.error(e);
     await prisma.$disconnect();
