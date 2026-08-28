@@ -1,11 +1,31 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { primaryButtonClass } from "@/components/admin/formStyles";
+import AdminPagination from "@/components/admin/AdminPagination";
 
-export default async function AdminNewsPage() {
+const PER_PAGE = 50;
+
+export default async function AdminNewsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page: pageParam } = await searchParams;
+
+  // Xəbərlər əl ilə yazılır, yəni say heç vaxt idxal olunan cədvəllər qədər
+  // böyüməyəcək. Səhifələmə yenə də var: burada limitsiz sorğu saxlamaq həmin
+  // qüsuru layihədə yaşadır və növbəti oxuyan onu nümunə kimi götürür.
+  // Axtarış qoyulmadı — başlıq ayrı cədvəldədir (NewsArticleTranslation) və
+  // bir neçə onluq sətir arasında gözlə tapmaq daha sürətlidir.
+  const total = await prisma.newsArticle.count();
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+  const page = Math.min(Math.max(1, Number(pageParam) || 1), totalPages);
+
   const articles = await prisma.newsArticle.findMany({
     orderBy: { createdAt: "desc" },
     include: { game: true, translations: true },
+    take: PER_PAGE,
+    skip: (page - 1) * PER_PAGE,
   });
 
   return (
@@ -41,6 +61,13 @@ export default async function AdminNewsPage() {
         })}
         {articles.length === 0 && <p className="p-6 text-center text-sm text-foreground-muted">Xəbər yoxdur.</p>}
       </div>
+
+      <AdminPagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        pathname="/admin/news"
+      />
     </div>
   );
 }

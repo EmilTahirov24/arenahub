@@ -2,11 +2,42 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { primaryButtonClass } from "@/components/admin/formStyles";
 import CountryFlag from "@/components/common/CountryFlag";
+import AdminSearch from "@/components/admin/AdminSearch";
+import AdminPagination from "@/components/admin/AdminPagination";
+import type { Prisma } from "@/app/generated/prisma/client";
 
-export default async function AdminPlayersPage() {
+const PER_PAGE = 50;
+
+export default async function AdminPlayersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; page?: string }>;
+}) {
+  const { q, page: pageParam } = await searchParams;
+  const search = (q ?? "").trim();
+
+  // Ləqəb, ad və soyad üzrə: admin oyunçunu həm nickname, həm real adı ilə
+  // axtara bilər, çünki hansının yadında qaldığı əvvəlcədən bilinmir.
+  const where: Prisma.PlayerWhereInput = search
+    ? {
+        OR: [
+          { nickname: { contains: search, mode: "insensitive" } },
+          { firstName: { contains: search, mode: "insensitive" } },
+          { lastName: { contains: search, mode: "insensitive" } },
+        ],
+      }
+    : {};
+
+  const total = await prisma.player.count({ where });
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+  const page = Math.min(Math.max(1, Number(pageParam) || 1), totalPages);
+
   const players = await prisma.player.findMany({
+    where,
     orderBy: { nickname: "asc" },
     include: { game: true, memberships: { where: { leftAt: null }, include: { team: true }, take: 1 } },
+    take: PER_PAGE,
+    skip: (page - 1) * PER_PAGE,
   });
 
   return (
@@ -17,6 +48,8 @@ export default async function AdminPlayersPage() {
           + Yeni oyunçu
         </Link>
       </div>
+
+      <AdminSearch action="/admin/players" defaultValue={search} placeholder="Ləqəb və ya ad ilə axtar..." />
 
       <div className="overflow-hidden rounded-lg border border-border-subtle">
         {players.map((player) => (
@@ -31,8 +64,20 @@ export default async function AdminPlayersPage() {
             <span className="text-xs text-foreground-muted">{player.game.shortName}</span>
           </Link>
         ))}
-        {players.length === 0 && <p className="p-6 text-center text-sm text-foreground-muted">Oyunçu yoxdur.</p>}
+        {players.length === 0 && (
+          <p className="p-6 text-center text-sm text-foreground-muted">
+            {search ? `«${search}» üçün oyunçu tapılmadı.` : "Oyunçu yoxdur."}
+          </p>
+        )}
       </div>
+
+      <AdminPagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        pathname="/admin/players"
+        query={{ q: search || undefined }}
+      />
     </div>
   );
 }

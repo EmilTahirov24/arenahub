@@ -21,6 +21,7 @@ import {
   submitForm,
   visibleText,
   gotoPage,
+  assertNotErrorPage,
 } from "./_lib";
 import { prisma } from "../lib/prisma";
 import { IMPORT_STALE_AFTER_MINUTES } from "../lib/importRun";
@@ -371,6 +372,40 @@ async function main() {
     assert(!alts.includes("E2E banner alt"), "gələcək tarixli banner hələ görünür");
   });
 
+
+  console.log("\nAdmin siyahıları\n");
+
+  // Bu səhifələr əvvəl BÜTÜN sətirləri bir dəfəyə çəkirdi — 814 komanda,
+  // 600 oyunçu — və hər açılış 3 saniyəyə qədər çəkirdi. Matçlarda isə
+  // `take: 100` vardı, səhifələmə yox: yəni 2349 matçın 2249-u ümumiyyətlə
+  // əlçatmaz idi. Say idxal ilə artdığı üçün bu, öz-özünə pisləşən qüsurdur.
+  await check("siyahılar səhifələnir və axtarış işləyir", async () => {
+    const total = await prisma.team.count();
+
+    await gotoPage(page, `${BASE}/admin/teams`);
+    const rows = await page.locator('a[href^="/admin/teams/"]').count();
+    // + Yeni komanda linki də bu seçiciyə düşür, ona görə bir ehtiyat.
+    assert(rows <= 52, `bir səhifədə ${rows} sətir — səhifələmə işləmir`);
+
+    if (total > 50) {
+      const pager = await page.locator('nav[aria-label="Səhifələr"]').count();
+      assert(pager > 0, "50-dən çox komanda var, amma səhifələmə görünmür");
+    }
+  });
+
+  await check("axtarış nəticəni daraldır", async () => {
+    const team = await prisma.team.findFirstOrThrow({ select: { name: true } });
+    await gotoPage(page, `${BASE}/admin/teams?q=${encodeURIComponent(team.name)}`);
+    const body = await visibleText(page);
+    assert(body.includes(team.name), `axtarılan komanda tapılmadı: ${team.name}`);
+  });
+
+  // Diapazondan kənar səhifə xəta verməməlidir.
+  await check("olmayan səhifə nömrəsi sonuncuya sıxılır", async () => {
+    const res = await gotoPage(page, `${BASE}/admin/players?page=9999`);
+    assert(res && res.status() === 200, `HTTP ${res?.status()}`);
+    await assertNotErrorPage(page);
+  });
 
   console.log("\nƏlçatanlıq\n");
 

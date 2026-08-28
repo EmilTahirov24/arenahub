@@ -1,13 +1,38 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { primaryButtonClass } from "@/components/admin/formStyles";
+import AdminSearch from "@/components/admin/AdminSearch";
+import AdminPagination from "@/components/admin/AdminPagination";
+import type { Prisma } from "@/app/generated/prisma/client";
 
 const TIER_COLOR: Record<string, string> = { S: "#facc15", A: "#22d3ee", B: "#a3a3a3", C: "#78716c" };
 
-export default async function AdminTournamentsPage() {
+const PER_PAGE = 50;
+
+export default async function AdminTournamentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; page?: string }>;
+}) {
+  const { q, page: pageParam } = await searchParams;
+  const search = (q ?? "").trim();
+
+  // Əvvəl bütün turnirlər bir dəfəyə çəkilirdi. Say idxal ilə artır, ona görə
+  // limitsiz variant vaxt keçdikcə yalnız pisləşir.
+  const where: Prisma.TournamentWhereInput = search
+    ? { name: { contains: search, mode: "insensitive" } }
+    : {};
+
+  const total = await prisma.tournament.count({ where });
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+  const page = Math.min(Math.max(1, Number(pageParam) || 1), totalPages);
+
   const tournaments = await prisma.tournament.findMany({
+    where,
     orderBy: { startDate: "desc" },
     include: { game: true },
+    take: PER_PAGE,
+    skip: (page - 1) * PER_PAGE,
   });
 
   const dateFmt = new Intl.DateTimeFormat("az", { day: "2-digit", month: "short", year: "numeric" });
@@ -20,6 +45,8 @@ export default async function AdminTournamentsPage() {
           + Yeni turnir
         </Link>
       </div>
+
+      <AdminSearch action="/admin/tournaments" defaultValue={search} placeholder="Turnir adı ilə axtar..." />
 
       <div className="overflow-hidden rounded-lg border border-border-subtle">
         {tournaments.map((tournament) => (
@@ -38,8 +65,20 @@ export default async function AdminTournamentsPage() {
             </span>
           </Link>
         ))}
-        {tournaments.length === 0 && <p className="p-6 text-center text-sm text-foreground-muted">Turnir yoxdur.</p>}
+        {tournaments.length === 0 && (
+          <p className="p-6 text-center text-sm text-foreground-muted">
+            {search ? `«${search}» üçün turnir tapılmadı.` : "Turnir yoxdur."}
+          </p>
+        )}
       </div>
+
+      <AdminPagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        pathname="/admin/tournaments"
+        query={{ q: search || undefined }}
+      />
     </div>
   );
 }
