@@ -25,11 +25,11 @@ function ClaimForm({ playerId }: { playerId: string }) {
 
   return (
     <form action={action} className="mt-3 space-y-2">
-      <label className="block text-xs text-foreground-muted">
+      <label htmlFor="claim-message" className="block text-xs text-foreground-muted">
         Bunun sizin profiliniz olduğunu necə təsdiqləyə bilərik? Sosial hesab linki, komanda yoldaşının adı,
         turnir səhifəsi — admin buna baxıb qərar verəcək.
       </label>
-      <textarea name="message" required minLength={10} rows={3} className={inputClass} />
+      <textarea id="claim-message" name="message" required minLength={10} rows={3} className={inputClass} />
       <button type="submit" disabled={pending} className={primaryButtonClass}>
         {pending ? "Göndərilir…" : "Müraciət göndər"}
       </button>

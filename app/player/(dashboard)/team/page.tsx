@@ -84,12 +84,12 @@ export default async function PlayerTeamPage() {
 
         <form action={createTeam} className="max-w-lg space-y-4">
           <div>
-            <label className={labelClass}>Komanda adı</label>
-            <input name="name" required className={inputClass} />
+            <label htmlFor="dashboard-team-name" className={labelClass}>Komanda adı</label>
+            <input id="dashboard-team-name" name="name" required className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Oyun</label>
-            <select name="gameId" required defaultValue="" className={inputClass}>
+            <label htmlFor="dashboard-team-gameId" className={labelClass}>Oyun</label>
+            <select id="dashboard-team-gameId" name="gameId" required defaultValue="" className={inputClass}>
               <option value="">Seçin</option>
               {games.map((g) => (
                 <option key={g.id} value={g.id}>
@@ -99,8 +99,8 @@ export default async function PlayerTeamPage() {
             </select>
           </div>
           <div>
-            <label className={labelClass}>Ölkə</label>
-            <CountrySelect className={inputClass} />
+            <label htmlFor="dashboard-team-country" className={labelClass}>Ölkə</label>
+            <CountrySelect id="dashboard-team-country" className={inputClass} />
           </div>
           <button type="submit" className={primaryButtonClass}>
             Komanda yarat

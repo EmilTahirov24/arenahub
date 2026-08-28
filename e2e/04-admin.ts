@@ -372,6 +372,43 @@ async function main() {
   });
 
 
+  console.log("\nƏlçatanlıq\n");
+
+  // Admin paneli hər gün işlədilən alətdir. Sahə etiketsiz olanda ekran
+  // oxuyucusu onu adsız oxuyur və parol menecerləri tanımır. Bu formalar
+  // giriş tələb etdiyi üçün yoxlama burada, public dəstdə deyil.
+  await check("admin formalarının sahələri etiketlidir", async () => {
+    const pages = [
+      "/admin/games/new",
+      "/admin/teams/new",
+      "/admin/players/new",
+      "/admin/tournaments/new",
+      "/admin/news/new",
+      "/admin/ads/new",
+    ];
+    const problems: string[] = [];
+
+    for (const path of pages) {
+      await gotoPage(page, `${BASE}${path}`);
+      const bare = await page.evaluate(() =>
+        [...document.querySelectorAll("input, select, textarea")]
+          .filter((el) => {
+            const input = el as HTMLInputElement;
+            if (input.type === "hidden") return false;
+            const id = el.getAttribute("id");
+            const linked = id && document.querySelector(`label[for="${CSS.escape(id)}"]`);
+            const wrapped = el.closest("label");
+            const aria = el.getAttribute("aria-label") ?? el.getAttribute("aria-labelledby");
+            return !linked && !wrapped && !aria;
+          })
+          .map((el) => el.getAttribute("name") ?? (el as HTMLInputElement).type),
+      );
+      if (bare.length) problems.push(`${path}: ${bare.join(", ")}`);
+    }
+
+    assert(problems.length === 0, `etiketsiz sahə — ${problems.join(" | ")}`);
+  });
+
   console.log("\nEDITOR rolunun sərhədləri\n");
 
   await check("EDITOR admin yaradılır", async () => {

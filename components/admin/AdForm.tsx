@@ -28,12 +28,12 @@ export default async function AdForm({
   return (
     <form action={action} className="max-w-lg space-y-4">
       <div>
-        <label className={labelClass}>Ad</label>
-        <input name="name" required defaultValue={ad?.name} className={inputClass} />
+        <label htmlFor="ad-name" className={labelClass}>Ad</label>
+        <input id="ad-name" name="name" required defaultValue={ad?.name} className={inputClass} />
       </div>
       <div>
-        <label className={labelClass}>Yer</label>
-        <select name="placement" defaultValue={ad?.placement ?? "SIDEBAR_RIGHT_TOP"} className={inputClass}>
+        <label htmlFor="ad-placement" className={labelClass}>Yer</label>
+        <select id="ad-placement" name="placement" defaultValue={ad?.placement ?? "SIDEBAR_RIGHT_TOP"} className={inputClass}>
           {PLACEMENTS.map((p) => (
             <option key={p.value} value={p.value}>
               {p.label}
@@ -43,17 +43,18 @@ export default async function AdForm({
       </div>
       <ImageUpload name="imageUrl" label="Şəkil" defaultValue={ad?.imageUrl} />
       <div>
-        <label className={labelClass}>Keçid linki</label>
-        <input name="linkUrl" type="url" required defaultValue={ad?.linkUrl} className={inputClass} placeholder="https://" />
+        <label htmlFor="ad-linkUrl" className={labelClass}>Keçid linki</label>
+        <input id="ad-linkUrl" name="linkUrl" type="url" required defaultValue={ad?.linkUrl} className={inputClass} placeholder="https://" />
       </div>
       <div>
-        <label className={labelClass}>Alt mətn</label>
-        <input name="altText" defaultValue={ad?.altText ?? ""} className={inputClass} />
+        <label htmlFor="ad-altText" className={labelClass}>Alt mətn</label>
+        <input id="ad-altText" name="altText" defaultValue={ad?.altText ?? ""} className={inputClass} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className={labelClass}>Başlama tarixi</label>
+          <label htmlFor="ad-startDate" className={labelClass}>Başlama tarixi</label>
           <input
+            id="ad-startDate"
             name="startDate"
             type="date"
             required
@@ -62,13 +63,13 @@ export default async function AdForm({
           />
         </div>
         <div>
-          <label className={labelClass}>Bitmə tarixi</label>
-          <input name="endDate" type="date" defaultValue={toDateInputValue(ad?.endDate)} className={inputClass} />
+          <label htmlFor="ad-endDate" className={labelClass}>Bitmə tarixi</label>
+          <input id="ad-endDate" name="endDate" type="date" defaultValue={toDateInputValue(ad?.endDate)} className={inputClass} />
         </div>
       </div>
       <div>
-        <label className={labelClass}>Çəki (rotasiya üçün)</label>
-        <input name="weight" type="number" min={1} defaultValue={ad?.weight ?? 1} className={inputClass} />
+        <label htmlFor="ad-weight" className={labelClass}>Çəki (rotasiya üçün)</label>
+        <input id="ad-weight" name="weight" type="number" min={1} defaultValue={ad?.weight ?? 1} className={inputClass} />
       </div>
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" name="isActive" defaultChecked={ad?.isActive ?? true} />

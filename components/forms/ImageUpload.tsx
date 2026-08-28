@@ -37,7 +37,11 @@ export default function ImageUpload({
 
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-foreground-muted">{label}</label>
+      {/* Etiket GÖRÜNƏN idarəediciyə bağlanır — fayl seçicisinə. Gizli input
+          dəyəri daşıyır, amma ekran oxuyucusu üçün maraqlı olan o deyil. */}
+      <label htmlFor={`${name}-file`} className="mb-1 block text-sm font-medium text-foreground-muted">
+        {label}
+      </label>
       <input type="hidden" name={name} value={url} />
       <div className="flex items-center gap-3">
         {url ? (
@@ -52,6 +56,7 @@ export default function ImageUpload({
             saxlamaq adamın faylı seçib yalnız sonra xəta almasına səbəb olurdu —
             bax app/api/upload/route.ts. */}
         <input
+          id={`${name}-file`}
           type="file"
           accept="image/png,image/jpeg,image/webp"
           onChange={handleChange}
