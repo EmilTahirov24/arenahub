@@ -64,6 +64,34 @@ export default async function EventDetailPage({
     }),
   ]);
 
+  /**
+   * Göstəriləcək komandalar.
+   *
+   * Kurasiya olunmuş TournamentParticipant sətirləri həmişə üstündür: onlar
+   * seed və placement daşıyır, mükafat hesablaması da onlardan asılıdır.
+   *
+   * Cədvəl boş olanda siyahı MATÇLARDAN çıxarılır. Səbəb ölçüldü: 149 turnirdən
+   * 111-inin iştirakçı sətri yox idi və bunların demək olar hamısı DAVAM EDƏN
+   * turnirlərdir. Yəni səhifə «iştirakçılar hələ açıqlanmayıb» yazırdı, halbuki
+   * elə aşağıda həmin komandaların oynadığı matçlar sadalanırdı — boş bölmə
+   * deyil, açıq ziddiyyət.
+   *
+   * Data onsuz da bizdədir və `matches` yuxarıda komandaları ilə birlikdə
+   * çəkilib, ona görə bunun əlavə sorğusu yoxdur.
+   *
+   * Cədvələ YAZILMIR. TournamentParticipant kurasiya üçündür; ora yazsaq həqiqi
+   * mənbə ikiyə bölünər və yeni matç gələndə cədvəl köhnələrdi. Render zamanı
+   * çıxarmaq həmişə cari qalır və admin sonradan həqiqi siyahını yazanda
+   * avtomatik ona keçir.
+   */
+  const derivedTeams =
+    participants.length > 0
+      ? []
+      : [...new Map(matches.flatMap((m) => [[m.teamAId, m.teamA], [m.teamBId, m.teamB]] as const)).values()]
+          // Əlifba sırası qəsdəndir: sıralama heç bir reytinq bildirməməlidir.
+          // Eyni mülahizə oyunçu cədvəlində də var (lib/playerTable.ts).
+          .sort((a, b) => a.name.localeCompare(b.name));
+
   const dateFmt = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
 
   return (
@@ -142,8 +170,21 @@ export default async function EventDetailPage({
             </Link>
           );
         })}
-        {participants.length === 0 && (
+        {derivedTeams.map((team) => (
+          // Çıxarılan komandada yer və mükafat YOXDUR — uydurma sıra nömrəsi
+          // göstərilməməlidir. Yalnız kimin oynadığı bilinir.
+          <Link
+            key={team.id}
+            href={`/teams/${team.slug}`}
+            className="flex items-center gap-2 rounded-lg border border-border-subtle bg-surface p-2 hover:bg-surface-raised"
+          >
+            <TeamAvatar name={team.name} logoUrl={team.logoUrl} color={team.primaryColor} size={28} />
+            <span className="min-w-0 flex-1 truncate text-sm">{team.name}</span>
+          </Link>
+        ))}
+        {participants.length === 0 && derivedTeams.length === 0 && (
           <p className="text-sm text-foreground-muted">
+            {/* Yalnız burada doğrudur: nə iştirakçı sətri var, nə də oynanmış matç. */}
             {locale === "az" ? "İştirakçılar hələ açıqlanmayıb." : "Participants have not been announced yet."}
           </p>
         )}
