@@ -159,6 +159,7 @@ sayğac yaddaşda olduğu üçün `npm run dev`-i yenidən başlatmaq onu sıfı
 | `npx tsx scripts/import-team-countries.ts --apply` | ölkəsi olmayan komandaların ölkəsini Liquipedia-dan doldurur |
 | `npx tsx scripts/import-active-rosters.ts --apply --limit 60` | son 30 gündə oynayan, tərkibi olmayan komandaların tərkibini gətirir (komanda başına ~30–60s, dəstələrlə işlədin) |
 | `npx tsx scripts/cleanup-bogus-teams.ts --apply` | adı turnir bölməsi olan saxta komandaları silir |
+| `npx tsx scripts/generate-weekly-roundup.ts --apply` | həftəlik nəticə icmalını öz matç datamızdan yazır (xəbər API-si yoxdur — səbəbi skriptin başındadır) |
 | `npx tsx scripts/dedupe-matches.ts` | təkrar düşmüş matçları birləşdirir |
 | `npx tsx scripts/merge-duplicate-tournaments.ts` | təkrar turnirləri birləşdirir |
 
