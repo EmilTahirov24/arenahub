@@ -148,6 +148,73 @@ async function main() {
     }
   });
 
+  console.log("\nTurnir iştirakçıları\n");
+
+  // Turnirlərin çoxunda iştirakçı cədvəli boşdur, amma matçlar oynanır.
+  // Səhifə əvvəl «açıqlanmayıb» yazırdı, halbuki elə aşağıda həmin
+  // komandaların matçları sadalanırdı. İndi siyahı matçlardan çıxarılır.
+  await check("iştirakçı sətri olmayan turnir komandaları matçlardan göstərir", async () => {
+    // Fikstur burada yaradılır, mövcud dataya güvənilmir. Əvvəlki variant
+    // «uyğun turnir tapılmasa ötür» deyirdi və lokal bazada belə turnir
+    // olmadığı üçün yoxlama heç nə sınamadan yaşıl olurdu.
+    const game = await prisma.game.findFirstOrThrow({ where: { isActive: true } });
+    const teams = await prisma.team.findMany({ where: { gameId: game.id }, take: 2, select: { id: true, name: true } });
+    assert(teams.length === 2, "fikstur üçün iki komanda lazımdır");
+
+    const stamp = Date.now();
+    const tournament = await prisma.tournament.create({
+      data: {
+        name: `E2E Iştirakçı Testi ${stamp}`,
+        slug: `e2e-istirakci-testi-${stamp}`,
+        gameId: game.id,
+        tier: "C",
+        status: "ONGOING",
+        startDate: new Date(Date.now() - 86_400_000),
+        endDate: new Date(Date.now() + 86_400_000),
+      },
+    });
+    await prisma.match.create({
+      data: {
+        slug: `e2e-istirakci-mac-${stamp}`,
+        scheduledAt: new Date(Date.now() - 3_600_000),
+        status: "FINISHED",
+        bestOf: 3,
+        gameId: game.id,
+        tournamentId: tournament.id,
+        teamAId: teams[0].id,
+        teamBId: teams[1].id,
+      },
+    });
+
+    try {
+      await gotoPage(page, `${BASE}/az/events/${tournament.slug}`);
+      const body = await visibleText(page);
+      assert(!/açıqlanmayıb/.test(body), "matçı olan turnirdə hələ də «açıqlanmayıb» yazılır");
+      for (const t of teams) {
+        assert(body.includes(t.name), `oynayan komanda siyahıda yoxdur: ${t.name}`);
+      }
+    } finally {
+      await prisma.match.deleteMany({ where: { tournamentId: tournament.id } });
+      await prisma.tournament.delete({ where: { id: tournament.id } });
+    }
+  });
+
+  // Əks hal: matçı olmayan turnirdə mesaj DOĞRUDUR və qalmalıdır.
+  await check("matçı olmayan turnirdə mesaj qalır", async () => {
+    const withMatch = new Set(
+      (await prisma.match.groupBy({ by: ["tournamentId"] })).map((r) => r.tournamentId),
+    );
+    const withPart = new Set(
+      (await prisma.tournamentParticipant.groupBy({ by: ["tournamentId"] })).map((r) => r.tournamentId),
+    );
+    const all = await prisma.tournament.findMany({ select: { id: true, slug: true } });
+    const target = all.find((t) => !withMatch.has(t.id) && !withPart.has(t.id));
+    if (!target) return;
+
+    await gotoPage(page, `${BASE}/az/events/${target.slug}`);
+    const body = await visibleText(page);
+    assert(/açıqlanmayıb/.test(body), "boş turnirdə mesaj itib");
+  });
   console.log("\nStrukturlaşdırılmış data (JSON-LD)\n");
 
   // Saytda 2000-dən çox matç var, amma onlar maşın üçün oxunmurdu. Bu
