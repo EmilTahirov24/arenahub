@@ -14,20 +14,20 @@ export default async function PlayerResetPasswordPage({
 
   if (!token) {
     return (
-      <div className="flex min-h-screen items-center justify-center px-4">
+      <main className="flex min-h-screen items-center justify-center px-4">
         <div className="w-full max-w-sm rounded-xl border border-border-subtle bg-surface p-6 text-center">
           <p className="mb-4 text-sm text-live">{text.resetInvalid}</p>
           <Link href={`/player/forgot-password${q}`} className="text-sm text-brand-via hover:underline">
             {text.resetRetry}
           </Link>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-10">
+    <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <PlayerResetPasswordForm token={token} text={text} />
-    </div>
+    </main>
   );
 }

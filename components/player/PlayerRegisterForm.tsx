@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useId } from "react";
 import Link from "next/link";
 import CountrySelect from "@/components/forms/CountrySelect";
 import { playerRegister } from "@/app/player/register/actions";
@@ -17,6 +17,10 @@ export default function PlayerRegisterForm({
   text: AuthText;
 }) {
   const [state, formAction, pending] = useActionState(playerRegister, undefined);
+  // Etiketi sahəyə bağlayır. Bunsuz ekran oxuyucusu sahəni adsız oxuyur,
+  // parol meneceri onu tanımır, etiketə klik isə sahəni fokuslamır.
+  // useId seçildi ki, səhifədə ikinci form olsa id-lər toqquşmasın.
+  const fieldId = useId();
   const q = lang === "az" ? "" : `?lang=${lang}`;
 
   return (
@@ -26,11 +30,11 @@ export default function PlayerRegisterForm({
       </h1>
       <p className="mb-6 text-sm text-foreground-muted">{text.registerSubtitle}</p>
 
-      <label className="mb-1 block text-sm font-medium text-foreground-muted">{text.nickname}</label>
-      <input name="nickname" required className="mb-4 w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via" />
+      <label htmlFor={`${fieldId}-nickname`} className="mb-1 block text-sm font-medium text-foreground-muted">{text.nickname}</label>
+      <input id={`${fieldId}-nickname`} name="nickname" required className="mb-4 w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via" />
 
-      <label className="mb-1 block text-sm font-medium text-foreground-muted">{text.game}</label>
-      <select name="gameId" required className="mb-4 w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via">
+      <label htmlFor={`${fieldId}-gameId`} className="mb-1 block text-sm font-medium text-foreground-muted">{text.game}</label>
+      <select id={`${fieldId}-gameId`} name="gameId" required className="mb-4 w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via">
         <option value="">{text.choose}</option>
         {games.map((g) => (
           <option key={g.id} value={g.id}>
@@ -39,16 +43,16 @@ export default function PlayerRegisterForm({
         ))}
       </select>
 
-      <label className="mb-1 block text-sm font-medium text-foreground-muted">{text.country}</label>
+      <label htmlFor={`${fieldId}-country`} className="mb-1 block text-sm font-medium text-foreground-muted">{text.country}</label>
       <div className="mb-4">
-        <CountrySelect className="w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via" />
+        <CountrySelect id={`${fieldId}-country`} className="w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via" />
       </div>
 
-      <label className="mb-1 block text-sm font-medium text-foreground-muted">{text.email}</label>
-      <input name="email" type="email" required className="mb-4 w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via" />
+      <label htmlFor={`${fieldId}-email`} className="mb-1 block text-sm font-medium text-foreground-muted">{text.email}</label>
+      <input id={`${fieldId}-email`} name="email" type="email" required className="mb-4 w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via" />
 
-      <label className="mb-1 block text-sm font-medium text-foreground-muted">{text.password}</label>
-      <input name="password" type="password" required minLength={6} className="mb-4 w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via" />
+      <label htmlFor={`${fieldId}-password`} className="mb-1 block text-sm font-medium text-foreground-muted">{text.password}</label>
+      <input id={`${fieldId}-password`} name="password" type="password" required minLength={6} className="mb-4 w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via" />
 
       <label className="mb-4 flex items-start gap-2 text-xs text-foreground-muted">
         <input type="checkbox" name="terms" required className="mt-0.5" />

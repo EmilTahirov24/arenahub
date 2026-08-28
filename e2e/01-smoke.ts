@@ -319,6 +319,53 @@ async function main() {
     assert(canonical?.endsWith(`/az/matches/${m.slug}`), `kanonik yanlışdır: ${canonical}`);
     assert(alts["en"]?.endsWith(`/en/matches/${m.slug}`), "en qarşılığı slug saxlamır");
   });
+  console.log("\nƏlçatanlıq: form sahələri\n");
+
+  // Bu, real tapıntıdan doğdu: kod bazasında htmlFor SIFIR dəfə işlənirdi,
+  // yəni heç bir sahə öz etiketi ilə bağlı deyildi. Nəticəsi ekranda
+  // görünmür, amma ekran oxuyucusu sahəni adsız oxuyur, parol meneceri onu
+  // tanımır və etiketə klik sahəni fokuslamır. Görünməyən qüsur olduğu üçün
+  // məhz testi olmalıdır.
+  async function unlabelledFields(url: string) {
+    await gotoPage(page, url);
+    return page.evaluate(() =>
+      [...document.querySelectorAll("input, select, textarea")]
+        .filter((el) => {
+          const input = el as HTMLInputElement;
+          if (input.type === "hidden") return false;
+          const id = el.getAttribute("id");
+          const linked = id && document.querySelector(`label[for="${CSS.escape(id)}"]`);
+          const wrapped = el.closest("label");
+          const aria = el.getAttribute("aria-label") ?? el.getAttribute("aria-labelledby");
+          return !linked && !wrapped && !aria;
+        })
+        .map((el) => el.getAttribute("name") ?? (el as HTMLInputElement).type),
+    );
+  }
+
+  await check("giriş və qeydiyyat sahələrinin etiketi var", async () => {
+    for (const path of ["/player/login", "/player/register"]) {
+      const bare = await unlabelledFields(`${BASE}${path}`);
+      assert(bare.length === 0, `${path}: etiketsiz sahə — ${bare.join(", ")}`);
+    }
+  });
+
+  await check("şifrə sıfırlama sahəsinin etiketi var", async () => {
+    const bare = await unlabelledFields(`${BASE}/player/forgot-password`);
+    assert(bare.length === 0, `etiketsiz sahə — ${bare.join(", ")}`);
+  });
+
+  // Ekran oxuyucusunda naviqasiyanı ötüb məzmuna keçmək üçün orientir lazımdır.
+  // Public sayt bunu layout-dan alır; auth səhifələri [locale]-dən kənardadır
+  // və həmin layout onlara çatmır.
+  await check("auth səhifələrində əsas məzmun orientiri var", async () => {
+    for (const path of ["/player/login", "/player/register", "/player/forgot-password"]) {
+      await gotoPage(page, `${BASE}${path}`);
+      const n = await page.locator("main").count();
+      assert(n > 0, `${path}: <main> yoxdur`);
+    }
+  });
+
   console.log("\nPaylaşım şəkilləri (Open Graph)\n");
 
   // Link Telegram, Discord və ya X-ə atılanda görünən şəkil. Əvvəl heç biri yox
