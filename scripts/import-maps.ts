@@ -35,6 +35,7 @@ import {
 } from "../lib/liquipedia";
 import { orgKey } from "../lib/orgNames";
 import { syncMaps } from "../lib/matchMaps";
+import { signalWrote } from "./_ciSignal";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -274,10 +275,18 @@ async function main() {
   ].filter(Boolean);
   if (skipped.length) console.log("Buraxıldı: " + skipped.join(", ") + ".");
   if (!apply) console.log("\nTətbiq etmək üçün: --apply");
+
+  // Yazılan xəritə sayı: iş axını reytinqi yalnız bu sıfırdan böyük olanda
+  // yenidən hesablayır. Xəritə hesabı matçın qalibini dəyişə bilir, ona görə
+  // burada da siqnal lazımdır.
+  return mapRows;
 }
 
 main()
-  .then(() => prisma.$disconnect())
+  .then((written) => {
+    signalWrote(written);
+    return prisma.$disconnect();
+  })
   .catch(async (e) => {
     console.error(e);
     await prisma.$disconnect();
