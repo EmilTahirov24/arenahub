@@ -11,9 +11,18 @@ type MatchCardProps = {
     teamB: Team;
     tournament: Tournament | null;
   };
+  /**
+   * Turnir adının kartda göstərilib-göstərilməməsi.
+   *
+   * MatchGroup adı onsuz da qrupun başlığında yazır, kart isə həmin adı hər
+   * sətirdə təkrar edirdi — bir qrupda dörd matç varsa, eyni uzun ad beş dəfə
+   * görünürdü. Ana səhifə kimi qruplaşdırma olmayan yerlərdə isə ad lazımdır,
+   * ona görə defolt true qalır.
+   */
+  showTournament?: boolean;
 };
 
-export default async function MatchCard({ match }: MatchCardProps) {
+export default async function MatchCard({ match, showTournament = true }: MatchCardProps) {
   const t = await getTranslations();
   const locale = await getLocale();
   const isLive = match.status === "LIVE";
@@ -32,13 +41,20 @@ export default async function MatchCard({ match }: MatchCardProps) {
         isLive ? "border-live/50" : "border-border-subtle"
       }`}
     >
-      <div className="mb-2 flex items-center justify-between gap-2 text-xs text-foreground-muted">
-        <span className="min-w-0 truncate">{match.tournament?.name ?? t("nav.matches")}</span>
-        <span className="flex shrink-0 items-center gap-2">
-          {match.stage && <span>{match.stage}</span>}
-          <StarRating value={match.starRating} />
-        </span>
-      </div>
+      {/* Meta sətri yalnız DOLU olanda çəkilir. Ulduz artıq defolt qiymətdə
+          heç nə qaytarmır və qrupun içində turnir adı da gizlədilir — ikisi də
+          boş olanda sətir tamamilə lazımsızdır və kart bir az nəfəs alır. */}
+      {(showTournament || match.stage || match.starRating > 1) && (
+        <div className="mb-2 flex items-center justify-between gap-2 text-xs text-foreground-muted">
+          <span className="min-w-0 truncate">
+            {showTournament ? (match.tournament?.name ?? t("nav.matches")) : ""}
+          </span>
+          <span className="flex shrink-0 items-center gap-2">
+            {match.stage && <span>{match.stage}</span>}
+            <StarRating value={match.starRating} />
+          </span>
+        </div>
+      )}
 
       <div className="flex items-center gap-2">
         <div className="flex flex-1 items-center gap-1.5 overflow-hidden">

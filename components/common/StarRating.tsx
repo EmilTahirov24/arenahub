@@ -1,4 +1,21 @@
+/**
+ * Matçın vaciblik reytinqi.
+ *
+ * Defolt qiymət (1) HEÇ NƏ göstərmir. Səbəb ölçüldü: production-dakı 2359
+ * matçın 100%-i 1 ulduz idi, çünki dəyəri yalnız admin əl ilə qoya bilir və
+ * idxal ona toxunmur. Yəni hər kartda eyni beş işarə görünürdü — sıfır məlumat,
+ * amma kartın sağ yuxarı küncü tutulurdu.
+ *
+ * Belə olanda ulduz həqiqi siqnala çevrilir: göründüsə, deməli kimsə bu matçı
+ * qəsdən önə çıxarıb. Qayda komponentin özündədir ki, bütün istifadə yerlərində
+ * eyni işləsin.
+ *
+ * Admin paneli reytinqi ayrıca <select> ilə təyin edir, bu komponentlə yox —
+ * yəni idarəedici gizlənmir.
+ */
 export default function StarRating({ value, max = 5 }: { value: number; max?: number }) {
+  if (value <= 1) return null;
+
   return (
     <div className="flex items-center gap-0.5" aria-label={`${value}/${max} stars`}>
       {Array.from({ length: max }).map((_, i) => (

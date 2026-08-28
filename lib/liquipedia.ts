@@ -778,12 +778,29 @@ function tournamentNameFrom(block: string): string | null {
   return name || null;
 }
 
-/** The team's page title from an opponent block, e.g. "Paper Rex". */
+/**
+ * The team's page title from an opponent block, e.g. "Paper Rex".
+ *
+ * Links pointing at a section are skipped. An opponent block sometimes also
+ * carries a link back to the event page — ".../Open_Qualifier_2#Round_1" — and
+ * taking its title filed the tournament itself as a team: 49 such rows had been
+ * created and were showing on the site as opponents before this was noticed.
+ *
+ * `tournamentNameFrom` above trims the fragment for the same reason. Here
+ * trimming would not help: the whole link is the wrong page, not just its tail,
+ * so it is rejected instead. Skipping it lets a real team link later in the
+ * block win.
+ *
+ * When nothing names the opponent, null is returned and the caller drops the
+ * match — a fixture whose opponent we cannot identify is not worth importing.
+ */
 function teamNameFrom(block: string, wiki: string): string | null {
-  const link = block.match(new RegExp(`<a href="/${wiki}/[^"]+" title="([^"]+)"`));
+  const link = block.match(new RegExp(`<a href="/${wiki}/[^"#]+" title="([^"]+)"`));
   const dynamic = block.match(/data-team-name="([^"]+)"/);
   const name = decodeEntities(link?.[1] ?? dynamic?.[1] ?? "").trim();
-  return !name || /^(tbd|bye)$/i.test(name) ? null : name;
+  if (!name || /^(tbd|bye)$/i.test(name)) return null;
+  // Some layouts carry the fragment in the title only, so the name is checked too.
+  return name.includes("#") ? null : name;
 }
 
 /** Segments of `html` starting at each occurrence of `needle`. */

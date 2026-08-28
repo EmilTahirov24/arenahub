@@ -145,7 +145,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         {live.length > 0 && (
           <section className="mb-10">
             <SectionHead title={t("nav.live")} href="/live" label={t("nav.live")} />
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {live.map((match) => (
                 <MatchCard key={match.id} match={match} />
               ))}
@@ -162,7 +162,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               href="/results"
               label={az ? "Bütün nəticələr" : "All results"}
             />
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {results.map((match) => (
                 <MatchCard key={match.id} match={match} />
               ))}
@@ -232,7 +232,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         {upcoming.length > 0 && (
           <section className="mb-10">
             <SectionHead title={t("nav.matches")} href="/matches" label={t("nav.matches")} />
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {upcoming.map((match) => (
                 <MatchCard key={match.id} match={match} />
               ))}
@@ -243,7 +243,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         {articles.length > 0 && (
           <section>
             <SectionHead title={t("nav.news")} href="/news" label={t("nav.news")} />
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2">
               {articles.map((article) => (
                 <NewsCard key={article.id} article={article} />
               ))}

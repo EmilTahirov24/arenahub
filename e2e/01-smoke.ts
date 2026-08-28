@@ -319,6 +319,24 @@ async function main() {
     assert(canonical?.endsWith(`/az/matches/${m.slug}`), `kanonik yanlışdır: ${canonical}`);
     assert(alts["en"]?.endsWith(`/en/matches/${m.slug}`), "en qarşılığı slug saxlamır");
   });
+  console.log("\nData bütövlüyü\n");
+
+  // Matç bileti parseri rəqib blokundakı ilk linki götürürdü və bəzi bloklarda
+  // həmin link turnirin öz bölməsinə gedirdi. Nəticədə turnir komanda kimi
+  // yazılırdı — production-da 49 belə sətir yığılmışdı və saytda rəqib kimi
+  // görünürdü. Parser düzəldildi; bu yoxlama onun geri qayıtmamasını qoruyur.
+  await check("komanda adı turnir bölməsi olmamalıdır", async () => {
+    const bogus = await prisma.team.findMany({
+      where: { name: { contains: "#" } },
+      select: { name: true },
+      take: 5,
+    });
+    assert(
+      bogus.length === 0,
+      `adında # olan komanda var: ${bogus.map((t) => t.name).join(", ")}`,
+    );
+  });
+
   console.log("\nƏlçatanlıq: form sahələri\n");
 
   // Bu, real tapıntıdan doğdu: kod bazasında htmlFor SIFIR dəfə işlənirdi,
