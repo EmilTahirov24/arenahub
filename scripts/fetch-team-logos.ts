@@ -37,13 +37,16 @@
  */
 import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { wikiForGame } from "../lib/wikis";
 
 const USER_AGENT = "ArenaHub/0.1 (esports site; contact: emil.tahirov24@gmail.com)";
-const WIKI = "counterstrike";
-const API = `https://liquipedia.net/${WIKI}/api.php`;
 
-/** Their documented floor for ordinary queries is one per 2s; 2.6s leaves room. */
+/**
+ * Their documented floor for ordinary queries is one per 2s; 2.6s leaves room.
+ * Global rather than per wiki: the limit is on the client, not the subdomain,
+ * so four wikis in one run must still share one queue.
+ */
 const GAP_MS = 2600;
 /** 32px avatars on lists, larger on team pages; 256 covers both on retina. */
 const SIZE = 256;
@@ -54,9 +57,10 @@ const INPUT = path.join(process.cwd(), "data", "logo-teams.json");
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function api(params: Record<string, string>) {
+async function api(wiki: string, params: Record<string, string>) {
   await sleep(GAP_MS);
-  const url = `${API}?${new URLSearchParams({ format: "json", formatversion: "2", ...params })}`;
+  const base = `https://liquipedia.net/${wiki}/api.php`;
+  const url = `${base}?${new URLSearchParams({ format: "json", formatversion: "2", ...params })}`;
   const res = await fetch(url, { headers: { "User-Agent": USER_AGENT, "Accept-Encoding": "gzip" } });
   if (!res.ok) throw new Error(`Liquipedia ${res.status} — ${url}`);
   return res.json();
@@ -89,8 +93,13 @@ function logoFileFrom(wikitext: string): string | null {
     if (!values.has(key)) values.set(key, trimmed.slice(eq + 1).trim());
   }
 
+  // MediaWiki başlıqlarında alt xətt boşluqla eynidir və cavabda həmişə
+  // boşluq kimi qayıdır. Burada normallaşdırılmasa, `PARIVISION_allmode.png`
+  // sorğuda tapılır, amma nəticə açarı ilə uyğunlaşmır və loqo itir.
   const usable = (value: string | undefined) =>
-    value && IMAGE_EXT.some((ext) => value.toLowerCase().endsWith(ext)) ? value : null;
+    value && IMAGE_EXT.some((ext) => value.toLowerCase().endsWith(ext))
+      ? value.split("_").join(" ")
+      : null;
 
   return usable(values.get("imagedark")) ?? usable(values.get("image")) ?? null;
 }
@@ -141,20 +150,27 @@ function variantsOf(file: string): string[] {
  * "Aurora" are both real pages for *other* organisations, so a near-miss does
  * not fail — it silently fits a rival's logo to the team.
  */
-type Team = { slug: string; name: string; wikiTitle?: string };
+type Team = { slug: string; name: string; game: string; wikiTitle?: string };
 
 async function main() {
   const apply = process.argv.includes("--apply");
-  const teams: Team[] = JSON.parse(readFileSync(INPUT, "utf8"));
+  const only = process.argv.indexOf("--game") >= 0 ? process.argv[process.argv.indexOf("--game") + 1] : null;
+  const all: Team[] = JSON.parse(readFileSync(INPUT, "utf8"));
+  const teams = only ? all.filter((t) => t.game === only) : all;
 
-  console.log(`komanda: ${teams.length}${apply ? "" : "  (QURU İŞLƏTMƏ)"}\n`);
+  console.log(`komanda: ${teams.length}${only ? ` (${only})` : ""}${apply ? "" : "  (QURU İŞLƏTMƏ)"}\n`);
 
   // 1. Hər komandanın infoboksundan fayl adı.
-  const found: { slug: string; name: string; file: string }[] = [];
+  const found: { slug: string; name: string; wiki: string; file: string; title: string }[] = [];
   for (const team of teams) {
+    const wiki = wikiForGame(team.game);
+    if (!wiki) {
+      console.log(`!  ${team.name.padEnd(20)} tanınmayan oyun: ${team.game}`);
+      continue;
+    }
     let data;
     try {
-      data = await api({
+      data = await api(wiki, {
         action: "query",
         prop: "revisions",
         rvprop: "content",
@@ -178,7 +194,7 @@ async function main() {
       continue;
     }
     console.log(`+  ${team.name.padEnd(20)} ${file}`);
-    found.push({ ...team, file });
+    found.push({ slug: team.slug, name: team.name, wiki, file, title: page?.title ?? "" });
   }
 
   if (found.length === 0) {
@@ -186,23 +202,63 @@ async function main() {
     return;
   }
 
-  // 2. Fayl adlarından real URL — bir sorğuda hamısı.
-  const candidates = new Set<string>();
-  for (const f of found) for (const c of variantsOf(f.file)) candidates.add(`File:${c}`);
+  /**
+   * Report, but do not act on, two teams landing on one Liquipedia page.
+   *
+   * The first version dropped both, on the reasoning that one of them must be
+   * wrong. Running it over four wikis showed that reasoning was too narrow.
+   * There are two quite different causes and only one is a fault:
+   *
+   *   G2 Gozen and G2 Esports both resolve to G2's page, as do Gentle Mates GC
+   *   and Gentle Mates. These are separate rosters of one organisation, and one
+   *   logo is the correct answer for both.
+   *
+   *   TEAM VISION resolves to PARIVISION because it is that organisation's
+   *   former name. The logo is still right; what is wrong is that our database
+   *   holds the same team twice.
+   *
+   * Neither is fixed by withholding a logo, and in the first case withholding
+   * one would be a regression. So this prints what it saw and leaves the rows
+   * alone — a duplicate team is a separate job with rating consequences.
+   */
+  const perTitle = new Map<string, string[]>();
+  for (const f of found) {
+    const key = `${f.wiki}/${f.title}`;
+    if (!perTitle.has(key)) perTitle.set(key, []);
+    perTitle.get(key)!.push(f.slug);
+  }
+  for (const [key, slugs] of perTitle) {
+    if (slugs.length < 2) continue;
+    console.log(`\n?  «${key}» -> ${slugs.join(", ")}`);
+    console.log(`   Ya eyni təşkilatın iki heyəti, ya da bazada təkrar komanda. Yoxlanmalıdır.`);
+  }
 
-  // 50 başlıq bir sorğunun həddidir.
+  // 2. Fayl adlarından real URL.
+  //
+  // Sorğu wiki-yə görə qruplaşdırılır: hər wiki-nin öz api.php-si var və
+  // faylı yalnız ona istinad edən wiki tanıyır. Fayllar isə ortaq commons-da
+  // saxlanılır, ona görə nəticə açarı kimi başlıq kifayətdir.
+  const perWiki = new Map<string, Set<string>>();
+  for (const f of found) {
+    if (!perWiki.has(f.wiki)) perWiki.set(f.wiki, new Set());
+    for (const c of variantsOf(f.file)) perWiki.get(f.wiki)!.add(`File:${c}`);
+  }
+
   const byTitle = new Map<string, { url: string; size: number; width: number; height: number }>();
-  const all = [...candidates];
-  for (let i = 0; i < all.length; i += 50) {
-    const info = await api({
-      action: "query",
-      prop: "imageinfo",
-      iiprop: "url|size|mime|dimensions",
-      titles: all.slice(i, i + 50).join("|"),
-    });
-    for (const p of info?.query?.pages ?? []) {
-      const ii = p?.imageinfo?.[0];
-      if (ii?.url) byTitle.set(p.title, { url: ii.url, size: ii.size, width: ii.width, height: ii.height });
+  for (const [wiki, titles] of perWiki) {
+    const list = [...titles];
+    // 50 başlıq bir sorğunun həddidir.
+    for (let i = 0; i < list.length; i += 50) {
+      const info = await api(wiki, {
+        action: "query",
+        prop: "imageinfo",
+        iiprop: "url|size|mime|dimensions",
+        titles: list.slice(i, i + 50).join("|"),
+      });
+      for (const p of info?.query?.pages ?? []) {
+        const ii = p?.imageinfo?.[0];
+        if (ii?.url) byTitle.set(p.title, { url: ii.url, size: ii.size, width: ii.width, height: ii.height });
+      }
     }
   }
 
@@ -246,7 +302,12 @@ async function main() {
   }
 
   await mkdir(OUT_DIR, { recursive: true });
-  const manifest: Record<string, string> = {};
+  // Mövcud manifest üzərinə yazılır, əvəz edilmir: `--game dota2` ilə qaçış
+  // CS2 sətirlərini silməməlidir.
+  const manifest: Record<string, string> = existsSync(MANIFEST)
+    ? JSON.parse(readFileSync(MANIFEST, "utf8"))
+    : {};
+  let written = 0;
   let bytes = 0;
 
   for (const f of found) {
@@ -270,12 +331,15 @@ async function main() {
     const rel = `/teams/${f.slug}.png`;
     await writeFile(path.join(OUT_DIR, `${f.slug}.png`), png);
     manifest[f.slug] = rel;
+    written++;
     bytes += png.length;
     console.log(`+  ${f.slug.padEnd(24)} ${(raw.length / 1024).toFixed(0)} KB -> ${(png.length / 1024).toFixed(0)} KB`);
   }
 
-  await writeFile(MANIFEST, JSON.stringify(manifest, null, 2) + "\n");
-  console.log(`\n${Object.keys(manifest).length} loqo yazıldı, cəmi ${(bytes / 1024).toFixed(0)} KB`);
+  const ordered = Object.fromEntries(Object.entries(manifest).sort(([a], [b]) => a.localeCompare(b)));
+  await writeFile(MANIFEST, JSON.stringify(ordered, null, 2) + "\n");
+  console.log(`\nbu qaçışda: ${written} loqo, ${(bytes / 1024).toFixed(0)} KB`);
+  console.log(`manifestdə cəmi: ${Object.keys(ordered).length}`);
   console.log(`Manifest: data/team-logos.json`);
   console.log(`Bazaya yazmaq üçün: scripts/apply-team-logos.ts (GitHub Actions-da)`);
 }

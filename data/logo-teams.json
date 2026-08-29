@@ -1,86 +1,406 @@
 [
   {
     "slug": "cs2-falcons",
-    "name": "Falcons"
+    "name": "Falcons",
+    "game": "cs2"
   },
   {
     "slug": "cs2-spirit",
     "name": "Spirit",
+    "game": "cs2",
     "wikiTitle": "Team Spirit"
   },
   {
     "slug": "cs2-vitality",
-    "name": "Vitality"
+    "name": "Vitality",
+    "game": "cs2"
   },
   {
     "slug": "cs2-furia",
-    "name": "FURIA"
+    "name": "FURIA",
+    "game": "cs2"
   },
   {
     "slug": "cs2-mouz",
-    "name": "MOUZ"
+    "name": "MOUZ",
+    "game": "cs2"
   },
   {
     "slug": "cs2-natus-vincere",
-    "name": "Natus Vincere"
+    "name": "Natus Vincere",
+    "game": "cs2"
   },
   {
     "slug": "cs2-legacy",
-    "name": "Legacy"
+    "name": "Legacy",
+    "game": "cs2"
   },
   {
     "slug": "cs2-betboom",
     "name": "BetBoom",
+    "game": "cs2",
     "wikiTitle": "BetBoom Team"
   },
   {
     "slug": "cs2-aurora",
     "name": "Aurora",
+    "game": "cs2",
     "wikiTitle": "Aurora Gaming"
   },
   {
     "slug": "cs2-g2",
-    "name": "G2"
+    "name": "G2",
+    "game": "cs2"
   },
   {
     "slug": "cs2-fut",
-    "name": "FUT"
+    "name": "FUT",
+    "game": "cs2"
   },
   {
     "slug": "cs2-9z",
     "name": "9z",
+    "game": "cs2",
     "wikiTitle": "9z Team"
   },
   {
     "slug": "cs2-the-mongolz",
-    "name": "The MongolZ"
+    "name": "The MongolZ",
+    "game": "cs2"
   },
   {
     "slug": "cs2-imperial-esports",
-    "name": "Imperial Esports"
+    "name": "Imperial Esports",
+    "game": "cs2"
   },
   {
     "slug": "cs2-faze-clan",
-    "name": "FaZe Clan"
+    "name": "FaZe Clan",
+    "game": "cs2"
   },
   {
     "slug": "cs2-ic-esports",
-    "name": "IC Esports"
+    "name": "IC Esports",
+    "game": "cs2"
   },
   {
     "slug": "cs2-jijiehao",
-    "name": "JiJieHao"
+    "name": "JiJieHao",
+    "game": "cs2"
   },
   {
     "slug": "cs2-gamerlegion",
-    "name": "GamerLegion"
+    "name": "GamerLegion",
+    "game": "cs2"
   },
   {
     "slug": "cs2-k27",
-    "name": "K27"
+    "name": "K27",
+    "game": "cs2"
   },
   {
     "slug": "cs2-100-thieves",
-    "name": "100 Thieves"
+    "name": "100 Thieves",
+    "game": "cs2"
+  },
+  {
+    "slug": "dota2-level-up",
+    "name": "Level UP",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-team-falcons",
+    "name": "Team Falcons",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-parivision",
+    "name": "PARIVISION",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-team-vision",
+    "name": "TEAM VISION",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-team-spirit",
+    "name": "Team Spirit",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-klim-sani4",
+    "name": "Klim Sani4",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-shopify-rebellion",
+    "name": "Shopify Rebellion",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-team-lynx",
+    "name": "Team Lynx",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-team-liquid",
+    "name": "Team Liquid",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-playtime",
+    "name": "PlayTime",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-satan666",
+    "name": "Satan666",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-travoman-team",
+    "name": "Travoman Team",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-direborn-esports",
+    "name": "Direborn Esports",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-team-kicked",
+    "name": "Team Kicked",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-xtreme-gaming",
+    "name": "Xtreme Gaming",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-nigma-galaxy",
+    "name": "Nigma Galaxy",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-team-6seven",
+    "name": "Team 6seven",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-team-kinetix",
+    "name": "Team Kinetix",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-trailer-park-boys",
+    "name": "Trailer Park Boys",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-dynasty-stack",
+    "name": "DYNASTY (stack)",
+    "game": "dota2"
+  },
+  {
+    "slug": "valorant-leviat-n",
+    "name": "Leviatán",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-nrg",
+    "name": "NRG",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-paper-rex",
+    "name": "Paper Rex",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-100-thieves",
+    "name": "100 Thieves",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-team-vitality",
+    "name": "Team Vitality",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-g2-gozen",
+    "name": "G2 Gozen",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-team-heretics",
+    "name": "Team Heretics",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-g2-esports",
+    "name": "G2 Esports",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-tyloo",
+    "name": "TYLOO",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-hook-esport",
+    "name": "HooK Esport",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-nongshim-redforce",
+    "name": "Nongshim RedForce",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-fire-flux-esports",
+    "name": "Fire Flux Esports",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-aogiri",
+    "name": "Aogiri",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-gooners",
+    "name": "GOONERS",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-twisted-saints-esports",
+    "name": "Twisted Saints Esports",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-akave-esports-black",
+    "name": "Akave Esports Black",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-kr-blaze",
+    "name": "KRÜ Blaze",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-jd-gaming",
+    "name": "JD Gaming",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-karmine-corp",
+    "name": "Karmine Corp",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-gentle-mates-gc",
+    "name": "Gentle Mates GC",
+    "game": "valorant"
+  },
+  {
+    "slug": "lol-bilibili-gaming",
+    "name": "Bilibili Gaming",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-west-point-esports",
+    "name": "West Point Esports",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-rising-bees",
+    "name": "Rising Bees",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-gen-g",
+    "name": "Gen.G",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-team-liquid",
+    "name": "Team Liquid",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-essences",
+    "name": "Essences",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-g2-esports",
+    "name": "G2 Esports",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-soopers",
+    "name": "SOOPers",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-wonka-chocolate-factory",
+    "name": "Wonka Chocolate Factory",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-good-chi",
+    "name": "Good Chi",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-mental-rush",
+    "name": "Mental Rush",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-gromp-esports",
+    "name": "Gromp Esports",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-the-secret-club",
+    "name": "The Secret Club",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-nightbirds",
+    "name": "NightBirds",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-baam-esports",
+    "name": "BAAM Esports",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-estral-esports",
+    "name": "Estral Esports",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-sparky",
+    "name": "Sparky",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-ninjas-in-pyjamas",
+    "name": "Ninjas in Pyjamas",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-jolly-bee",
+    "name": "Jolly Bee",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-g2-nord",
+    "name": "G2 NORD",
+    "game": "lol"
   }
 ]
