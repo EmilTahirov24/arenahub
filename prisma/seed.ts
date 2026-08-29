@@ -355,15 +355,25 @@ function readAdminCredentials() {
       "SEED_ADMIN_EMAIL və SEED_ADMIN_PASSWORD təyin edilməyib. Standart parol YOXDUR — .env-də özün yaz.",
     );
   }
-  if (adminPassword.length < 12) {
+  // Yalnız BU FAYLDA dərc olunmuş köhnə dəyərlər bloklanır. Səbəb dar və
+  // konkretdir: onlar açıq repoda yazılı idi, yəni tapmaq üçün təxmin etmək
+  // lazım deyildi — oxumaq kifayət idi. Onları geri qaytarmaq problemi eynilə
+  // bərpa edərdi.
+  if (adminPassword === "changeme" || adminEmail === "admin@example.com") {
     throw new Error(
-      `SEED_ADMIN_PASSWORD çox qısadır (${adminPassword.length} simvol) — ən azı 12 olmalıdır. ` +
-        "Panel ictimai ünvandadır.",
+      "SEED_ADMIN_EMAIL/SEED_ADMIN_PASSWORD köhnə dərc olunmuş dəyərlərdir (admin@example.com / changeme). " +
+        "Onlar açıq repoda görünürdü — başqasını seç.",
     );
   }
-  if (/^(changeme|password|admin|123456|qwerty)/i.test(adminPassword)) {
-    throw new Error("SEED_ADMIN_PASSWORD tanınmış zəif parollardandır — başqasını seç.");
+
+  // Qalanı sahibinin qərarıdır: seed dayanmır, sadəcə deyir. Zəif parol üçün
+  // işi bloklamaq onu güclü etmir, yalnız adamı mühafizəni söndürməyə itələyir.
+  if (adminPassword.length < 12) {
+    console.warn(
+      `\nXƏBƏRDARLIQ: SEED_ADMIN_PASSWORD ${adminPassword.length} simvoldur və admin paneli ictimai ünvandadır.\n`,
+    );
   }
+
   return { adminEmail, adminPassword };
 }
 
