@@ -400,6 +400,68 @@ async function main() {
     assert(body.includes(team.name), `axtarılan komanda tapılmadı: ${team.name}`);
   });
 
+  // Matç siyahısında yalnız komanda adı ilə axtarış vardı. 2315 sətirdə
+  // «canlı olan nə var» və ya «yalnız CS2» sualının cavabı üçün adam 47
+  // səhifəni əl ilə gəzməli idi.
+  await check("matç status filtri sorğunu daraldır", async () => {
+    // Ən çox sətri olan status seçilir ki, yoxlama həm seed, həm də dolu
+    // bazada işləsin.
+    const groups = await prisma.match.groupBy({ by: ["status"], _count: { _all: true } });
+    assert(groups.length > 0, "bazada matç yoxdur");
+    const biggest = [...groups].sort((a, b) => b._count._all - a._count._all)[0];
+
+    await gotoPage(page, `${BASE}/admin/matches?status=${biggest.status}`);
+    await assertNotErrorPage(page);
+    const body = await visibleText(page);
+    assert(body.includes(biggest.status), `${biggest.status} sətri görünmür`);
+    // Filtr sorğuda olmalıdır, ekranda süzgəc kimi yox: başqa status qalsaydı,
+    // sətir sayı da, «cəmi» sayğacı da yalan olardı.
+    for (const other of groups.map((g) => g.status).filter((s) => s !== biggest.status)) {
+      assert(!body.includes(other), `${other} statuslu matç ${biggest.status} filtrində qaldı`);
+    }
+  });
+
+  await check("matç oyun filtri sorğunu daraldır", async () => {
+    const game = await prisma.game.findFirstOrThrow({
+      where: { matches: { some: {} } },
+      select: { slug: true, shortName: true },
+    });
+    const expected = await prisma.match.count({ where: { game: { slug: game.slug } } });
+
+    await gotoPage(page, `${BASE}/admin/matches?game=${encodeURIComponent(game.slug)}`);
+    await assertNotErrorPage(page);
+    const body = await visibleText(page);
+    // Sayğac yalnız bir səhifədən çox olanda çıxır; azdırsa, sətir sayı özü
+    // sübutdur.
+    if (expected > 50) {
+      assert(body.includes(`cəmi ${expected}`), `«cəmi ${expected}» görünmür — filtr sayğaca təsir etmir`);
+    } else {
+      assert(body.includes(game.shortName), `${game.shortName} sətri görünmür`);
+    }
+  });
+
+  // Filtr ünvandan gəlir, yəni istənilən mətn ola bilər. Yoxlanmasa, `status`
+  // birbaşa Prisma-ya gedir və enum xətası ilə 500 qaytarır — səhv yazılmış
+  // link səhifəni sındırmamalıdır.
+  await check("uydurma filtr dəyəri paneli sındırmır", async () => {
+    const res = await gotoPage(page, `${BASE}/admin/matches?status=YOXDUR&game=yoxdur`);
+    assert(res && res.status() === 200, `HTTP ${res?.status()}`);
+    await assertNotErrorPage(page);
+  });
+
+  // Xəbər siyahısında axtarış yox idi: başlıq ayrı cədvəldədir
+  // (NewsArticleTranslation), ona görə əvvəl ötürülmüşdü.
+  await check("xəbər axtarışı başlığa görə işləyir", async () => {
+    await gotoPage(page, `${BASE}/admin/news?q=${encodeURIComponent(NEWS_AZ)}`);
+    await assertNotErrorPage(page);
+    const found = await visibleText(page);
+    assert(found.includes(NEWS_AZ), `axtarılan xəbər tapılmadı: ${NEWS_AZ}`);
+
+    await gotoPage(page, `${BASE}/admin/news?q=zzz-belke-de-yoxdur-12345`);
+    const empty = await visibleText(page);
+    assert(empty.includes("tapılmadı"), "boş nəticə üçün mesaj yoxdur");
+  });
+
   // Diapazondan kənar səhifə xəta verməməlidir.
   await check("olmayan səhifə nömrəsi sonuncuya sıxılır", async () => {
     const res = await gotoPage(page, `${BASE}/admin/players?page=9999`);

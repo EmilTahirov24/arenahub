@@ -1,6 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { dayRange } from "@/lib/dates";
+import { dayRange, isDateKey } from "@/lib/dates";
 import { publiclyListedPlayer } from "@/lib/publicPlayers";
 import type { Prisma } from "@/app/generated/prisma/client";
 
@@ -66,7 +66,8 @@ export async function upcomingMatches(gameSlug?: string, date?: string) {
 
   const where: Prisma.MatchWhereInput = { status: { in: ["UPCOMING", "LIVE"] } };
   if (gameSlug) where.game = { slug: gameSlug };
-  if (date) {
+  // Yoxlama olmadan uydurma tarix Prisma-da RangeError verirdi — bax lib/dates.ts.
+  if (isDateKey(date)) {
     const { start, end } = dayRange(date);
     where.scheduledAt = { gte: start, lte: end };
   }
@@ -86,7 +87,7 @@ export async function finishedMatches(gameSlug: string | undefined, date: string
 
   const where: Prisma.MatchWhereInput = { status: "FINISHED" };
   if (gameSlug) where.game = { slug: gameSlug };
-  if (date) {
+  if (isDateKey(date)) {
     const { start, end } = dayRange(date);
     where.scheduledAt = { gte: start, lte: end };
   }

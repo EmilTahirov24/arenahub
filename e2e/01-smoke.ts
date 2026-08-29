@@ -451,6 +451,30 @@ async function main() {
     assert(content!.startsWith("http"), `og:image nisbi ünvandır: ${content}`);
   });
 
+  console.log("\nÜnvandan gələn filtrlər\n");
+
+  // `?date=abc` ünvanı `new Date("abcT00:00:00.000Z")` verirdi — Invalid Date —
+  // və Prisma onu ISO-ya çevirməyə çalışıb RangeError atırdı. Səhifənin qabığı
+  // 200 qaytardığı üçün bu, HTTP kodunda GÖRÜNMÜRDÜ: xəta axında gəlirdi və
+  // siyahı hissəsi xəta sərhəddi ilə əvəzlənirdi. Yəni ictimai ünvanla
+  // sındırıla bilən səhifə idi. Ona görə yoxlama məhz brauzerdədir.
+  for (const path of ["/results", "/matches"]) {
+    await check(`${path} uydurma tarix filtrindən sınmır`, async () => {
+      const res = await gotoPage(page, `${BASE}/az${path}?date=abc`);
+      assert(res && res.status() === 200, `HTTP ${res?.status()}`);
+      await assertNotErrorPage(page);
+    });
+  }
+
+  // `2026-02-31` Node-da xəta vermir, səssizcə 3 Marta sürüşür — yəni adam
+  // istəmədiyi günün nəticələrini görürdü və bunu bilmirdi.
+  await check("olmayan təqvim günü filtr kimi qəbul edilmir", async () => {
+    await gotoPage(page, `${BASE}/az/results?date=2026-02-31`);
+    await assertNotErrorPage(page);
+    const body = await visibleText(page);
+    assert(body.includes("Bütün tarixlər"), "tarix zolağı görünmür");
+  });
+
   // Bu qəsdən 404-dür, ona görə problem toplayıcısından kənarda saxlanılır.
   const before = problems.length;
   await check("olmayan ünvan 404 verir", async () => {
