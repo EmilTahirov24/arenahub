@@ -24,6 +24,12 @@
 # it takes either an external trigger calling workflow_dispatch, or a paid
 # scheduler. Both are decisions, not tweaks.
 #
+# The external trigger now exists: `scripts/setup-trigger.ps1` asks for a
+# GitHub token once, proves it with a single dispatch, and only then registers
+# a Windows task that calls this workflow every 20 minutes. `workflow_dispatch`
+# is not queued the way `schedule` is, so the interval is real. Its limit is
+# equally real and stated in the script: it runs only while that machine is on.
+#
 # Needs one secret: DATABASE_URL. Liquipedia requires no key, only the
 # descriptive User-Agent the client already sends.
 #
