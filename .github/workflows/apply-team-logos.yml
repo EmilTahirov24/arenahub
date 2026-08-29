@@ -1,0 +1,51 @@
+# Komanda loqolarını bazaya bağlayır.
+#
+# Niyə ayrıca iş və niyə burada. Loqo faylları repoya scripts/fetch-team-logos.ts
+# ilə əl ilə əlavə olunur — o skript şəbəkəyə çıxır və Liquipedia-nı sürət
+# limitinə hörmətlə gəzir, yəni hər push-da qaçmamalıdır. Bu iş isə əksinədir:
+# şəbəkəsizdir, saniyələr çəkir, amma production baza parolunu tələb edir. O
+# parol Vercel-də "Secret" kimi bağlıdır və geri oxunmur, ona görə yazma
+# əməliyyatı yalnız burada — DATABASE_URL-in onsuz da mövcud olduğu yerdə —
+# mümkündür.
+#
+# Manifest dəyişəndə özü qaçır: yeni loqo əlavə edildikdə əlavə addım lazım
+# deyil. Təkrar qaçış zərərsizdir, çünki skript dəyişməyən sətri ötürür.
+name: Apply team logos
+
+on:
+  push:
+    paths:
+      - "data/team-logos.json"
+      - "scripts/apply-team-logos.ts"
+      - ".github/workflows/apply-team-logos.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: apply-team-logos
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npx prisma generate
+
+      - name: Verify database secret
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL is not set."
+            exit 1
+          fi
+
+      - run: npx tsx scripts/apply-team-logos.ts --apply

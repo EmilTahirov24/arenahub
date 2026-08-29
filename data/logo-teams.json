@@ -1,0 +1,86 @@
+[
+  {
+    "slug": "cs2-falcons",
+    "name": "Falcons"
+  },
+  {
+    "slug": "cs2-spirit",
+    "name": "Spirit",
+    "wikiTitle": "Team Spirit"
+  },
+  {
+    "slug": "cs2-vitality",
+    "name": "Vitality"
+  },
+  {
+    "slug": "cs2-furia",
+    "name": "FURIA"
+  },
+  {
+    "slug": "cs2-mouz",
+    "name": "MOUZ"
+  },
+  {
+    "slug": "cs2-natus-vincere",
+    "name": "Natus Vincere"
+  },
+  {
+    "slug": "cs2-legacy",
+    "name": "Legacy"
+  },
+  {
+    "slug": "cs2-betboom",
+    "name": "BetBoom",
+    "wikiTitle": "BetBoom Team"
+  },
+  {
+    "slug": "cs2-aurora",
+    "name": "Aurora",
+    "wikiTitle": "Aurora Gaming"
+  },
+  {
+    "slug": "cs2-g2",
+    "name": "G2"
+  },
+  {
+    "slug": "cs2-fut",
+    "name": "FUT"
+  },
+  {
+    "slug": "cs2-9z",
+    "name": "9z",
+    "wikiTitle": "9z Team"
+  },
+  {
+    "slug": "cs2-the-mongolz",
+    "name": "The MongolZ"
+  },
+  {
+    "slug": "cs2-imperial-esports",
+    "name": "Imperial Esports"
+  },
+  {
+    "slug": "cs2-faze-clan",
+    "name": "FaZe Clan"
+  },
+  {
+    "slug": "cs2-ic-esports",
+    "name": "IC Esports"
+  },
+  {
+    "slug": "cs2-jijiehao",
+    "name": "JiJieHao"
+  },
+  {
+    "slug": "cs2-gamerlegion",
+    "name": "GamerLegion"
+  },
+  {
+    "slug": "cs2-k27",
+    "name": "K27"
+  },
+  {
+    "slug": "cs2-100-thieves",
+    "name": "100 Thieves"
+  }
+]
