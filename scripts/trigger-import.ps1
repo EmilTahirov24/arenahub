@@ -61,6 +61,26 @@ try {
   Write-Line "idxal işə salındı"
 } catch {
   # Səhv gizlədilmir: cədvəllə işləyəndə yeganə iz bu sətirdir.
-  Write-Line "ALINMADI: $($_.Exception.Message)"
+  #
+  # Status koduna görə ayrılır, çünki iki hal tamam fərqli cavab tələb edir və
+  # 2026-08-30-da bunu təcrübədə gördük: log yalnız "(401) Unauthorized" yazdı
+  # və səbəbi anlamaq üçün ayrıca yoxlama lazım gəldi. 401/403 insan müdaxiləsi
+  # istəyir — özü düzəlməz, hər 20 dəqiqədə eyni sətri təkrarlayar. Şəbəkə
+  # xətası isə növbəti qaçışda öz-özünə keçir.
+  $status = $null
+  try { $status = [int]$_.Exception.Response.StatusCode } catch {}
+
+  if ($status -eq 401) {
+    Write-Line "ALINMADI (401): token qəbul edilmir — ləğv edilib və ya müddəti bitib."
+    Write-Line "  Düzəlişi: yeni token yarat, kopyala, sonra:"
+    Write-Line "  Remove-Item scripts\.github-token; powershell -File scripts\setup-trigger.ps1 -Yes"
+    Write-Line "  QEYD: idxal tam dayanmır — GitHub-ın öz cədvəli işləyir, sadəcə saatlarla gecikir."
+  } elseif ($status -eq 403 -or $status -eq 404) {
+    Write-Line "ALINMADI ($status): token var, amma icazəsi çatmır."
+    Write-Line "  Ən çox rast gəlinən səbəb: `Actions: Read and write` verilməyib,"
+    Write-Line "  ya da token `arenahub` reposuna bağlanmayıb."
+  } else {
+    Write-Line "ALINMADI: $($_.Exception.Message)"
+  }
   exit 1
 }
