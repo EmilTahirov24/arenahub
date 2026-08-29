@@ -179,7 +179,7 @@ export default async function MatchDetailPage({
       <div className="rounded-xl border border-border-subtle bg-surface p-6">
         {isLive && (
           <div className="mb-4 flex justify-center">
-            <span className="inline-flex items-center gap-2 rounded-full bg-live/15 px-3 py-1 text-xs font-bold text-live">
+            <span className="inline-flex items-center gap-2 rounded-full bg-live/15 px-3 py-1 text-xs font-bold text-live-fg">
               <span className="h-2 w-2 animate-glow-pulse rounded-full bg-live" />
               {t("nav.live")}
             </span>
@@ -227,7 +227,7 @@ export default async function MatchDetailPage({
                 href={match.streamUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-live/40 bg-live/10 px-3 py-1 text-xs font-semibold text-live hover:border-live/80 hover:bg-live/15"
+                className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-live/40 bg-live/10 px-3 py-1 text-xs font-semibold text-live-fg hover:border-live/80 hover:bg-live/15"
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-live" />
                 {locale === "az" ? "İzlə" : "Watch"}

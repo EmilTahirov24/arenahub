@@ -39,7 +39,7 @@ export default function PlayerLoginForm({ lang, text }: { lang: AuthLang; text: 
       <input id={`${fieldId}-password`} name="password" type="password" required className="mb-1 w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via" />
 
       <p className="mb-4 text-right text-xs">
-        <Link href={`/player/forgot-password${q}`} className="text-brand-via hover:underline">
+        <Link href={`/player/forgot-password${q}`} className="text-brand-via-fg hover:underline">
           {text.forgotLink}
         </Link>
       </p>
@@ -52,7 +52,7 @@ export default function PlayerLoginForm({ lang, text }: { lang: AuthLang; text: 
 
       <p className="mt-4 text-center text-xs text-foreground-muted">
         {text.noAccount}{" "}
-        <Link href={`/player/register${q}`} className="text-brand-via hover:underline">
+        <Link href={`/player/register${q}`} className="text-brand-via-fg hover:underline">
           {text.goRegister}
         </Link>
       </p>

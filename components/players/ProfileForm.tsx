@@ -36,7 +36,7 @@ export default function ProfileForm({ children }: { children: React.ReactNode })
       </div>
 
       {!pending && state?.warning && (
-        <p className="rounded-md border border-live/40 bg-live/10 px-3 py-2 text-sm text-live">
+        <p className="rounded-md border border-live/40 bg-live/10 px-3 py-2 text-sm text-live-fg">
           {state.warning}
         </p>
       )}

@@ -30,7 +30,7 @@ export default function VerifyStatusBanner() {
 
   if (verify === "expired") {
     return (
-      <p className="mb-4 rounded-md border border-live/30 bg-live/10 px-3 py-2 text-xs text-live">
+      <p className="mb-4 rounded-md border border-live/30 bg-live/10 px-3 py-2 text-xs text-live-fg">
         Təsdiq linkinin vaxtı bitib. Daxil olub yeni link göndərə bilərsiniz.
       </p>
     );
@@ -38,7 +38,7 @@ export default function VerifyStatusBanner() {
 
   if (verify === "invalid") {
     return (
-      <p className="mb-4 rounded-md border border-live/30 bg-live/10 px-3 py-2 text-xs text-live">
+      <p className="mb-4 rounded-md border border-live/30 bg-live/10 px-3 py-2 text-xs text-live-fg">
         Təsdiq linki tanınmadı. Linki tam kopyalayın və ya daxil olub yenisini göndərin.
       </p>
     );

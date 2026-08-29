@@ -29,6 +29,6 @@ export default function Countdown({ target, locale }: { target: string; locale: 
   const label = parts.days > 0 ? `${parts.days}g ${pad(parts.hours)}:${pad(parts.minutes)}:${pad(parts.seconds)}` : `${pad(parts.hours)}:${pad(parts.minutes)}:${pad(parts.seconds)}`;
 
   return (
-    <span className="font-display tabular-nums text-lg font-bold text-brand-via">{label}</span>
+    <span className="font-display tabular-nums text-lg font-bold text-brand-via-fg">{label}</span>
   );
 }

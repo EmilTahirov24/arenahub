@@ -44,7 +44,7 @@ export default function VerifyEmailBanner({ action, initialWaitSeconds }: { acti
   return (
     <div
       className={`mb-6 flex flex-wrap items-center justify-between gap-2 rounded-md border px-4 py-3 text-sm ${
-        failed ? "border-live/30 bg-live/10 text-live" : "border-warning/30 bg-warning/10 text-warning"
+        failed ? "border-live/30 bg-live/10 text-live-fg" : "border-warning/30 bg-warning/10 text-warning"
       }`}
     >
       <span>

@@ -59,7 +59,7 @@ export default async function TournamentRow({ tournament }: { tournament: Tourna
         </div>
       </div>
       {tournament.prizePool && (
-        <span className="shrink-0 text-sm font-semibold text-brand-via">{tournament.prizePool}</span>
+        <span className="shrink-0 text-sm font-semibold text-brand-via-fg">{tournament.prizePool}</span>
       )}
     </Link>
   );

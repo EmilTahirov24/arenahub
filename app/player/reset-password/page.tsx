@@ -17,7 +17,7 @@ export default async function PlayerResetPasswordPage({
       <main className="flex min-h-screen items-center justify-center px-4">
         <div className="w-full max-w-sm rounded-xl border border-border-subtle bg-surface p-6 text-center">
           <p className="mb-4 text-sm text-live">{text.resetInvalid}</p>
-          <Link href={`/player/forgot-password${q}`} className="text-sm text-brand-via hover:underline">
+          <Link href={`/player/forgot-password${q}`} className="text-sm text-brand-via-fg hover:underline">
             {text.resetRetry}
           </Link>
         </div>

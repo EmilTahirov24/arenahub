@@ -80,7 +80,7 @@ export default async function Header() {
           ))}
           <Link
             href={`/${LOCAL_NAV_ITEM}`}
-            className="ml-1 rounded-md border border-brand-via/30 bg-brand-via/10 px-3 py-2 text-sm font-medium text-brand-via transition-colors hover:bg-brand-via/20"
+            className="ml-1 rounded-md border border-brand-via/30 bg-brand-via/10 px-3 py-2 text-sm font-medium text-brand-via-fg transition-colors hover:bg-brand-via/20"
           >
             🇦🇿 {t(`nav.${LOCAL_NAV_ITEM}`)}
           </Link>

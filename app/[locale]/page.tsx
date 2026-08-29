@@ -34,7 +34,7 @@ function SectionHead({ title, href, label }: { title: string; href: string; labe
   return (
     <div className="mb-4 flex items-center justify-between gap-3">
       <h2 className="font-display text-xl font-bold">{title}</h2>
-      <Link href={href} className="shrink-0 text-sm text-brand-via hover:underline">
+      <Link href={href} className="shrink-0 text-sm text-brand-via-fg hover:underline">
         {label} →
       </Link>
     </div>
@@ -121,7 +121,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
       <div className="border-b border-border-subtle">
         <div className="mx-auto max-w-[1400px] px-4 py-7">
           {live.length > 0 && (
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-live/40 bg-live/10 px-3 py-1 text-xs font-semibold text-live">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-live/40 bg-live/10 px-3 py-1 text-xs font-semibold text-live-fg">
               <span className="h-2 w-2 animate-glow-pulse rounded-full bg-live" />
               {live.length} {t("nav.live")}
             </div>

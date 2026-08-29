@@ -55,7 +55,7 @@ export default async function EditTournamentPage({ params }: { params: Promise<{
               <AdminRowForm
                 action={setPlacementWithId.bind(null, p.id)}
                 submitLabel="yaz"
-                submitClassName="text-xs text-brand-via hover:underline disabled:opacity-60"
+                submitClassName="text-xs text-brand-via-fg hover:underline disabled:opacity-60"
                 className="flex items-center gap-1"
               >
                 <input

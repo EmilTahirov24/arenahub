@@ -171,7 +171,7 @@ export default async function StatsPage({
                 <td className="px-3 py-2 text-sm text-foreground-muted">
                   {r.team ? <span className="truncate">{r.team.name}</span> : "—"}
                 </td>
-                <td className="px-3 py-2 text-right font-display text-sm font-bold tabular-nums text-brand-via">
+                <td className="px-3 py-2 text-right font-display text-sm font-bold tabular-nums text-brand-via-fg">
                   {r.score?.toFixed(2)}
                 </td>
                 <td className="px-3 py-2 text-right text-sm tabular-nums">{r.kills?.toFixed(2) ?? "—"}</td>

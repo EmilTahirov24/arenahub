@@ -152,7 +152,7 @@ export default function MobileNav({
                 <Link
                   href={localItem.href}
                   onClick={() => setOpen(false)}
-                  className="rounded-md px-3 py-2.5 text-sm font-medium text-brand-via hover:bg-surface-raised"
+                  className="rounded-md px-3 py-2.5 text-sm font-medium text-brand-via-fg hover:bg-surface-raised"
                 >
                   🇦🇿 {localItem.label}
                 </Link>

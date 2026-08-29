@@ -67,7 +67,7 @@ export default async function PredictionsLeaderboardPage({
                       {player.nickname}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-right font-display font-bold text-brand-via">{player.points}</td>
+                  <td className="px-4 py-3 text-right font-display font-bold text-brand-via-fg">{player.points}</td>
                 </tr>
               ))}
             </tbody>

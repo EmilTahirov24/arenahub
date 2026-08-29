@@ -13,6 +13,12 @@
   --brand-via: #d946ef;
   --brand-to: #22d3ee;
 
+  /* Marka rəngi qradiyentlər üçün seçilib, mətn üçün yox. Qaranlıq temada
+     mətn kimi də keçir (4.86:1), ona görə burada eynidir; işıqlı temada 2.72:1
+     verirdi və 40 element bu səbəbdən sınırdı. Qradiyentlər `--brand-via`
+     işlətməyə davam edir — dəyişən yalnız MƏTN üçündür. */
+  --brand-via-fg: #d946ef;
+
   /* Status colours, kept as tokens rather than Tailwind classes so the light
      theme can override them. Written straight into components they were the
      same in both themes, and emerald-400 on white measures about 1.9:1 — well
@@ -20,6 +26,14 @@
   --live: #ef4444;
   --positive: #34d399;
   --warning: #eab308;
+
+  /* `--live` özünün 15%-lik yuyuntusu üzərində 3.99:1 ölçüldü (axe-core,
+     2026-08-30) — 4.5:1 həddindən aşağı. Rəngin özü dəyişmir, çünki o, nöqtə,
+     haşiyə və nəbz animasiyasında işlənir və orada kontrast qaydası tətbiq
+     olunmur. Yalnız MƏTN üçün bir addım açıq variant verilir: 5.01:1.
+     `--positive` və `--warning` eyni yuyuntuda 6.7:1 verir, onlara ehtiyac
+     yoxdur. */
+  --live-fg: #f26969;
 
   /* Set per page via inline style from Game.accentColor; falls back to the
      brand colour on pages that cover every game, like the home page. */
@@ -59,6 +73,15 @@
   --live: #b91c1c;
   --positive: #065f46;
   --warning: #854d0e;
+  /* İşıqlı temada dəyər onsuz da yuyuntuya qarşı seçilib (yuxarıdakı şərhə
+     bax), ona görə mətn variantı eynidir. Token yenə də təyin olunur:
+     təyin edilməsə, `text-live-fg` işıqlı temada qaranlığın açıq qırmızısını
+     saxlayardı. */
+  --live-fg: #b91c1c;
+
+  /* Marka rənginin işıqlı tema variantı: qaraya doğru 30% — ölçülən ən pis
+     hal 4.96:1 (ağ, off-white və öz 10%-lik yuyuntusu üzərində). */
+  --brand-via-fg: #9831a7;
 }
 
 @theme inline {
@@ -71,8 +94,10 @@
 
   --color-brand-from: var(--brand-from);
   --color-brand-via: var(--brand-via);
+  --color-brand-via-fg: var(--brand-via-fg);
   --color-brand-to: var(--brand-to);
   --color-live: var(--live);
+  --color-live-fg: var(--live-fg);
   --color-positive: var(--positive);
   --color-warning: var(--warning);
   --color-game-accent: var(--game-accent);
@@ -177,4 +202,19 @@ body::before {
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+/* Oyun pili. Mətn rəngi `GameChip`-də hesablanır və iki dəyişən kimi gəlir —
+   biri tünd, biri açıq fon üçün. Səbəb: eyni accent rəngi iki temada ƏKS
+   istiqamətə düzəlir (tünddə açılmalı, açıqda qaraldılmalı), inline stil isə
+   temaya reaksiya verə bilmir. Seçimi burada CSS edir.
+
+   Ehtiyat dəyər `currentColor`-dur: dəyişən nədənsə gəlməsə, pil əvvəlki kimi
+   deyil, ətrafdakı mətn rəngi ilə görünür — yəni ən pis halda oxunaqlı qalır. */
+.game-chip {
+  color: var(--chip-fg-dark, currentColor);
+}
+
+:root[data-theme="light"] .game-chip {
+  color: var(--chip-fg-light, currentColor);
 }

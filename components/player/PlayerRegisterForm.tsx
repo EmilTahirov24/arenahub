@@ -61,11 +61,11 @@ export default function PlayerRegisterForm({
             dildə hüquqi mətni qəbul etməsi istənilirdi. */}
         <span>
           {text.termsPrefix}
-          <a href={`/${lang}/terms`} target="_blank" rel="noopener noreferrer" className="text-brand-via hover:underline">
+          <a href={`/${lang}/terms`} target="_blank" rel="noopener noreferrer" className="text-brand-via-fg hover:underline">
             {text.termsLink}
           </a>
           {text.termsAnd}
-          <a href={`/${lang}/privacy`} target="_blank" rel="noopener noreferrer" className="text-brand-via hover:underline">
+          <a href={`/${lang}/privacy`} target="_blank" rel="noopener noreferrer" className="text-brand-via-fg hover:underline">
             {text.privacyLink}
           </a>
           {text.termsSuffix}
@@ -80,7 +80,7 @@ export default function PlayerRegisterForm({
 
       <p className="mt-4 text-center text-xs text-foreground-muted">
         {text.haveAccount}{" "}
-        <Link href={`/player/login${q}`} className="text-brand-via hover:underline">
+        <Link href={`/player/login${q}`} className="text-brand-via-fg hover:underline">
           {text.goLogin}
         </Link>
       </p>
