@@ -11,7 +11,27 @@
  *   npx tsx e2e/01-smoke.ts       # public səhifələr
  *   npx tsx e2e/02-lifecycle.ts   # admin matç həyat dövrü
  *
- * Server əvvəlcədən qaldırılmalıdır: `npm run dev`.
+ * Server əvvəlcədən qaldırılmalıdır. İki variant var və fərqi əhəmiyyətlidir:
+ *
+ *   npm run dev                          # sürətli, amma yanıltıcı ola bilər
+ *   npm run build && npm run start       # HƏQİQİ nəticə
+ *
+ * Dev rejimində iki şey yalançı sınıq verir, hər ikisi ölçülüb:
+ *
+ * Next 16 `cacheComponents` ilə "blocking-prerender-dynamic" xəbərdarlığını
+ * konsola yazır. /admin/* və /player/* budaqları qəsdən bloklayandır —
+ * valideyn layout-larda `connection()` və `instant = false` var, səbəbi orada
+ * izah olunub — amma dev bu budaqlar İÇİNDƏKİ keçidləri yenə də yoxlayır. Bu,
+ * bizim qərarımıza dair xəbərdarlıqdır, qüsur deyil, və production-da yoxdur.
+ *
+ * Marşrutlar ilk gedişdə kompilyasiya olunur; 20 saniyəlik gözləmə hədləri o
+ * zaman aşır. Buna görə `.next` təmizləndikdən sonra DAHA ÇOX test sınır —
+ * əks-intuitiv olduğu üçün yazılır.
+ *
+ * Hər iki səbəb də `next start` altında yoxa çıxır: 6 dəstin hamısı yaşıl olur.
+ * Nəticə şübhəlidirsə, qərar production quruluşundadır.
+ *
+ * `E2E_BASE_URL` ilə istənilən ünvana yönəldilə bilər.
  */
 import "dotenv/config";
 import { chromium, type Browser, type Locator, type Page, type Response } from "playwright";
