@@ -24,6 +24,14 @@
     Permissions -> Repository -> Actions: Read and write
 #>
 
+param(
+  # Sual vermədən işləyir: tokeni mübadilə buferindən götürür və təsdiq
+  # istəmir. Sahibi tokeni kopyalayır, quraşdırmanı başqası (məsələn köməkçi)
+  # işlədir — açar heç bir söhbətə, log-a və ya arqument sətrinə düşmür.
+  # Arqument kimi ötürmək olmaz: proses siyahısında görünərdi.
+  [switch]$Yes
+)
+
 $ErrorActionPreference = "Stop"
 try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch {}
 
@@ -35,8 +43,12 @@ $taskName = "ArenaHub idxal tetikleyicisi"
 
 if (Test-Path $tokenFile) {
   Write-Output "Token faylı artıq var: $tokenFile"
-  $again = Read-Host "Yenisini yazmaq istəyirsən? (h/y)"
-  if ($again -eq "h" -or $again -eq "H") { Remove-Item $tokenFile -Force }
+  if ($Yes) {
+    Write-Output "-Yes verilib: mövcud fayl saxlanılır."
+  } else {
+    $again = Read-Host "Yenisini yazmaq istəyirsən? (h/y)"
+    if ($again -eq "h" -or $again -eq "H") { Remove-Item $tokenFile -Force }
+  }
 }
 
 if (-not (Test-Path $tokenFile)) {
@@ -58,8 +70,17 @@ if (-not (Test-Path $tokenFile)) {
     Write-Output ""
     Write-Output "Mübadilə buferində token tapıldı:"
     Write-Output "  $onIki…  ($($clip.Length) simvol)"
-    $istifade = Read-Host "Bunu işlədim? (h/y)"
-    if ($istifade -eq "h" -or $istifade -eq "H") { $plain = $clip }
+    if ($Yes) {
+      Write-Output "-Yes verilib: bu token işlədilir."
+      $plain = $clip
+    } else {
+      $istifade = Read-Host "Bunu işlədim? (h/y)"
+      if ($istifade -eq "h" -or $istifade -eq "H") { $plain = $clip }
+    }
+  }
+
+  if (-not $plain -and $Yes) {
+    Write-Error "Mübadilə buferində token yoxdur. Tokeni kopyala (Ctrl+C) və yenidən işlət."
   }
 
   if (-not $plain) {
