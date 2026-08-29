@@ -151,6 +151,7 @@ sayğac yaddaşda olduğu üçün `npm run dev`-i yenidən başlatmaq onu sıfı
 | `npx prisma db seed` | demo data + admin hesabı |
 | `npx tsx scripts/recompute-ratings.ts` | komanda reytinqlərini matç tarixçəsindən yenidən qurur (seed-dən sonra lazımdır) |
 | `npx tsx scripts/check-email.ts --to ünvan` | e-poçt qurulumunu yoxlayır, real məktub göndərir |
+| `powershell -ExecutionPolicy Bypass -File scripts/rotate-smtp-password.ps1` | Gmail app password-u döndərir: `.env` → yerli sınaq → Vercel → deploy (sınaq keçməsə geri qaytarır) |
 | `npx tsx scripts/import-live.ts --apply` | Liquipedia-dan qarşıdakı/canlı/təzə bitmiş matçlar |
 | `npx tsx scripts/import-maps.ts --apply --limit 6` | bitmiş matçların xəritə nəticələri |
 | `npx tsx scripts/import-tournaments.ts` | turnirlər |
