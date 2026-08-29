@@ -167,5 +167,6 @@ sayğac yaddaşda olduğu üçün `npm run dev`-i yenidən başlatmaq onu sıfı
 | `powershell -File scripts/trigger-import.ps1` | idxalı əl ilə işə salır (token `scripts/.github-token` faylından, log `scripts/.trigger-log.txt`) |
 | `npx tsx scripts/dedupe-matches.ts` | təkrar düşmüş matçları birləşdirir |
 | `npx tsx scripts/merge-duplicate-tournaments.ts` | təkrar turnirləri birləşdirir |
+| `npx tsx scripts/merge-duplicate-teams.ts --apply` | eyni oyunda tam eyni adlı komanda sətirlərini birləşdirir (ən köhnəsi qalır; reytinq yenidən hesablanır) |
 
 İdxal skriptləri `--apply` olmadan yalnız nə edəcəyini yazır — əvvəlcə onsuz işlət.

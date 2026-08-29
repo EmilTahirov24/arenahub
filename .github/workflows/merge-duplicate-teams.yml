@@ -1,0 +1,58 @@
+# Eyni komandanın bazadakı təkrar sətirlərini birləşdirir.
+#
+# Niyə burada: skript yalnız bazaya yazır və production parolu Vercel-də
+# "Secret" kimi bağlıdır, yəni yerli maşından işlətmək mümkün deyil.
+#
+# Bir dəfəlik təmizlikdir. Səbəb `lib/orgNames.ts`-də düzəldilib — eyni adlı
+# sətirlər artıq qeyri-müəyyən sayılmır, ona görə yeni təkrar yaranmır. Bu iş
+# həmin dövrənin artıq yaratdıqlarını yığışdırır.
+#
+# Reytinq təkrar hesablanır, çünki Elo hər komandanın bitmiş matçlarından
+# çıxır: iki sətir birləşəndə matçlar bir komandada toplanır və köhnə reytinq
+# artıq həmin tarixçəyə uyğun gəlmir. Skript dəyişiklik olmasa siqnal vermir,
+# yəni boş qaçış reytinqi yenidən hesablamır.
+name: Merge duplicate teams
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/merge-duplicate-teams.ts"
+      - ".github/workflows/merge-duplicate-teams.yml"
+
+concurrency:
+  group: merge-duplicate-teams
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npx prisma generate
+
+      - name: Verify database secret
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL is not set."
+            exit 1
+          fi
+
+      - id: merge
+        run: npx tsx scripts/merge-duplicate-teams.ts --apply
+
+      - if: steps.merge.outputs.ratings_stale == 'true'
+        run: npx tsx scripts/recompute-ratings.ts
+
+      - if: steps.merge.outputs.ratings_stale != 'true'
+        run: echo "Birləşmə olmadı — reytinq toxunulmadı."

@@ -172,6 +172,8 @@ async function main() {
     const teams = await prisma.team.findMany({
       where: { gameId },
       select: { id: true, name: true, slug: true },
+      // Ən köhnə əvvəl — səbəbi lib/orgNames.ts-də izah olunub.
+      orderBy: { createdAt: "asc" },
     });
     const byKey = new Map<string, { id: string; name: string }>();
     for (const team of teams) {

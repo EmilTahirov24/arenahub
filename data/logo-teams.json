@@ -104,6 +104,91 @@
     "game": "cs2"
   },
   {
+    "slug": "cs2-astralis",
+    "name": "Astralis",
+    "game": "cs2"
+  },
+  {
+    "slug": "cs2-sashi-esport",
+    "name": "Sashi Esport",
+    "game": "cs2"
+  },
+  {
+    "slug": "cs2-hotu",
+    "name": "HOTU",
+    "game": "cs2"
+  },
+  {
+    "slug": "cs2-1w-team",
+    "name": "1w Team",
+    "game": "cs2"
+  },
+  {
+    "slug": "cs2-betclic-apogee-esports",
+    "name": "Betclic Apogee Esports",
+    "game": "cs2"
+  },
+  {
+    "slug": "cs2-bc-game-esports",
+    "name": "BC.Game Esports",
+    "game": "cs2"
+  },
+  {
+    "slug": "cs2-genone",
+    "name": "GenOne",
+    "game": "cs2"
+  },
+  {
+    "slug": "cs2-faze",
+    "name": "FaZe",
+    "game": "cs2"
+  },
+  {
+    "slug": "cs2-phantom-esports",
+    "name": "Phantom Esports",
+    "game": "cs2"
+  },
+  {
+    "slug": "cs2-acend",
+    "name": "Acend",
+    "game": "cs2"
+  },
+  {
+    "slug": "cs2-esuba",
+    "name": "ESuba",
+    "game": "cs2"
+  },
+  {
+    "slug": "cs2-tdk",
+    "name": "TDK",
+    "game": "cs2"
+  },
+  {
+    "slug": "cs2-jam-ukrainian-team",
+    "name": "JAM (Ukrainian team)",
+    "game": "cs2"
+  },
+  {
+    "slug": "cs2-unity-esports",
+    "name": "UNiTY esports",
+    "game": "cs2"
+  },
+  {
+    "slug": "cs2-lph-gaming",
+    "name": "LPH Gaming",
+    "game": "cs2"
+  },
+  {
+    "slug": "cs2-teletubisie",
+    "name": "Teletubisie",
+    "game": "cs2"
+  },
+  {
+    "slug": "cs2-echo",
+    "name": "Echo",
+    "game": "cs2"
+  },
+  {
     "slug": "dota2-level-up",
     "name": "Level UP",
     "game": "dota2"
@@ -201,6 +286,156 @@
   {
     "slug": "dota2-dynasty-stack",
     "name": "DYNASTY (stack)",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-natus-vincere",
+    "name": "Natus Vincere",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-team-resilience",
+    "name": "Team Resilience",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-inner-circle-x-insanity",
+    "name": "Inner Circle x Insanity",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-1w-team",
+    "name": "1w Team",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-tpb3",
+    "name": "TPB3",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-iron-wing",
+    "name": "Iron Wing",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-crescent-chinese-team",
+    "name": "Crescent (Chinese Team)",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-novus-gaming",
+    "name": "Novus Gaming",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-the-goal-of-all-life-is-death",
+    "name": "The goal of all life is death",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-team-synapse",
+    "name": "Team Synapse",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-glyph",
+    "name": "GLYPH",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-devil-kings",
+    "name": "Devil Kings",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-rune-eaters",
+    "name": "Rune Eaters",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-yellow-submarine",
+    "name": "Yellow Submarine",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-l1ga-team",
+    "name": "L1ga Team",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-heroic",
+    "name": "HEROIC",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-team-yandex",
+    "name": "Team Yandex",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-summer-bear",
+    "name": "Summer Bear",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-betboom-team",
+    "name": "BetBoom Team",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-re-arise",
+    "name": "RE Arise",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-tundra-esports",
+    "name": "Tundra Esports",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-stray-team",
+    "name": "Stray Team",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-ns-team",
+    "name": "NS Team",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-six-cats",
+    "name": "Six Cats",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-mentality-monsters",
+    "name": "Mentality Monsters",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-yangon-galacticos",
+    "name": "Yangon Galacticos",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-amaru-gaming",
+    "name": "Amaru Gaming",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-avice-team",
+    "name": "Avice Team",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-execration",
+    "name": "Execration",
+    "game": "dota2"
+  },
+  {
+    "slug": "dota2-dynasty-sea-stack",
+    "name": "DYNASTY (SEA stack)",
     "game": "dota2"
   },
   {
@@ -304,6 +539,156 @@
     "game": "valorant"
   },
   {
+    "slug": "valorant-team-liquid-brazil",
+    "name": "Team Liquid Brazil",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-mibr-gc",
+    "name": "MIBR GC",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-shopify-rebellion-gold",
+    "name": "Shopify Rebellion Gold",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-cloud9-gc",
+    "name": "Cloud9 GC",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-mvsk-secret",
+    "name": "MVSK Secret",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-enterprise-esports",
+    "name": "Enterprise Esports",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-fokus-sakura",
+    "name": "FOKUS Sakura",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-titan-esports-club",
+    "name": "Titan Esports Club",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-detonation-focusme",
+    "name": "DetonatioN FocusMe",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-drx",
+    "name": "DRX",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-varrel",
+    "name": "VARREL",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-onside-gaming",
+    "name": "ONSIDE GAMING",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-the-spiders",
+    "name": "The Spiders",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-evil-geniuses-gc",
+    "name": "Evil Geniuses GC",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-tatusiu",
+    "name": "Tatusiu",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-ushiras",
+    "name": "Ushiras",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-habos-babos",
+    "name": "Habos Babos",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-axolotl-north-american-team",
+    "name": "Axolotl (North American team)",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-flyquest-red",
+    "name": "FlyQuest RED",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-himmers",
+    "name": "HIMMERS",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-joblife",
+    "name": "Joblife",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-gen-g",
+    "name": "Gen.G",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-eintracht-frankfurt",
+    "name": "Eintracht Frankfurt",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-twisted-minds-orchid",
+    "name": "Twisted Minds Orchid",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-trace-esports",
+    "name": "Trace Esports",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-fnatic",
+    "name": "Fnatic",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-333",
+    "name": "333",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-swimtrek-blue",
+    "name": "SwimTrek Blue",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-fusion-x",
+    "name": "FUSION X",
+    "game": "valorant"
+  },
+  {
+    "slug": "valorant-looking-for-laburo",
+    "name": "Looking For Laburo",
+    "game": "valorant"
+  },
+  {
     "slug": "lol-bilibili-gaming",
     "name": "Bilibili Gaming",
     "game": "lol"
@@ -401,6 +786,156 @@
   {
     "slug": "lol-g2-nord",
     "name": "G2 NORD",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-galions",
+    "name": "Galions",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-realeroce-s-party",
+    "name": "RealerOCE&#x27;s party",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-su-esports",
+    "name": "SU Esports",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-frites-esports-club",
+    "name": "Frites Esports Club",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-trident-esports",
+    "name": "Trident Esports",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-hanwha-life-esports",
+    "name": "Hanwha Life Esports",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-karmine-corp",
+    "name": "Karmine Corp",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-drx-challengers",
+    "name": "DRX Challengers",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-dplus",
+    "name": "Dplus",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-sk-gaming-avarosa",
+    "name": "SK Gaming Avarosa",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-owo",
+    "name": "OwO",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-team-twobyeol",
+    "name": "Team twobyeol",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-fearx",
+    "name": "FEARX",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-frank-esports",
+    "name": "Frank Esports",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-secret-whales",
+    "name": "Secret Whales",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-movistar-koi-f-nix",
+    "name": "Movistar KOI Fénix",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-meow-gaming",
+    "name": "Meow Gaming",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-arctic-pandas",
+    "name": "Arctic Pandas",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-loud",
+    "name": "LOUD",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-hmble",
+    "name": "HMBLE",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-pignexus",
+    "name": "PigNexus",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-winthrop-university",
+    "name": "Winthrop University",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-cloud9",
+    "name": "Cloud9",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-lodis",
+    "name": "LODIS",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-nine-lives-esports",
+    "name": "Nine Lives Esports",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-ion-global-academy",
+    "name": "ION Global Academy",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-team-vitality",
+    "name": "Team Vitality",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-nrg",
+    "name": "NRG",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-furia",
+    "name": "FURIA",
+    "game": "lol"
+  },
+  {
+    "slug": "lol-intz",
+    "name": "INTZ",
     "game": "lol"
   }
 ]
