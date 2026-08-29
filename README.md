@@ -25,7 +25,7 @@ npm run dev
 | `DATABASE_URL` | **bəli** | PostgreSQL bağlantı sətri |
 | `AUTH_SECRET` | **bəli** | Sessiya JWT-si üçün açar — `openssl rand -base64 32` |
 | `NEXT_PUBLIC_SITE_URL` | **bəli** | Saytın tam ünvanı, sonda `/` olmadan. Email linkləri və sitemap bundan qurulur |
-| `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | seed üçün, **məcburi** | `prisma/seed.ts` ilk admini bununla yaradır. Standart qiymət YOXDUR: təyin edilməsə seed dayanır, parol 12 simvoldan qısa olsa da. Əvvəl burada `changeme` vardı və canlı panel həmin parolla qorunurdu. |
+| `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | seed üçün, **məcburi** | `prisma/seed.ts` ilk admini bununla yaradır. Standart qiymət YOXDUR — təyin edilməsə seed silməyə başlamadan dayanır. Köhnə dərc olunmuş cütlük (`admin@example.com` / `changeme`) qəbul edilmir; qısa parol isə yalnız xəbərdarlıq verir. |
 | `RESEND_API_KEY` | xeyr | Olmasa şifrə bərpası linkləri serverin konsoluna yazılır ([lib/email.ts](lib/email.ts)) |
 | `EMAIL_FROM` | xeyr | Domen təsdiqlənənə qədər `onboarding@resend.dev` qalmalıdır |
 | `BLOB_READ_WRITE_TOKEN` | prod-da **bəli** | Olmasa şəkillər lokal diskə yazılır; serverless-də disk read-only olduğu üçün production-da tələb olunur ([lib/storage.ts](lib/storage.ts)) |
