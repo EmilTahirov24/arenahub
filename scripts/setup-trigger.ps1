@@ -11,7 +11,11 @@
   Niyə belə: əvvəl bu üç addım ayrı-ayrı idi və səhv token yalnız cədvəl
   qurulduqdan sonra, log-da üzə çıxırdı — yəni heç vaxt.
 
-  Token ekranda görünmür: `Read-Host -AsSecureString` yazılanı gizlədir.
+  Token GitHub-dan kopyalanmış halda mübadilə buferində olur, ona görə skript
+  əvvəlcə oraya baxır: yazmaq lazım deyil, yalnız təsdiq. Bufer boşdursa,
+  gizli sahə açılır (`Read-Host -AsSecureString` yazılanı gizlədir).
+
+  Token heç bir addımda ekrana tam çıxmır — yalnız ilk 14 simvol və uzunluq.
   Fayl `.gitignore`-dadır və repoya düşmür.
 
   Tokeni belə yarat:
@@ -36,14 +40,38 @@ if (Test-Path $tokenFile) {
 }
 
 if (-not (Test-Path $tokenFile)) {
-  Write-Output ""
-  Write-Output "GitHub tokenini yapışdır (yazılan görünməyəcək):"
-  $secure = Read-Host -AsSecureString
-  $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
-  try {
-    $plain = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr).Trim()
-  } finally {
-    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+  $plain = $null
+
+  # Mübadilə buferi əvvəlcə yoxlanılır. Səbəb sadədir: token GitHub-dan məhz
+  # kopyalanaraq gəlir, yəni onsuz da oradadır. Gizli sahəyə yapışdırmaq
+  # qarışıqlıq yaradırdı — ekran boş qalır və adam yazının getdiyinə əmin
+  # olmur. Burada heç nə yazmaq lazım deyil, yalnız təsdiq.
+  #
+  # Tokenin özü EKRANA ÇIXMIR: yalnız ilk 14 simvol və uzunluq göstərilir,
+  # bu, "düzgün olanı kopyalamışam?" sualına cavab vermək üçün kifayətdir.
+  $clip = ""
+  try { $clip = (Get-Clipboard -Raw -ErrorAction Stop) } catch {}
+  if ($clip) { $clip = $clip.Trim() }
+
+  if ($clip -and ($clip.StartsWith("github_pat_") -or $clip.StartsWith("ghp_"))) {
+    $onIki = $clip.Substring(0, [Math]::Min(14, $clip.Length))
+    Write-Output ""
+    Write-Output "Mübadilə buferində token tapıldı:"
+    Write-Output "  $onIki…  ($($clip.Length) simvol)"
+    $istifade = Read-Host "Bunu işlədim? (h/y)"
+    if ($istifade -eq "h" -or $istifade -eq "H") { $plain = $clip }
+  }
+
+  if (-not $plain) {
+    Write-Output ""
+    Write-Output "GitHub tokenini yapışdır (Ctrl+V, sonra Enter — yazılan görünməyəcək):"
+    $secure = Read-Host -AsSecureString
+    $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+    try {
+      $plain = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr).Trim()
+    } finally {
+      [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+    }
   }
 
   if ([string]::IsNullOrWhiteSpace($plain)) { Write-Error "Boş token." }
