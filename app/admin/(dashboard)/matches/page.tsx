@@ -5,6 +5,7 @@ import AdminSearch from "@/components/admin/AdminSearch";
 import AdminPagination from "@/components/admin/AdminPagination";
 import { MatchStatus } from "@/app/generated/prisma/client";
 import type { Prisma } from "@/app/generated/prisma/client";
+import { siteFormat } from "@/lib/dates";
 
 const STATUS_COLOR: Record<string, string> = {
   LIVE: "text-live",
@@ -74,7 +75,7 @@ export default async function AdminMatchesPage({
 
   // Saat da göstərilir, təkcə gün yox: eyni gün ərzində bir neçə matç olur və
   // admin onları məhz vaxta görə ayırd edir.
-  const whenFmt = new Intl.DateTimeFormat("az", {
+  const whenFmt = siteFormat("az", {
     day: "2-digit",
     month: "short",
     hour: "2-digit",

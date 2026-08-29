@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import GameChip from "@/components/common/GameChip";
 import type { Game, Tournament } from "@/app/generated/prisma/client";
+import { siteFormat } from "@/lib/dates";
 
 /** Tier badge colours: gold for the majors, down to grey for the smallest. */
 export const TIER_COLOR: Record<string, string> = { S: "#facc15", A: "#22d3ee", B: "#a3a3a3", C: "#78716c" };
@@ -19,7 +20,7 @@ const STATUS_LABEL: Record<string, { az: string; en: string }> = {
  */
 export default async function TournamentRow({ tournament }: { tournament: Tournament & { game: Game } }) {
   const locale = await getLocale();
-  const dateFmt = new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short" });
+  const dateFmt = siteFormat(locale, { day: "2-digit", month: "short" });
   const status = STATUS_LABEL[tournament.status];
 
   return (

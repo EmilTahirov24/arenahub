@@ -3,13 +3,14 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
 import { primaryButtonClass } from "@/components/admin/formStyles";
+import { siteFormat } from "@/lib/dates";
 
 export default async function AdminUsersPage() {
   const session = await getAdminSession();
   if (!session || session.role !== "SUPER_ADMIN") redirect("/admin");
 
   const users = await prisma.adminUser.findMany({ orderBy: { email: "asc" } });
-  const dateFmt = new Intl.DateTimeFormat("az", { dateStyle: "medium", timeStyle: "short" });
+  const dateFmt = siteFormat("az", { dateStyle: "medium", timeStyle: "short" });
 
   return (
     <div>

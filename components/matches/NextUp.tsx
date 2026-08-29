@@ -2,6 +2,7 @@ import { getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { prisma } from "@/lib/prisma";
 import GameChip from "@/components/common/GameChip";
+import { siteFormat } from "@/lib/dates";
 
 /**
  * What to show when there is nothing scheduled and nothing live.
@@ -42,7 +43,7 @@ export default async function NextUp({ reason }: { reason: "matches" | "live" })
             <GameChip name={next.game.shortName} color={next.game.accentColor} />
             <span className="font-display text-lg font-bold group-hover:underline">{next.name}</span>
             <span className="text-sm text-foreground-muted">
-              {new Intl.DateTimeFormat(locale, { day: "2-digit", month: "long" }).format(next.startDate)}
+              {siteFormat(locale, { day: "2-digit", month: "long" }).format(next.startDate)}
               {next.location ? ` · ${next.location}` : ""}
             </span>
           </Link>

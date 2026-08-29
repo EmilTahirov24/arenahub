@@ -2,6 +2,7 @@ import { getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { recentTransfers } from "@/lib/cachedQueries";
 import TeamAvatar from "@/components/common/TeamAvatar";
+import { siteFormat } from "@/lib/dates";
 
 export default async function TopTransfers() {
   const locale = await getLocale();
@@ -10,7 +11,7 @@ export default async function TopTransfers() {
 
   if (memberships.length === 0) return null;
 
-  const dateFmt = new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short" });
+  const dateFmt = siteFormat(locale, { day: "2-digit", month: "short" });
 
   return (
     <div className="rounded-lg border border-border-subtle bg-surface p-3">

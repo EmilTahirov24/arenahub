@@ -451,6 +451,41 @@ async function main() {
     assert(content!.startsWith("http"), `og:image nisbi ünvandır: ${content}`);
   });
 
+  console.log("\nVaxt zonası\n");
+
+  // Bütün `Intl.DateTimeFormat` çağırışları serverin zonasında işləyirdi —
+  // Vercel-də bu, UTC-dir. Yəni Bakıda 13:00-da başlayan matç saytda 09:00
+  // yazılırdı. Ən aydın sübutu bu idi: eyni matç ÖZ paylaşım şəklində 13:00,
+  // səhifəsində 09:00 görünürdü, çünki `opengraph-image.tsx` `Asia/Baku`-nu əl
+  // ilə yazmışdı. Ölçüldü, canlı saytda təsdiqləndi (2026-08-29).
+  await check("matç vaxtı Bakı zonasında göstərilir", async () => {
+    const m = await prisma.match.findFirstOrThrow({
+      where: { status: "UPCOMING" },
+      select: { slug: true, scheduledAt: true },
+      orderBy: { scheduledAt: "asc" },
+    });
+    const gozlenilen = new Intl.DateTimeFormat("az", {
+      timeZone: "Asia/Baku",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(m.scheduledAt);
+
+    await gotoPage(page, `${BASE}/az/matches/${m.slug}`);
+    const body = await visibleText(page);
+    assert(body.includes(gozlenilen), `səhifədə «${gozlenilen}» yoxdur — vaxt yenə server zonasındadır`);
+    assert(body.includes("Bakı vaxtı"), "zona yazısı yoxdur — rəqəm tək başına yanıldıcıdır");
+  });
+
+  // Bakı vaxtı ilə gecə 00:00–04:00 arasındakı matç UTC-də hələ əvvəlki gündür.
+  // Gün sərhədləri UTC-dən götürüləndə belə matç «bu gün» zolağında görünmürdü.
+  await check("gecə matçı öz Bakı gününə düşür", async () => {
+    const { toDateKey, dayRange } = await import("../lib/dates");
+    const gece = new Date("2026-08-29T22:30:00.000Z"); // = 30 avqust 02:30 Bakı
+    assert(toDateKey(gece) === "2026-08-30", `gün səhvdir: ${toDateKey(gece)}`);
+    const r = dayRange("2026-08-30");
+    assert(gece >= r.start && gece <= r.end, "matç öz gününün aralığına düşmür");
+  });
+
   console.log("\nÜnvandan gələn filtrlər\n");
 
   // `?date=abc` ünvanı `new Date("abcT00:00:00.000Z")` verirdi — Invalid Date —

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { dateStrip, toDateKey } from "@/lib/dates";
+import { dateStrip, toDateKey, siteFormat } from "@/lib/dates";
 import type { Game } from "@/app/generated/prisma/client";
 
 export default async function MatchFilters({
@@ -16,7 +16,7 @@ export default async function MatchFilters({
   activeDate?: string;
 }) {
   const locale = await getLocale();
-  const dayFmt = new Intl.DateTimeFormat(locale, { weekday: "short", day: "2-digit" });
+  const dayFmt = siteFormat(locale, { weekday: "short", day: "2-digit" });
   const days = dateStrip();
   const todayKey = toDateKey(new Date());
 
@@ -92,6 +92,13 @@ export default async function MatchFilters({
           );
         })}
       </div>
+
+      {/* Siyahıdakı hər saat bu zonadadır. Yazılmasa rəqəm yalan danışır:
+          xaricdən baxan onu öz saatı sanır. Gün zolağı da Bakı günləri ilə
+          bölünür — «bu gün» gecə 04:00-da deyil, yarımgecədə dəyişir. */}
+      <p className="text-[11px] text-foreground-muted">
+        {locale === "az" ? "Bütün vaxtlar Bakı vaxtı ilə (UTC+4)." : "All times are Baku time (UTC+4)."}
+      </p>
     </div>
   );
 }

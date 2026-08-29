@@ -5,6 +5,7 @@ import PlayerAvatar from "@/components/common/PlayerAvatar";
 import CountryFlag from "@/components/common/CountryFlag";
 import { inputClass, primaryButtonClass, dangerButtonClass } from "@/components/admin/formStyles";
 import { approveClaim, rejectClaim } from "./actions";
+import { siteFormat } from "@/lib/dates";
 
 export default async function AdminClaimsPage() {
   await requireAdmin();
@@ -22,7 +23,7 @@ export default async function AdminClaimsPage() {
   const pending = claims.filter((c) => c.status === "PENDING");
   const reviewed = claims.filter((c) => c.status !== "PENDING");
 
-  const reviewFmt = new Intl.DateTimeFormat("az", {
+  const reviewFmt = siteFormat("az", {
     day: "2-digit",
     month: "short",
     year: "numeric",

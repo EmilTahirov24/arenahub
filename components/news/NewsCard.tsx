@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import GameChip from "@/components/common/GameChip";
 import type { NewsArticle, Game, NewsArticleTranslation } from "@/app/generated/prisma/client";
+import { siteFormat } from "@/lib/dates";
 
 type NewsCardArticle = NewsArticle & { game: Game | null; translations: NewsArticleTranslation[] };
 
@@ -11,7 +12,7 @@ export default async function NewsCard({ article }: { article: NewsCardArticle }
   const tr = article.translations.find((t) => t.locale === locale) ?? article.translations[0];
   if (!tr) return null;
 
-  const dateFmt = new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short", year: "numeric" });
+  const dateFmt = siteFormat(locale, { day: "2-digit", month: "short", year: "numeric" });
 
   return (
     <Link
