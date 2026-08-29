@@ -22,6 +22,12 @@ export default async function AdminClaimsPage() {
   const pending = claims.filter((c) => c.status === "PENDING");
   const reviewed = claims.filter((c) => c.status !== "PENDING");
 
+  const reviewFmt = new Intl.DateTimeFormat("az", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
   return (
     <div className="max-w-3xl">
       <h1 className="font-display mb-1 text-2xl font-bold">Profil müraciətləri</h1>
@@ -89,9 +95,19 @@ export default async function AdminClaimsPage() {
                 <span>
                   {claim.player.nickname} ← {claim.claimant.nickname}
                 </span>
+                {/*
+                  Tarix də göstərilir. `reviewedAt` onsuz da yazılırdı, sadəcə
+                  görünmürdü — yəni bu səhifə geri qaytarılmayan bir əməliyyatın
+                  KİM tərəfindən edildiyini deyirdi, NƏ VAXT edildiyini yox.
+                  Hesab köçürülməsinə sonradan etiraz olsa, lazım olan ilk şey
+                  budur.
+                */}
                 <span className={claim.status === "APPROVED" ? "text-xs text-positive" : "text-xs text-live"}>
                   {claim.status === "APPROVED" ? "təsdiqləndi" : "rədd edildi"}
                   {claim.reviewedBy && ` · ${claim.reviewedBy.name}`}
+                  {claim.reviewedAt && (
+                    <span className="text-foreground-muted"> · {reviewFmt.format(claim.reviewedAt)}</span>
+                  )}
                 </span>
               </div>
             ))}

@@ -48,6 +48,15 @@ export default async function AdminMatchesPage({
     skip: (page - 1) * PER_PAGE,
   });
 
+  // Saat da göstərilir, təkcə gün yox: eyni gün ərzində bir neçə matç olur və
+  // admin onları məhz vaxta görə ayırd edir.
+  const whenFmt = new Intl.DateTimeFormat("az", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -65,6 +74,16 @@ export default async function AdminMatchesPage({
             <Link href={`/admin/matches/${m.id}`} className="flex-1 hover:underline">
               {m.teamA.name} vs {m.teamB.name}
             </Link>
+            {/*
+              Siyahı `scheduledAt` üzrə sıralanır, amma tarixi göstərmirdi — yəni
+              admin görmədiyi dəyərə görə düzülmüş sətirlərə baxırdı. Eyni cütlük
+              fərqli oyunlarda və fərqli günlərdə təkrarlanır, tarix isə onları
+              ayırd edən yeganə sütundur. Turnir və xəbər siyahıları bunu onsuz
+              da edir; matçlar tək istisna idi.
+            */}
+            <span className="whitespace-nowrap text-xs tabular-nums text-foreground-muted">
+              {whenFmt.format(m.scheduledAt)}
+            </span>
             <span className="text-xs text-foreground-muted">{m.game.shortName}</span>
             <span className={`text-xs font-semibold ${STATUS_COLOR[m.status]}`}>{m.status}</span>
             <span className="font-display text-sm font-semibold">{m.teamAScore}:{m.teamBScore}</span>
