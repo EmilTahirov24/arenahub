@@ -160,6 +160,8 @@ sayğac yaddaşda olduğu üçün `npm run dev`-i yenidən başlatmaq onu sıfı
 | `npx tsx scripts/import-active-rosters.ts --apply --limit 60` | son 30 gündə oynayan, tərkibi olmayan komandaların tərkibini gətirir (komanda başına ~30–60s, dəstələrlə işlədin) |
 | `npx tsx scripts/cleanup-bogus-teams.ts --apply` | adı turnir bölməsi olan saxta komandaları silir |
 | `npx tsx scripts/generate-weekly-roundup.ts --apply` | həftəlik nəticə icmalını öz matç datamızdan yazır (xəbər API-si yoxdur — səbəbi skriptin başındadır) |
+| `powershell -File scripts/trigger-import.ps1` | idxal işini GitHub-da əl ilə işə salır (token `scripts/.github-token` faylından) |
+| `powershell -File scripts/install-trigger-task.ps1` | həmin tetikleyicini Windows cədvəlinə hər 20 dəqiqəyə qoyur |
 | `npx tsx scripts/dedupe-matches.ts` | təkrar düşmüş matçları birləşdirir |
 | `npx tsx scripts/merge-duplicate-tournaments.ts` | təkrar turnirləri birləşdirir |
 

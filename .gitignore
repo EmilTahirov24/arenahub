@@ -54,3 +54,7 @@ next-env.d.ts
 
 scripts/.merge-backup-*.json
 scripts/.match-cleanup-*.json
+
+# İdxal tetikleyicisinin GitHub token-i və logu — heç vaxt commit olunmamalıdır.
+scripts/.github-token
+scripts/.trigger-log.txt
