@@ -74,7 +74,7 @@ async function main() {
     include: {
       teamA: { select: { name: true, slug: true } },
       teamB: { select: { name: true, slug: true } },
-      game: { select: { name: true, shortName: true } },
+      game: { select: { name: true, shortName: true, slug: true } },
       tournament: { select: { name: true, slug: true, tier: true } },
     },
     orderBy: { scheduledAt: "asc" },
@@ -129,6 +129,15 @@ async function main() {
 
   const byGame = new Map<string, number>();
   for (const m of matches) byGame.set(m.game.shortName, (byGame.get(m.game.shortName) ?? 0) + 1);
+  // Əhatə olunan oyunların slug-ları etiketə yazılır. Kartda rəngli pil kimi
+  // görünür: siyahı əvvəl doqquz eyni boz mətn qutusundan ibarət idi və hansı
+  // həftədə nəyin oynandığı yalnız xülasəni oxuyanda bilinirdi. Etiket
+  // uydurma deyil — həmin həftədə həqiqətən matçı olan oyunlardır, matç
+  // sayına görə sıralanır.
+  const perSlug = new Map<string, number>();
+  for (const m of matches) perSlug.set(m.game.slug, (perSlug.get(m.game.slug) ?? 0) + 1);
+  const gameSlugs = [...perSlug.entries()].sort((a, b) => b[1] - a[1]).map(([slug]) => slug);
+  const articleTags = ["nəticələr", ...gameSlugs];
   const gameLine = [...byGame.entries()].sort((a, b) => b[1] - a[1]).map(([g, n]) => `${g} ${n}`).join(", ");
 
   function body(locale: "az" | "en") {
@@ -246,11 +255,12 @@ async function main() {
   const article = existing
     ? await prisma.newsArticle.update({
         where: { id: existing.id },
-        data: { publishedAt },
+        // Etiketlər də yenilənir: köhnə məqalələr yalnız ["nəticələr"] daşıyırdı.
+        data: { publishedAt, tags: articleTags },
         select: { id: true },
       })
     : await prisma.newsArticle.create({
-        data: { slug, authorId: author.id, publishedAt, tags: ["nəticələr"] },
+        data: { slug, authorId: author.id, publishedAt, tags: articleTags },
         select: { id: true },
       });
 

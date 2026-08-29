@@ -26,12 +26,19 @@ function hash(text: string): number {
 }
 
 /**
- * Çalar dairə üzrə seçilir, doyğunluq və işıqlılıq isə dar aralıqda saxlanılır.
- * Səbəb: avatarın üstündə ağ mətn var. Sərbəst buraxılsa, sarı fonda ağ hərflər
- * oxunmur — dar aralıq bütün çalarlarda kontrastı qoruyur.
+ * Çalar dairə üzrə seçilir, doyğunluq və işıqlılıq isə sabit qalır.
+ *
+ * İşıqlılıq 28%-dir və bu rəqəm seçilməyib, HESABLANIB. Avatarın üstündə ağ
+ * mətn var; ilk versiyada 42% yazmışdım və 360 çaların hamısını yoxlayanda
+ * ən pis hal — sarı, h=60, #a9a92d — ağ mətnlə cəmi 2.50:1 verirdi, yəni
+ * WCAG həddinin yarısı. axe bunu tutmurdu, çünki fon qradiyentdir və alət
+ * qradiyentli elementləri atlayır: rəqəm yalnız əl ilə ölçəndə üzə çıxdı.
+ *
+ * Ölçülən hədlər (S=58%): 34% -> 3.71, 32% -> 4.12, 30% -> 4.60, 28% -> 5.14.
+ * 30% keçir, amma sərhədə çox yaxındır; 28% ehtiyat saxlayır.
  */
 export function avatarColor(name: string, primaryColor?: string | null): string {
   if (primaryColor) return primaryColor;
   const hue = hash(name.trim().toLowerCase()) % 360;
-  return `hsl(${hue} 58% 42%)`;
+  return `hsl(${hue} 58% 28%)`;
 }

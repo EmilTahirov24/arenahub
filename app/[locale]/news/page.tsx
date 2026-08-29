@@ -90,7 +90,7 @@ export default async function NewsPage({
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {articles.map((article, i) => (
           <div key={article.id} className={i === 0 && articles.length > 1 ? "sm:col-span-2" : undefined}>
-            <NewsCard article={article} lead={i === 0 && articles.length > 1} />
+            <NewsCard article={article} games={games} lead={i === 0 && articles.length > 1} />
           </div>
         ))}
       </div>
