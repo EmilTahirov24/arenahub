@@ -49,4 +49,20 @@ jobs:
             exit 1
           fi
 
-      - run: npx tsx scripts/generate-weekly-roundup.ts --apply
+      # Son 8 həftə hər qaçışda yenidən yoxlanılır, təkcə keçən həftə yox.
+      #
+      # İki səbəb. Birincisi: xəbər bölməsində cəmi iki yazı vardı və səhifə boş
+      # görünürdü, halbuki bazada aylarla real nəticə dayanır — həmin həftələr
+      # sadəcə heç vaxt yazılmamışdı. İkincisi: bir bazar ertəsi qaçış uğursuz
+      # olsa, o həftə əvvəl həmişəlik itirdi; indi növbəti qaçış onu doldurur.
+      #
+      # Təkrardan qorxmur: slug tarix aralığını daşıyır, yəni eyni həftə
+      # yenilənir, ikinciləşmir. `publishedAt` isə əhatə olunan həftənin sonudur,
+      # ona görə köhnə həftəni yenidən yazmaq onu siyahının başına atmır.
+      # Matçsız həftə heç nə yazmır.
+      - name: Generate roundups (last 8 weeks)
+        run: |
+          for w in 1 2 3 4 5 6 7 8; do
+            echo "--- həftə -$w ---"
+            npx tsx scripts/generate-weekly-roundup.ts --weeks "$w" --apply
+          done
