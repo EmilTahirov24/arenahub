@@ -1,0 +1,50 @@
+# Yeri olmayan turnirlərin yerini Liquipedia-dan doldurur.
+#
+# Niyə burada qaçır: skript yalnız bazaya yazır və production parolu Vercel-də
+# "Secret" kimi bağlıdır, yəni yerli maşından işlətmək mümkün deyil.
+#
+# Niyə `--limit` var: Liquipedia turnir başına ~2.5 saniyə tələb edir, yəni bir
+# qaçış onlarla deyil, yüzlərlə dəqiqə çəkə bilər. Hər qaçış yalnız yeri
+# OLMAYAN turnirləri götürür, ona görə təkrar işə salmaq irəliləyişi davam
+# etdirir — qalan varsa, "Run workflow" ilə yenidən başlat.
+#
+# Cədvəldə deyil, qəsdən: pulsuz planda planlanmış işlər növbəyə düşür və idxal
+# onsuz da o növbəni uduzur. Bu, bir dəfəlik doldurma işidir, davamlı deyil.
+name: Tournament locations
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/import-tournament-locations.ts"
+      - ".github/workflows/tournament-locations.yml"
+
+concurrency:
+  group: tournament-locations
+  cancel-in-progress: false
+
+jobs:
+  locations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npx prisma generate
+
+      - name: Verify database secret
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL is not set."
+            exit 1
+          fi
+
+      - run: npx tsx scripts/import-tournament-locations.ts --apply --limit 400
