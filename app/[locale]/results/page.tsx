@@ -7,6 +7,7 @@ import MatchFilters from "@/components/matches/MatchFilters";
 import MatchGroup from "@/components/matches/MatchGroup";
 import Pagination from "@/components/common/Pagination";
 import { localeAlternates } from "@/lib/localeAlternates";
+import { isDateKey } from "@/lib/dates";
 
 const RESULTS_PER_PAGE = 50;
 
@@ -32,7 +33,9 @@ export default async function ResultsPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const { game: gameSlug, date, page: pageParam } = await searchParams;
+  const { game: gameSlug, date: dateParam, page: pageParam } = await searchParams;
+  // Uydurma tarix filtr sayılmır — səbəb lib/dates.ts-də izah edilib.
+  const date = isDateKey(dateParam) ? dateParam : undefined;
   const t = await getTranslations();
 
   const games = await activeGames();

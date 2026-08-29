@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { primaryButtonClass, secondaryButtonClass } from "@/components/admin/formStyles";
 import AdminSearch from "@/components/admin/AdminSearch";
 import AdminPagination from "@/components/admin/AdminPagination";
+import { MatchStatus } from "@/app/generated/prisma/client";
 import type { Prisma } from "@/app/generated/prisma/client";
 
 const STATUS_COLOR: Record<string, string> = {
@@ -13,28 +14,51 @@ const STATUS_COLOR: Record<string, string> = {
   CANCELLED: "text-foreground-muted",
 };
 
+const STATUS_LABEL: Record<MatchStatus, string> = {
+  UPCOMING: "Gözlənilir",
+  LIVE: "Canlı",
+  FINISHED: "Bitib",
+  POSTPONED: "Təxirə salınıb",
+  CANCELLED: "Ləğv edilib",
+};
+
 const PER_PAGE = 50;
 
 export default async function AdminMatchesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; status?: string; game?: string }>;
 }) {
-  const { q, page: pageParam } = await searchParams;
+  const { q, page: pageParam, status: statusParam, game: gameParam } = await searchParams;
   const search = (q ?? "").trim();
+
+  // Status ünvandan gəlir, yəni istənilən mətn ola bilər. Yoxlanmadan Prisma-ya
+  // versək, `?status=xxx` enum xətası ilə 500 qaytarar — filtr səhv yazılmış
+  // linki səhifəni sındırmaqla cəzalandırmamalıdır.
+  const status =
+    statusParam && (Object.values(MatchStatus) as string[]).includes(statusParam)
+      ? (statusParam as MatchStatus)
+      : undefined;
+
+  const games = await prisma.game.findMany({ orderBy: { name: "asc" }, select: { slug: true, shortName: true } });
+  const gameSlug = games.some((g) => g.slug === gameParam) ? gameParam : undefined;
 
   // Əvvəl burada yalnız `take: 100` vardı və səhifələmə yox idi — yəni ən təzə
   // 100 matçdan başqa heç birinə çatmaq mümkün deyildi. Production-da 2349 matç
   // var, yəni 2249-u admin üçün əlçatmaz idi. Bu, limitsiz sorğudan da pisdir:
   // orada heç olmasa data görünürdü.
-  const where: Prisma.MatchWhereInput = search
-    ? {
-        OR: [
-          { teamA: { name: { contains: search, mode: "insensitive" } } },
-          { teamB: { name: { contains: search, mode: "insensitive" } } },
-        ],
-      }
-    : {};
+  const where: Prisma.MatchWhereInput = {
+    ...(search
+      ? {
+          OR: [
+            { teamA: { name: { contains: search, mode: "insensitive" } } },
+            { teamB: { name: { contains: search, mode: "insensitive" } } },
+          ],
+        }
+      : {}),
+    ...(status ? { status } : {}),
+    ...(gameSlug ? { game: { slug: gameSlug } } : {}),
+  };
 
   const total = await prisma.match.count({ where });
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
@@ -57,6 +81,8 @@ export default async function AdminMatchesPage({
     minute: "2-digit",
   });
 
+  const filtered = Boolean(search || status || gameSlug);
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -66,7 +92,30 @@ export default async function AdminMatchesPage({
         </Link>
       </div>
 
-      <AdminSearch action="/admin/matches" defaultValue={search} placeholder="Komanda adı ilə axtar..." />
+      {/*
+        Komanda adı ilə axtarış tək başına bəs etmirdi: 2315 matçda «canlı olan
+        nə var» və ya «yalnız CS2» sualının cavabı üçün adam 47 səhifəni əl ilə
+        gəzməli idi. Hər ikisi sorğuda onsuz da indeksli sahədir.
+      */}
+      <AdminSearch
+        action="/admin/matches"
+        defaultValue={search}
+        placeholder="Komanda adı ilə axtar..."
+        filters={[
+          {
+            name: "status",
+            value: status,
+            allLabel: "Bütün statuslar",
+            options: Object.values(MatchStatus).map((s) => ({ value: s, label: STATUS_LABEL[s] })),
+          },
+          {
+            name: "game",
+            value: gameSlug,
+            allLabel: "Bütün oyunlar",
+            options: games.map((g) => ({ value: g.slug, label: g.shortName })),
+          },
+        ]}
+      />
 
       <div className="overflow-hidden rounded-lg border border-border-subtle">
         {matches.map((m) => (
@@ -94,7 +143,7 @@ export default async function AdminMatchesPage({
         ))}
         {matches.length === 0 && (
           <p className="p-6 text-center text-sm text-foreground-muted">
-            {search ? `«${search}» üçün matç tapılmadı.` : "Matç yoxdur."}
+            {filtered ? "Bu şərtlərə uyğun matç tapılmadı." : "Matç yoxdur."}
           </p>
         )}
       </div>
@@ -104,7 +153,7 @@ export default async function AdminMatchesPage({
         totalPages={totalPages}
         total={total}
         pathname="/admin/matches"
-        query={{ q: search || undefined }}
+        query={{ q: search || undefined, status, game: gameSlug }}
       />
     </div>
   );

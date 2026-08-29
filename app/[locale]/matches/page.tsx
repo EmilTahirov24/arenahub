@@ -7,6 +7,7 @@ import MatchFilters from "@/components/matches/MatchFilters";
 import MatchGroup from "@/components/matches/MatchGroup";
 import NextUp from "@/components/matches/NextUp";
 import { localeAlternates } from "@/lib/localeAlternates";
+import { isDateKey } from "@/lib/dates";
 
 export async function generateMetadata({
   params,
@@ -30,7 +31,11 @@ export default async function MatchesPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const { game: gameSlug, date } = await searchParams;
+  const { game: gameSlug, date: dateParam } = await searchParams;
+  // Uydurma tarix filtr kimi qəbul edilmir: sorğu onsuz da onu nəzərə almır
+  // (lib/dates.ts), amma normallaşdırmasaq, filtr zolağında heç bir gün seçili
+  // görünmür və uydurma dəyər bütün linklərə daşınır.
+  const date = isDateKey(dateParam) ? dateParam : undefined;
   const t = await getTranslations();
 
   const games = await activeGames();
