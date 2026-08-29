@@ -158,6 +158,8 @@ async function main() {
         country: true,
         _count: { select: { memberships: { where: { leftAt: null } } } },
       },
+      // Ən köhnə əvvəl — səbəbi lib/orgNames.ts-də izah olunub.
+      orderBy: { createdAt: "asc" },
     });
     const { index: byOrg, ambiguous } = indexByOrg(existingTeams);
     if (ambiguous.length) problems.push(`${def.slug}: eyni adlı komandalar: ${ambiguous.join(", ")}`);

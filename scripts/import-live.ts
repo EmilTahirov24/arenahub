@@ -138,7 +138,14 @@ async function main(): Promise<{ written: number; note: string; ratingsStale: nu
       continue;
     }
 
-    const teams = await prisma.team.findMany({ where: { gameId: game.id }, select: { id: true, name: true } });
+    // Ən köhnə əvvəl: `indexByOrg` eyni adlı sətirlərdən birincisini seçir, yəni
+    // sıra nəticəni müəyyən edir. Orijinal sətir qalib gəlməlidir ki, matçlar
+    // onun üzərində toplansın, hər idxalda başqa nüsxəyə köçməsin.
+    const teams = await prisma.team.findMany({
+      where: { gameId: game.id },
+      select: { id: true, name: true },
+      orderBy: { createdAt: "asc" },
+    });
     const { index: byOrg } = indexByOrg(teams);
 
     /** Finds a team, creating it from the wiki's own page title when new. */
