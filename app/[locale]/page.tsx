@@ -245,7 +245,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
             <SectionHead title={t("nav.news")} href="/news" label={t("nav.news")} />
             <div className="grid gap-4 sm:grid-cols-2">
               {articles.map((article) => (
-                <NewsCard key={article.id} article={article} />
+                <NewsCard key={article.id} article={article} games={games} />
               ))}
             </div>
           </section>

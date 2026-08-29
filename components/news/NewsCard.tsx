@@ -9,11 +9,18 @@ type NewsCardArticle = NewsArticle & { game: Game | null; translations: NewsArti
 
 export default async function NewsCard({
   article,
+  // Həftəlik icmalın `gameId`-si yoxdur, çünki bütün oyunları əhatə edir.
+  // Kartda isə rəng lazımdır: siyahı doqquz eyni boz mətn qutusundan ibarət idi.
+  // Ona görə icmal əhatə etdiyi oyunları `tags`-a yazır və burada həmin
+  // etiketlərə uyğun oyunlar pil kimi göstərilir — matç sayına görə sıralı,
+  // ən çoxu birinci.
+  games = [],
   // Siyahının ən təzə yazısı üçün: eyni kart, bir ölçü böyük başlıq və üç sətir
   // xülasə. Ayrı komponent yazmaq iki yerdə eyni məntiqi saxlamaq demək olardı.
   lead = false,
 }: {
   article: NewsCardArticle;
+  games?: Game[];
   lead?: boolean;
 }) {
   const locale = await getLocale();
@@ -44,8 +51,19 @@ export default async function NewsCard({
         />
       )}
 
-      <div className="mb-2 flex items-center gap-2">
-        {article.game && <GameChip name={article.game.shortName} color={article.game.accentColor} />}
+      {/* `flex-wrap`: dörd oyun pili + tarix + «Seçilmiş» dar kartda bir sətrə
+          sığmır və sarılmadan daşırdı. */}
+      <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+        {article.game ? (
+          <GameChip name={article.game.shortName} color={article.game.accentColor} />
+        ) : (
+          // Ən çox dörd pil: beşincisi sətri qırır və heç nə əlavə etmir.
+          games
+            .filter((g) => article.tags.includes(g.slug))
+            .sort((a, b) => article.tags.indexOf(a.slug) - article.tags.indexOf(b.slug))
+            .slice(0, 4)
+            .map((g) => <GameChip key={g.id} name={g.shortName} color={g.accentColor} />)
+        )}
         {/* Sahib «seçilmiş» qutusunu işarələyəndə nəticəsini görməlidir — yoxsa
             qutu yenə səssiz qalır, sadəcə bu dəfə sıralamanın içində. */}
         {article.isFeatured && (
