@@ -80,7 +80,30 @@ async function main() {
     orderBy: { scheduledAt: "asc" },
   });
 
-  const range = `${start.toISOString().slice(0, 10)} — ${new Date(end.getTime() - 1).toISOString().slice(0, 10)}`;
+  const last = new Date(end.getTime() - 1);
+  const range = `${start.toISOString().slice(0, 10)} — ${last.toISOString().slice(0, 10)}`;
+
+  // Etiketdə göstərilən son gün: həftənin sonuncu TAM günü, UTC yarımgecəsində.
+  //
+  // `last` 23:59:59.999-dur və onu Bakı zonasında formatlamaq günü bir irəli
+  // sürüşdürürdü — «27 iyul – 3 avqust», halbuki həftə 2 avqustda bitir.
+  // Həftə sərhədləri UTC ilə hesablandığı üçün etiket də UTC ilə yazılır;
+  // ay adı dilə görə dəyişir, gün nömrəsi yox.
+  const labelEnd = new Date(start.getTime() + 6 * 86_400_000);
+
+  /**
+   * «17–23 avqust» şəklində insan oxunuşlu aralıq. Ay sərhədini keçəndə hər
+   * iki ay yazılır («29 avqust – 4 sentyabr»), yoxsa aralıq yanlış oxunur.
+   */
+  function weekLabel(locale: "az" | "en") {
+    const tag = locale === "az" ? "az-AZ" : "en-GB";
+    const d = (x: Date) => new Intl.DateTimeFormat(tag, { timeZone: "UTC", day: "numeric" }).format(x);
+    const dm = (x: Date) =>
+      new Intl.DateTimeFormat(tag, { timeZone: "UTC", day: "numeric", month: "long" }).format(x);
+    const sameMonth = start.getUTCMonth() === labelEnd.getUTCMonth();
+    return sameMonth ? `${d(start)}–${dm(labelEnd)}` : `${dm(start)} – ${dm(labelEnd)}`;
+  }
+
   console.log(`həftə: ${range}`);
   console.log(`bitmiş matç: ${matches.length}\n`);
 
@@ -152,12 +175,29 @@ async function main() {
     return parts.join("\n");
   }
 
-  const titleAz = `Həftənin nəticələri: ${range}`;
-  const titleEn = `Results of the week: ${range}`;
+  // Başlıq adam üçün yazılır, maşın üçün yox. Əvvəl `2026-08-17 — 2026-08-23`
+  // idi: siyahıda yan-yana duran iki belə başlıq bir-birindən seçilmirdi və
+  // heç nə vəd etmirdi. İndi ay adı ilə, ISO tarixi isə slug-da qalır.
+  const titleAz = `${weekLabel("az")}: həftənin nəticələri`;
+  const titleEn = `${weekLabel("en")}: results of the week`;
   const slug = `hefte-neticeleri-${start.toISOString().slice(0, 10)}`;
 
-  console.log("BAŞLIQ: " + titleAz);
-  console.log("SLUG:   " + slug);
+  // Xülasə kartda görünən yeganə mətndir — onsuz kart bir sətir başlıqdan
+  // ibarət qalır. Burada da heç nə uydurulmur: matç sayı, oyun bölgüsü və ən
+  // yüksək səviyyəli turnir öz sətirlərimizdən yığılır.
+  const lead = groups[0]?.[0]?.tournament?.name;
+  function excerpt(locale: "az" | "en") {
+    const az = locale === "az";
+    const head = az
+      ? `${matches.length} matç başa çatdı — ${gameLine}.`
+      : `${matches.length} matches finished — ${gameLine}.`;
+    if (!lead) return head;
+    return az ? `${head} Ən böyük hadisə: ${lead}.` : `${head} Biggest event: ${lead}.`;
+  }
+
+  console.log("BAŞLIQ:  " + titleAz);
+  console.log("XÜLASƏ:  " + excerpt("az"));
+  console.log("SLUG:    " + slug);
   console.log("");
   console.log(body("az").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 600) + "…");
 
@@ -172,15 +212,27 @@ async function main() {
     return;
   }
 
+  // Dərc tarixi ƏHATƏ OLUNAN həftənin sonudur, yazılma anı yox.
+  //
+  // Əvvəl burada `new Date()` vardı və nəticəsi canlı saytda göründü: 10–16
+  // avqustun icmalı «28 avqust» tarixi ilə dayanırdı, çünki skript həmin gün
+  // yenidən qaçmışdı. Yəni köhnə həftəni yenidən yazmaq onu bugünkü xəbər kimi
+  // göstərirdi və sıralama yalan olurdu. Keçmiş həftələri doldurmaq üçün bu,
+  // xüsusilə vacibdir.
+  //
+  // Gələcəyə keçmir: cari həftə üçün qaçırılsa, indiki an götürülür.
+  const now2 = new Date();
+  const publishedAt = last < now2 ? last : now2;
+
   const existing = await prisma.newsArticle.findUnique({ where: { slug }, select: { id: true } });
   const article = existing
     ? await prisma.newsArticle.update({
         where: { id: existing.id },
-        data: { publishedAt: new Date() },
+        data: { publishedAt },
         select: { id: true },
       })
     : await prisma.newsArticle.create({
-        data: { slug, authorId: author.id, publishedAt: new Date(), tags: ["nəticələr"] },
+        data: { slug, authorId: author.id, publishedAt, tags: ["nəticələr"] },
         select: { id: true },
       });
 
@@ -190,8 +242,8 @@ async function main() {
   ] as const) {
     await prisma.newsArticleTranslation.upsert({
       where: { articleId_locale: { articleId: article.id, locale } },
-      create: { articleId: article.id, locale, title, bodyHtml: body(locale) },
-      update: { title, bodyHtml: body(locale) },
+      create: { articleId: article.id, locale, title, excerpt: excerpt(locale), bodyHtml: body(locale) },
+      update: { title, excerpt: excerpt(locale), bodyHtml: body(locale) },
     });
   }
 

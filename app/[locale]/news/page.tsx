@@ -34,6 +34,20 @@ export default async function NewsPage({
 
   const games = await activeGames();
 
+  // Filtr pili yalnız arxasında məqalə olan oyun üçün göstərilir.
+  //
+  // Əvvəl dördü də həmişə görünürdü və dördü də «Xəbər tapılmadı» verirdi:
+  // həftəlik icmal bütün oyunları əhatə edir, ona görə `gameId`-si yoxdur.
+  // Yəni səhifə dörd düymə vəd edir, dördü də adamı boş ekrana aparırdı. Boş
+  // vəd verməkdənsə düyməni göstərməmək düzdür.
+  const counts = await prisma.newsArticle.groupBy({
+    by: ["gameId"],
+    where: { publishedAt: { not: null }, gameId: { not: null } },
+    _count: { _all: true },
+  });
+  const withArticles = new Set(counts.map((c) => c.gameId));
+  const filterGames = games.filter((g) => withArticles.has(g.id));
+
   const articles = await prisma.newsArticle.findMany({
     where: {
       publishedAt: { not: null },
@@ -49,6 +63,7 @@ export default async function NewsPage({
     <PageShell showDefaultWidgets={false}>
       <h1 className="font-display mb-4 text-2xl font-bold">{t("nav.news")}</h1>
 
+      {filterGames.length > 0 && (
       <div className="mb-6 flex flex-wrap gap-2">
         <Link
           href="/news"
@@ -56,7 +71,7 @@ export default async function NewsPage({
         >
           {locale === "az" ? "Hamısı" : "All"}
         </Link>
-        {games.map((game) => (
+        {filterGames.map((game) => (
           <Link
             key={game.id}
             href={{ pathname: "/news", query: { game: game.slug } }}
@@ -67,15 +82,36 @@ export default async function NewsPage({
           </Link>
         ))}
       </div>
+      )}
 
+      {/* Ən təzə xəbər iki sütun tutur. İki eyni ölçülü qutu yan-yana duranda
+          səhifənin harada başladığı bilinmirdi; genişlik oxucuya haradan
+          başlayacağını göstərir və altdakı boşluğu da azaldır. */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {articles.map((article) => (
-          <NewsCard key={article.id} article={article} />
+        {articles.map((article, i) => (
+          <div key={article.id} className={i === 0 && articles.length > 1 ? "sm:col-span-2" : undefined}>
+            <NewsCard article={article} lead={i === 0 && articles.length > 1} />
+          </div>
         ))}
-        {articles.length === 0 && (
-          <p className="text-sm text-foreground-muted">{locale === "az" ? "Xəbər tapılmadı." : "No news found."}</p>
-        )}
       </div>
+
+      {articles.length === 0 && (
+        <div className="rounded-lg border border-border-subtle bg-surface p-8 text-center">
+          <p className="mb-1 text-sm text-foreground-muted">
+            {gameSlug
+              ? locale === "az"
+                ? "Bu oyun üzrə hələ xəbər yoxdur."
+                : "No news for this game yet."
+              : locale === "az"
+                ? "Hələ xəbər yoxdur."
+                : "No news yet."}
+          </p>
+          {/* Boş ekranda adamı saxlamaq olmaz: nəticələr onsuz da doludur. */}
+          <Link href="/results" className="text-sm font-medium text-brand-via-fg hover:underline">
+            {locale === "az" ? "Nəticələrə bax →" : "Browse results →"}
+          </Link>
+        </div>
+      )}
     </PageShell>
   );
 }

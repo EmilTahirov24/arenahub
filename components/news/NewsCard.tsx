@@ -7,7 +7,15 @@ import { siteFormat } from "@/lib/dates";
 
 type NewsCardArticle = NewsArticle & { game: Game | null; translations: NewsArticleTranslation[] };
 
-export default async function NewsCard({ article }: { article: NewsCardArticle }) {
+export default async function NewsCard({
+  article,
+  // Siyahının ən təzə yazısı üçün: eyni kart, bir ölçü böyük başlıq və üç sətir
+  // xülasə. Ayrı komponent yazmaq iki yerdə eyni məntiqi saxlamaq demək olardı.
+  lead = false,
+}: {
+  article: NewsCardArticle;
+  lead?: boolean;
+}) {
   const locale = await getLocale();
   const tr = article.translations.find((t) => t.locale === locale) ?? article.translations[0];
   if (!tr) return null;
@@ -17,7 +25,9 @@ export default async function NewsCard({ article }: { article: NewsCardArticle }
   return (
     <Link
       href={`/news/${article.slug}`}
-      className="flex flex-col rounded-lg border border-border-subtle bg-surface p-4 transition-colors hover:bg-surface-raised"
+      className={`flex h-full flex-col rounded-lg border bg-surface transition-colors hover:bg-surface-raised ${
+        lead ? "border-brand-via/30 p-5" : "border-border-subtle p-4"
+      }`}
     >
       {/* Üz şəkli admin paneldən yüklənirdi və heç yerdə göstərilmirdi — redaktor
           şəkil seçirdi, qarşılığında heç nə almırdı. Şəkil yoxdursa kart əvvəlki
@@ -47,8 +57,12 @@ export default async function NewsCard({ article }: { article: NewsCardArticle }
           <span className="text-xs text-foreground-muted">{dateFmt.format(article.publishedAt)}</span>
         )}
       </div>
-      <h3 className="font-display font-semibold leading-snug">{tr.title}</h3>
-      {tr.excerpt && <p className="mt-1 line-clamp-2 text-sm text-foreground-muted">{tr.excerpt}</p>}
+      <h3 className={`font-display font-semibold leading-snug ${lead ? "text-lg" : ""}`}>{tr.title}</h3>
+      {tr.excerpt && (
+        <p className={`mt-1 text-sm text-foreground-muted ${lead ? "line-clamp-3" : "line-clamp-2"}`}>
+          {tr.excerpt}
+        </p>
+      )}
     </Link>
   );
 }
