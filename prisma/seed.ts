@@ -335,11 +335,49 @@ function randomTeamStat(rating: number) {
   return { kills, deaths, assists };
 }
 
+/**
+ * Seed-in yaradacağı admin hesabının açarı.
+ *
+ * Burada əvvəl `|| "admin@example.com"` və `|| "changeme"` vardı və nəticəsi
+ * bu oldu: canlı saytın admin paneli 26 gün boyunca məhz həmin iki dəyərlə
+ * qorundu. Repo açıqdır, yəni parol elə bu faylda hər kəsə görünürdü —
+ * sındırmaq lazım deyildi, oxumaq kifayət idi.
+ *
+ * Standart qiymət pis olduğu üçün deyil, SƏSSİZ olduğu üçün təhlükəlidir:
+ * dəyişən qoyulmadıqda seed işini görür, heç nə demir və hamı hər şeyin
+ * qaydasında olduğunu düşünür.
+ */
+function readAdminCredentials() {
+  const adminEmail = process.env.SEED_ADMIN_EMAIL;
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+  if (!adminEmail || !adminPassword) {
+    throw new Error(
+      "SEED_ADMIN_EMAIL və SEED_ADMIN_PASSWORD təyin edilməyib. Standart parol YOXDUR — .env-də özün yaz.",
+    );
+  }
+  if (adminPassword.length < 12) {
+    throw new Error(
+      `SEED_ADMIN_PASSWORD çox qısadır (${adminPassword.length} simvol) — ən azı 12 olmalıdır. ` +
+        "Panel ictimai ünvandadır.",
+    );
+  }
+  if (/^(changeme|password|admin|123456|qwerty)/i.test(adminPassword)) {
+    throw new Error("SEED_ADMIN_PASSWORD tanınmış zəif parollardandır — başqasını seç.");
+  }
+  return { adminEmail, adminPassword };
+}
+
 async function main() {
   // Demo data (fictional teams, invented matches, sample ads) is for local
   // development. Set SEED_DEMO=false in production: games, the admin user and
   // the real CS2 teams are still created, but nothing is invented.
   const seedDemo = process.env.SEED_DEMO !== "false";
+
+  // Admin açarı SİLMƏDƏN ƏVVƏL yoxlanılır. Aşağıdakı `deleteMany` zənciri
+  // bazanı boşaldır; yoxlama sonra olsaydı, səhv konfiqurasiya ilə işlədilən
+  // seed hər şeyi silib SONRA dayanardı və geridə admini olmayan boş baza
+  // qalardı. Yoxlamanın özündən daha vacib olan onun YERİDİR.
+  const { adminEmail, adminPassword } = readAdminCredentials();
 
   console.log(`Cleaning existing data... (demo data: ${seedDemo ? "yes" : "no"})`);
   await prisma.playerMatchStat.deleteMany();
@@ -367,28 +405,6 @@ async function main() {
   await prisma.adminUser.deleteMany();
 
   console.log("Creating admin user...");
-  // Burada əvvəl `|| "admin@example.com"` və `|| "changeme"` vardı və nəticəsi
-  // budur: canlı saytın admin paneli 26 gün boyunca məhz bu iki dəyərlə
-  // qorunub. Repo açıqdır, yəni parol elə bu faylda hər kəsə görünürdü —
-  // sındırmaq lazım deyildi, oxumaq kifayət idi.
-  //
-  // Standart qiymət pis olduğu üçün deyil, SƏSSİZ olduğu üçün təhlükəlidir:
-  // dəyişən qoyulmadıqda seed işini görür, heç nə demir və hamı hər şeyin
-  // qaydasında olduğunu düşünür. İndi dayanır.
-  const adminEmail = process.env.SEED_ADMIN_EMAIL;
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD;
-  if (!adminEmail || !adminPassword) {
-    throw new Error(
-      "SEED_ADMIN_EMAIL və SEED_ADMIN_PASSWORD təyin edilməyib. " +
-        "Standart parol YOXDUR — .env-də özün yaz.",
-    );
-  }
-  if (adminPassword.length < 12) {
-    throw new Error(`SEED_ADMIN_PASSWORD çox qısadır (${adminPassword.length} simvol) — ən azı 12 olmalıdır.`);
-  }
-  if (/^(changeme|password|admin|123456)/i.test(adminPassword)) {
-    throw new Error("SEED_ADMIN_PASSWORD tanınmış zəif parollardandır — başqasını seç.");
-  }
   const admin = await prisma.adminUser.create({
     data: {
       email: adminEmail,
