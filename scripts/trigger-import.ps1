@@ -45,11 +45,22 @@ $headers = @{
   "User-Agent"           = "ArenaHub-trigger"
 }
 
+# Log skriptin öz işidir. Əvvəl bunu cədvəlin arqument sətrindəki `>>` edirdi,
+# amma Task Scheduler yönləndirmə tanımır — o mətni PowerShell-ə arqument kimi
+# ötürür. Yəni log heç vaxt yaranmırdı və cədvəl səssizcə uğursuz ola bilərdi.
+$logFile = Join-Path $PSScriptRoot ".trigger-log.txt"
+
+function Write-Line([string]$text) {
+  $line = "$(Get-Date -Format 'yyyy-MM-dd HH:mm')  $text"
+  Write-Output $line
+  try { Add-Content -Path $logFile -Value $line -Encoding UTF8 } catch {}
+}
+
 try {
   Invoke-RestMethod -Uri $uri -Method Post -Headers $headers -Body '{"ref":"main"}' -ContentType "application/json"
-  Write-Output "$(Get-Date -Format 'yyyy-MM-dd HH:mm')  idxal işə salındı"
+  Write-Line "idxal işə salındı"
 } catch {
   # Səhv gizlədilmir: cədvəllə işləyəndə yeganə iz bu sətirdir.
-  Write-Output "$(Get-Date -Format 'yyyy-MM-dd HH:mm')  ALINMADI: $($_.Exception.Message)"
+  Write-Line "ALINMADI: $($_.Exception.Message)"
   exit 1
 }
