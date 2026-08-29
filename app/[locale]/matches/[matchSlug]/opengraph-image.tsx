@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { prisma } from "@/lib/prisma";
 import { C, Frame, Wordmark, OG_SIZE, OG_CONTENT_TYPE } from "@/lib/ogTheme";
+import { siteFormat } from "@/lib/dates";
 
 /**
  * Matç linki üçün paylaşım şəkli.
@@ -63,10 +64,14 @@ export default async function Image({
       ? az ? "BİTDİ" : "FINISHED"
       // Tarix və saat AYRI formatlanır. Birlikdə istənəndə Intl onları
         // "4 avqust/09:00" kimi kəsir — əyri xətt səliqəsiz görünür.
-        : `${new Intl.DateTimeFormat(az ? "az-AZ" : "en-GB", {
-            day: "numeric", month: "long", timeZone: "Asia/Baku",
-          }).format(match.scheduledAt)} · ${new Intl.DateTimeFormat(az ? "az-AZ" : "en-GB", {
-            hour: "2-digit", minute: "2-digit", timeZone: "Asia/Baku",
+        // `Asia/Baku` əvvəl burada əl ilə yazılmışdı və saytda YEGANƏ düzgün
+        // vaxt bu idi: səhifənin özü serverin zonasında (UTC) göstərirdi, yəni
+        // eyni matç şəkildə 13:00, səhifədə 09:00 idi. İndi hər ikisi
+        // `SITE_TIME_ZONE`-dan gəlir.
+        : `${siteFormat(az ? "az-AZ" : "en-GB", {
+            day: "numeric", month: "long",
+          }).format(match.scheduledAt)} · ${siteFormat(az ? "az-AZ" : "en-GB", {
+            hour: "2-digit", minute: "2-digit",
           }).format(match.scheduledAt)}`;
 
   return new ImageResponse(

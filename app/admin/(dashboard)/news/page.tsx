@@ -4,6 +4,7 @@ import { primaryButtonClass } from "@/components/admin/formStyles";
 import AdminSearch from "@/components/admin/AdminSearch";
 import AdminPagination from "@/components/admin/AdminPagination";
 import type { Prisma } from "@/app/generated/prisma/client";
+import { siteFormat } from "@/lib/dates";
 
 const PER_PAGE = 50;
 
@@ -44,7 +45,7 @@ export default async function AdminNewsPage({
     skip: (page - 1) * PER_PAGE,
   });
 
-  const dateFmt = new Intl.DateTimeFormat("az", { day: "2-digit", month: "short", year: "numeric" });
+  const dateFmt = siteFormat("az", { day: "2-digit", month: "short", year: "numeric" });
 
   return (
     <div>

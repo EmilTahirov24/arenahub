@@ -10,6 +10,7 @@ import AdSlot from "@/components/ads/AdSlot";
 import GameChip from "@/components/common/GameChip";
 import TeamAvatar from "@/components/common/TeamAvatar";
 import { localeAlternates } from "@/lib/localeAlternates";
+import { siteFormat } from "@/lib/dates";
 
 export async function generateMetadata({
   params,
@@ -55,7 +56,7 @@ export default async function NewsArticlePage({
   const tr = article.translations.find((t) => t.locale === locale) ?? article.translations[0];
   if (!tr) notFound();
 
-  const dateFmt = new Intl.DateTimeFormat(locale, { dateStyle: "long" });
+  const dateFmt = siteFormat(locale, { dateStyle: "long" });
 
   return (
     <PageShell showDefaultWidgets={false}>

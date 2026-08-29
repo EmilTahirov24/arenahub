@@ -19,6 +19,7 @@ import { Link } from "@/i18n/navigation";
 import { localeAlternates } from "@/lib/localeAlternates";
 import JsonLd from "@/components/seo/JsonLd";
 import { matchJsonLd } from "@/lib/structuredData";
+import { siteFormat } from "@/lib/dates";
 
 // Qəsdən dinamik: Canlı matçda AutoRefresh 8 saniyədən bir yeniləyir; keş həmin yeniləməyə köhnə hesab qaytarardı.
 /**
@@ -130,7 +131,7 @@ export default async function MatchDetailPage({
   const isUpcoming = match.status === "UPCOMING";
   const isFinished = match.status === "FINISHED";
 
-  const dateTimeFmt = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
+  const dateTimeFmt = siteFormat(locale, { dateStyle: "medium", timeStyle: "short" });
 
   const statsByTeam = new Map<string, typeof match.playerStats>();
   for (const stat of match.playerStats) {
@@ -201,7 +202,14 @@ export default async function MatchDetailPage({
             {isUpcoming ? (
               <>
                 <Countdown target={match.scheduledAt.toISOString()} locale={locale} />
-                <span className="text-xs text-foreground-muted">{dateTimeFmt.format(match.scheduledAt)}</span>
+                {/* Zona yazılır, çünki rəqəm tək başına yalan danışa bilir:
+                    Almaniyadan baxan «20:00» görüb öz saatını nəzərdə tutur.
+                    Geri sayım onsuz da baxanın öz saatına görə işləyir, ona görə
+                    ikisi bir-birini yoxlayır. */}
+                <span className="text-xs text-foreground-muted">
+                  {dateTimeFmt.format(match.scheduledAt)}
+                  <span className="ml-1 opacity-70">{locale === "az" ? "(Bakı vaxtı)" : "(Baku time)"}</span>
+                </span>
                 <span className="text-xs text-foreground-muted">BO{match.bestOf}</span>
               </>
             ) : (

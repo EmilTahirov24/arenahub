@@ -12,6 +12,7 @@ import MatchCard from "@/components/matches/MatchCard";
 import Bracket from "@/components/events/Bracket";
 import { placeRangeLabel, formatMoney, prizeForPlacement } from "@/lib/prizes";
 import { localeAlternates } from "@/lib/localeAlternates";
+import { siteFormat } from "@/lib/dates";
 
 const BRACKET_STAGES = new Set(["round of 16", "quarterfinal", "semifinal", "3rd place decider", "final"]);
 
@@ -92,7 +93,7 @@ export default async function EventDetailPage({
           // Eyni mülahizə oyunçu cədvəlində də var (lib/playerTable.ts).
           .sort((a, b) => a.name.localeCompare(b.name));
 
-  const dateFmt = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  const dateFmt = siteFormat(locale, { dateStyle: "medium" });
 
   return (
     <PageShell>
