@@ -1,0 +1,52 @@
+# Həftəlik nəticə icmalını yazır.
+#
+# Niyə ayrıca iş: import-live hər 20 dəqiqədə qaçır, bu isə həftədə bir dəfə.
+# Onları birləşdirmək icmalı hər qaçışda yenidən yazardı.
+#
+# Niyə burada `schedule` bəs edir, halbuki import-live üçün etmirdi: GitHub
+# pulsuz planda `schedule`-ı saatlarla gecikdirir. İdxal üçün bu ölümcül idi —
+# canlı matç köhnəlir. İcmal üçün deyil: bazar ertəsi səhər yerinə günorta
+# yazılması heç nəyi dəyişmir. Ona görə burada tetikleyici lazım deyil.
+#
+# Skript özü təkrarlara davamlıdır: slug tarix aralığını daşıyır, yəni eyni
+# həftə üçün ikinci qaçış yeni məqalə yaratmır, mövcudu yeniləyir. Matçsız
+# həftədə isə heç nə yazmır.
+name: Weekly roundup
+
+on:
+  schedule:
+    # Bazar ertəsi, keçən həftə tam bitəndən sonra.
+    - cron: "23 6 * * 1"
+  workflow_dispatch:
+  push:
+    paths: [".github/workflows/weekly-roundup.yml"]
+
+concurrency:
+  group: weekly-roundup
+  cancel-in-progress: false
+
+jobs:
+  roundup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npx prisma generate
+
+      - name: Verify database secret
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL is not set."
+            exit 1
+          fi
+
+      - run: npx tsx scripts/generate-weekly-roundup.ts --apply
