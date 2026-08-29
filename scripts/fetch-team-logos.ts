@@ -3,6 +3,7 @@
  *
  *   npx tsx scripts/fetch-team-logos.ts            # dry run, shows what it found
  *   npx tsx scripts/fetch-team-logos.ts --apply    # writes public/teams/*.png
+ *   npx tsx scripts/fetch-team-logos.ts --missing  # only teams with no file yet
  *
  * Why this touches no database. Setting Team.logoUrl needs the production
  * connection string, which is stored as a Vercel "Secret" and cannot be read
@@ -156,7 +157,21 @@ async function main() {
   const apply = process.argv.includes("--apply");
   const only = process.argv.indexOf("--game") >= 0 ? process.argv[process.argv.indexOf("--game") + 1] : null;
   const all: Team[] = JSON.parse(readFileSync(INPUT, "utf8"));
-  const teams = only ? all.filter((t) => t.game === only) : all;
+  const byGame = only ? all.filter((t) => t.game === only) : all;
+
+  // `--missing`: faylı onsuz da olan komandanı atlayır.
+  //
+  // Siyahı böyüdükcə tam qaçış Liquipedia-nın 2.6 saniyəlik fasiləsinə görə
+  // dəqiqələrlə çəkir, halbuki hər dəfə axtarılan bir neçə yeni addır. Bu bayraq
+  // olmadan siyahıya bir komanda əlavə etmək bütün siyahını yenidən çəkmək
+  // demək idi — praktikada bu, siyahını böyütməkdən çəkindirirdi.
+  //
+  // Standart davranış dəyişmir: bayraqsız hamısı yenilənir, çünki loqo dəyişən
+  // komanda üçün yeganə yol budur.
+  const missingOnly = process.argv.includes("--missing");
+  const teams = missingOnly
+    ? byGame.filter((t) => !existsSync(path.join(OUT_DIR, `${t.slug}.png`)))
+    : byGame;
 
   console.log(`komanda: ${teams.length}${only ? ` (${only})` : ""}${apply ? "" : "  (QURU İŞLƏTMƏ)"}\n`);
 

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { initials } from "@/lib/initials";
+import { avatarColor } from "@/lib/avatarColor";
 
 export default function PlayerAvatar({
   name,
@@ -33,7 +34,9 @@ export default function PlayerAvatar({
         width: size,
         height: size,
         fontSize: size * 0.36,
-        background: `linear-gradient(135deg, ${color ?? "#d946ef"}, #0a0b10)`,
+        // Komanda avatarı ilə eyni səbəb: /az/players siyahısında da
+        // fotosuz oyunçular tam eyni rəngdə idi.
+        background: `linear-gradient(135deg, ${avatarColor(name, color)}, #0a0b10)`,
       }}
     >
       {initials(name)}

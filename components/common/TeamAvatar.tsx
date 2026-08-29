@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { initials } from "@/lib/initials";
+import { avatarColor } from "@/lib/avatarColor";
 
 export default function TeamAvatar({
   name,
@@ -33,7 +34,7 @@ export default function TeamAvatar({
         width: size,
         height: size,
         fontSize: size * 0.36,
-        background: `linear-gradient(135deg, ${color ?? "#7c3aed"}, #0a0b10)`,
+        background: `linear-gradient(135deg, ${avatarColor(name, color)}, #0a0b10)`,
       }}
     >
       {initials(name)}
