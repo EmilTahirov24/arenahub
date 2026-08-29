@@ -117,6 +117,12 @@ const ROLE_POOL: Record<string, string[]> = {
  * Roles are left empty rather than guessed. Rosters are a snapshot and go stale
  * as players transfer — they are maintained from the admin panel.
  */
+// `primaryColor` QƏSDƏN yazılmır. Əvvəl hər komandaya OYUNUN accent rəngi
+// qoyulurdu, yəni bir oyundakı bütün komandalar eyni rəngə düşürdü — sahə adı
+// «komandanın rəngi» olsa da, saxladığı şey komandaya aid deyildi. Loqosuz
+// avatarlar da ona görə tam eyni görünürdü. İdxal skriptləri bu sahəni onsuz da
+// doldurmur, yəni production-da o boşdur; seed indi həmin vəziyyəti təkrarlayır.
+// Rəng `lib/avatarColor.ts`-də addan hesablanır.
 const REAL_CS2_TEAMS: { name: string; country: string | null; earnings?: number; players: string[] }[] = [
   { name: "Vitality", country: "FR", earnings: 1_082_500, players: ["apEX", "ropz", "ZywOo", "flameZ", "mezii"] },
   { name: "Falcons", country: "SA", earnings: 789_000, players: ["NiKo", "karrigan", "TeSeS", "m0NESY", "kyousuke"] },
@@ -454,7 +460,6 @@ async function main() {
             name: def.name,
             country: def.country,
             earnings: def.earnings ?? null,
-            primaryColor: gameDef.accentColor,
             secondaryColor: "#0a0b10",
             gameId: game.id,
           },
@@ -497,7 +502,6 @@ async function main() {
           slug: `${gameDef.slug}-${slugify(name)}`,
           name,
           country: nextCountry(),
-          primaryColor: gameDef.accentColor,
           secondaryColor: "#0a0b10",
           gameId: game.id,
         },
