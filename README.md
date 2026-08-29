@@ -152,6 +152,8 @@ sayğac yaddaşda olduğu üçün `npm run dev`-i yenidən başlatmaq onu sıfı
 | `npx tsx scripts/recompute-ratings.ts` | komanda reytinqlərini matç tarixçəsindən yenidən qurur (seed-dən sonra lazımdır) |
 | `npx tsx scripts/check-email.ts --to ünvan` | e-poçt qurulumunu yoxlayır, real məktub göndərir |
 | `powershell -ExecutionPolicy Bypass -File scripts/rotate-smtp-password.ps1` | Gmail app password-u döndərir: `.env` → yerli sınaq → Vercel → deploy (sınaq keçməsə geri qaytarır) |
+| `npx tsx scripts/set-admin-credentials.ts --email ... --password ...` | **yerli** admin hesabının açarını dəyişir (`DATABASE_URL` hansı bazanı göstərirsə) |
+| `node scripts/set-admin-credentials.mjs --url ... --current-email ... --current-password ... --email ... --password ...` | **canlı** admin açarını panelin öz formasından dəyişir; canlı `DATABASE_URL` oxunmadığı üçün yeganə yol budur |
 | `npx tsx scripts/import-live.ts --apply` | Liquipedia-dan qarşıdakı/canlı/təzə bitmiş matçlar |
 | `npx tsx scripts/import-maps.ts --apply --limit 6` | bitmiş matçların xəritə nəticələri |
 | `npx tsx scripts/import-tournaments.ts` | turnirlər |
