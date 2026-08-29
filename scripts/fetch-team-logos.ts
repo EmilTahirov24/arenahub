@@ -95,6 +95,46 @@ function logoFileFrom(wikitext: string): string | null {
   return usable(values.get("imagedark")) ?? usable(values.get("image")) ?? null;
 }
 
+const MODES = ["allmode", "darkmode", "lightmode"];
+
+/**
+ * Other filenames that plausibly hold the same logo in a squarer crop.
+ *
+ * Two rewrites, and the boundary between them is the whole point.
+ *
+ * Dropping "full" is safe. Liquipedia uses it for the full lockup — icon plus
+ * wordmark — and the file without it is the same artwork's icon, from the same
+ * upload. Swapping the mode suffix is safe for the same reason.
+ *
+ * Dropping the *year* is not, and this was measured rather than assumed. The
+ * infobox gives `Team Vitality 2026 full darkmode.png`; `Team Vitality
+ * allmode.png` also exists, is nicely square, and is their previous crest with
+ * the crossed swords. Same for `G2 Esports allmode.png`. A stale logo is worse
+ * than a wide one, so the year stays.
+ *
+ * lightmode is generated as a candidate only when it was already the source:
+ * the site is dark, and a logo drawn for white paper disappears on it.
+ */
+function variantsOf(file: string): string[] {
+  const dot = file.lastIndexOf(".");
+  const stem = dot < 0 ? file : file.slice(0, dot);
+  const ext = dot < 0 ? ".png" : file.slice(dot);
+
+  const stems = new Set([stem]);
+  if (stem.includes(" full ")) stems.add(stem.replace(" full ", " "));
+  if (stem.endsWith(" full")) stems.add(stem.slice(0, -" full".length));
+
+  const out = new Set<string>();
+  for (const s of stems) {
+    out.add(s + ext);
+    const mode = MODES.find((m) => s.endsWith(` ${m}`));
+    if (!mode) continue;
+    const head = s.slice(0, s.length - mode.length);
+    for (const other of ["allmode", "darkmode"]) out.add(head + other + ext);
+  }
+  return [...out];
+}
+
 /**
  * `wikiTitle` is set only where our name is not the Liquipedia title, and each
  * one was checked by hand. Guessing is not an option here: "Spirit" and
@@ -147,28 +187,23 @@ async function main() {
   }
 
   // 2. Fayl adlarından real URL — bir sorğuda hamısı.
-  //
-  // Hər komanda üçün iki namizəd: infoboksdakı ad və ondan "full" çıxarılmış
-  // variant. Liquipedia-da "full" tam kilidi (ikon + yazı) bildirir, ikonun
-  // özü isə adsız faylda olur. Hər ikisi mövcud olmur — G2 və Vitality üçün
-  // yalnız "full" var, 100 Thieves və FaZe üçün hər ikisi.
   const candidates = new Set<string>();
-  for (const f of found) {
-    candidates.add(`File:${f.file}`);
-    const square = f.file.replace(" full ", " ");
-    if (square !== f.file) candidates.add(`File:${square}`);
-  }
+  for (const f of found) for (const c of variantsOf(f.file)) candidates.add(`File:${c}`);
 
-  const info = await api({
-    action: "query",
-    prop: "imageinfo",
-    iiprop: "url|size|mime|dimensions",
-    titles: [...candidates].join("|"),
-  });
+  // 50 başlıq bir sorğunun həddidir.
   const byTitle = new Map<string, { url: string; size: number; width: number; height: number }>();
-  for (const p of info?.query?.pages ?? []) {
-    const ii = p?.imageinfo?.[0];
-    if (ii?.url) byTitle.set(p.title, { url: ii.url, size: ii.size, width: ii.width, height: ii.height });
+  const all = [...candidates];
+  for (let i = 0; i < all.length; i += 50) {
+    const info = await api({
+      action: "query",
+      prop: "imageinfo",
+      iiprop: "url|size|mime|dimensions",
+      titles: all.slice(i, i + 50).join("|"),
+    });
+    for (const p of info?.query?.pages ?? []) {
+      const ii = p?.imageinfo?.[0];
+      if (ii?.url) byTitle.set(p.title, { url: ii.url, size: ii.size, width: ii.width, height: ii.height });
+    }
   }
 
   /**
@@ -178,8 +213,8 @@ async function main() {
    */
   const urlByTitle = new Map<string, { url: string; size: number }>();
   for (const f of found) {
-    const options = [`File:${f.file}`, `File:${f.file.replace(" full ", " ")}`]
-      .map((t) => ({ title: t, hit: byTitle.get(t) }))
+    const options = variantsOf(f.file)
+      .map((c) => ({ title: `File:${c}`, hit: byTitle.get(`File:${c}`) }))
       .filter((o): o is { title: string; hit: NonNullable<ReturnType<typeof byTitle.get>> } => Boolean(o.hit));
     if (options.length === 0) continue;
     const best = options.sort(
