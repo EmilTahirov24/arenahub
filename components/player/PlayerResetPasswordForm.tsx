@@ -52,7 +52,7 @@ export default function PlayerResetPasswordForm({ token, text }: { token: string
       </button>
 
       <p className="mt-4 text-center text-xs text-foreground-muted">
-        <Link href="/player/login" className="text-brand-via hover:underline">
+        <Link href="/player/login" className="text-brand-via-fg hover:underline">
           Girişə qayıt
         </Link>
       </p>

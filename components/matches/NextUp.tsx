@@ -50,7 +50,7 @@ export default async function NextUp({ reason }: { reason: "matches" | "live" })
         </div>
       )}
 
-      <Link href="/results" className="mt-5 inline-block text-sm text-brand-via hover:underline">
+      <Link href="/results" className="mt-5 inline-block text-sm text-brand-via-fg hover:underline">
         {az ? "Son nəticələrə bax" : "See the latest results"} →
       </Link>
     </div>

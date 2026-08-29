@@ -34,7 +34,7 @@ export default function InvitePlayerSearch() {
       </form>
 
       {state?.error && (
-        <p className="mt-3 rounded-md border border-live/40 bg-live/10 px-3 py-2 text-sm text-live">{state.error}</p>
+        <p className="mt-3 rounded-md border border-live/40 bg-live/10 px-3 py-2 text-sm text-live-fg">{state.error}</p>
       )}
 
       {state?.found && (

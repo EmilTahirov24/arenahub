@@ -24,7 +24,7 @@ export default function OwnPlayerForm({
   return (
     <form action={formAction} className="max-w-lg space-y-4">
       {state?.error && (
-        <p className="rounded-md border border-live/40 bg-live/10 px-3 py-2 text-sm text-live">{state.error}</p>
+        <p className="rounded-md border border-live/40 bg-live/10 px-3 py-2 text-sm text-live-fg">{state.error}</p>
       )}
       <div>
         <label htmlFor="own-player-nickname" className={labelClass}>Nickname</label>

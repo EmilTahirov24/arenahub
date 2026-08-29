@@ -39,7 +39,7 @@ export default async function NewsCard({ article }: { article: NewsCardArticle }
         {/* Sahib «seçilmiş» qutusunu işarələyəndə nəticəsini görməlidir — yoxsa
             qutu yenə səssiz qalır, sadəcə bu dəfə sıralamanın içində. */}
         {article.isFeatured && (
-          <span className="rounded-full border border-brand-via/40 bg-brand-via/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-via">
+          <span className="rounded-full border border-brand-via/40 bg-brand-via/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-via-fg">
             {locale === "az" ? "Seçilmiş" : "Featured"}
           </span>
         )}

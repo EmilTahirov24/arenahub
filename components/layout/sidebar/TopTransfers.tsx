@@ -25,7 +25,7 @@ export default async function TopTransfers() {
               <TeamAvatar name={m.team.name} logoUrl={m.team.logoUrl} color={m.team.primaryColor} size={22} />
               <span className="flex-1 truncate text-xs text-foreground-muted group-hover:text-foreground">
                 <span className="font-medium text-foreground">{m.player.nickname}</span>
-                <span className="mx-1 text-brand-via">→</span>
+                <span className="mx-1 text-brand-via-fg">→</span>
                 {m.team.name}
               </span>
               <span className="shrink-0 text-[10px] text-foreground-muted">{dateFmt.format(m.joinedAt)}</span>

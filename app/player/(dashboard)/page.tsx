@@ -100,17 +100,17 @@ export default async function PlayerHomePage() {
       <h2 className="font-display mb-3 mt-10 text-lg font-bold">Proqnozlarım</h2>
       <div className="mb-6 grid max-w-lg grid-cols-2 gap-3">
         <div className="rounded-lg border border-border-subtle bg-surface p-4 text-center">
-          <div className="font-display text-3xl font-bold text-brand-via">{player.points}</div>
+          <div className="font-display text-3xl font-bold text-brand-via-fg">{player.points}</div>
           <div className="text-xs text-foreground-muted">Xal</div>
         </div>
         <div className="rounded-lg border border-border-subtle bg-surface p-4 text-center">
-          <div className="font-display text-3xl font-bold text-brand-via">#{rank}</div>
+          <div className="font-display text-3xl font-bold text-brand-via-fg">#{rank}</div>
           <div className="text-xs text-foreground-muted">Sıralama (oyunçular arası)</div>
         </div>
       </div>
 
       <p className="mb-6 max-w-lg text-sm">
-        <Link href="/az/predictions" className="text-brand-via hover:underline">
+        <Link href="/az/predictions" className="text-brand-via-fg hover:underline">
           Bütün lider cədvəlinə bax →
         </Link>
       </p>

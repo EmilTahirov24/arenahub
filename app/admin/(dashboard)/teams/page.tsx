@@ -57,7 +57,7 @@ export default async function AdminTeamsPage({
             <CountryFlag code={team.country} />
             <span className="flex-1 font-medium">{team.name}</span>
             <span className="text-xs text-foreground-muted">{team.game.shortName}</span>
-            {team.owner && <span className="text-xs text-brand-via">sahib: {team.owner.nickname}</span>}
+            {team.owner && <span className="text-xs text-brand-via-fg">sahib: {team.owner.nickname}</span>}
             {!team.isActive && <span className="text-xs text-live">deaktiv</span>}
           </Link>
         ))}

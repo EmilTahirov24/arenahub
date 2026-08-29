@@ -81,7 +81,7 @@ export default async function MatchCard({ match, showTournament = true }: MatchC
             </span>
           )}
           {isLive ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-live/15 px-2 py-0.5 text-[10px] font-bold text-live">
+            <span className="inline-flex items-center gap-1 rounded-full bg-live/15 px-2 py-0.5 text-[10px] font-bold text-live-fg">
               <span className="h-1.5 w-1.5 animate-glow-pulse rounded-full bg-live" />
               {t("nav.live")}
             </span>

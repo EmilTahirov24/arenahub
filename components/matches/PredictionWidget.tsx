@@ -40,7 +40,7 @@ export default function PredictionWidget({
       return (
         <div className="mt-6 rounded-lg border border-border-subtle bg-surface p-4 text-center text-sm text-foreground-muted">
           {isAz ? "Matç proqnozu vermək üçün " : "To predict this match, "}
-          <Link href="/player/login" className="text-brand-via hover:underline">
+          <Link href="/player/login" className="text-brand-via-fg hover:underline">
             {isAz ? "daxil olun" : "log in"}
           </Link>
           .
@@ -66,7 +66,7 @@ export default function PredictionWidget({
               >
                 <CountryFlag code={team.country} size={14} />
                 {team.name}
-                {myPick === team.id && <span className="text-brand-via">✓</span>}
+                {myPick === team.id && <span className="text-brand-via-fg">✓</span>}
               </button>
             </form>
           ))}
@@ -103,7 +103,7 @@ export default function PredictionWidget({
       )}
       {!isLoggedIn && (
         <p className="mt-3 text-center text-xs text-foreground-muted">
-          <Link href="/player/login" className="text-brand-via hover:underline">
+          <Link href="/player/login" className="text-brand-via-fg hover:underline">
             {isAz ? "Daxil olun" : "Log in"}
           </Link>{" "}
           {isAz ? "və öz proqnozunuzu izləyin." : "to track your own picks."}
@@ -140,7 +140,7 @@ export default function PredictionWidget({
 function LeaderboardLink({ locale, isAz }: { locale: string; isAz: boolean }) {
   return (
     <p className="mt-3 text-center text-xs">
-      <Link href={`/${locale}/predictions`} className="text-brand-via hover:underline">
+      <Link href={`/${locale}/predictions`} className="text-brand-via-fg hover:underline">
         {isAz ? "Lider Cədvəli →" : "Leaderboard →"}
       </Link>
     </p>

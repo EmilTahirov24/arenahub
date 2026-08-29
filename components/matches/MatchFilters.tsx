@@ -87,7 +87,7 @@ export default async function MatchFilters({
               } ${key === todayKey && !isActive ? "border-border-subtle" : ""}`}
             >
               <div className="font-semibold">{dayFmt.format(d)}</div>
-              {key === todayKey && <div className="text-[10px] text-brand-via">{locale === "az" ? "bu gün" : "today"}</div>}
+              {key === todayKey && <div className="text-[10px] text-brand-via-fg">{locale === "az" ? "bu gün" : "today"}</div>}
             </Link>
           );
         })}

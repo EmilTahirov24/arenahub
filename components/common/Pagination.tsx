@@ -25,7 +25,9 @@ export default function Pagination({
   const href = (p: number) => ({ pathname, query: p === 1 ? query : { ...query, page: String(p) } });
   const box = "rounded-md border px-3 py-1.5 text-sm transition-colors";
   const idle = "border-border-subtle text-foreground-muted hover:text-foreground";
-  const dead = "border-border-subtle/50 text-foreground-muted/40 cursor-default";
+  // `/40` bu mətni 1.79:1-ə salırdı — WCAG həddinin dörddə biri. Deaktiv
+// görünüş haşiyə və kursor ilə verilir; mətnin özü oxunaqlı qalır.
+const dead = "border-border-subtle/50 text-foreground-muted cursor-default";
 
   // First, last, and a window around the current page.
   const shown = new Set<number>([1, totalPages, page - 1, page, page + 1]);

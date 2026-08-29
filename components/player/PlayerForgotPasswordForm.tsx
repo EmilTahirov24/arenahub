@@ -46,7 +46,7 @@ export default function PlayerForgotPasswordForm({ lang, text }: { lang: AuthLan
       )}
 
       <p className="mt-4 text-center text-xs text-foreground-muted">
-        <Link href={`/player/login${q}`} className="text-brand-via hover:underline">
+        <Link href={`/player/login${q}`} className="text-brand-via-fg hover:underline">
           {text.backToLogin}
         </Link>
       </p>

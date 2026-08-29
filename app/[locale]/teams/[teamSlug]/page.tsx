@@ -140,7 +140,7 @@ export default async function TeamProfilePage({
                 </div>
               </div>
               <div className="text-center">
-                <div className="font-display text-2xl font-bold tabular-nums text-brand-via">{winRate}%</div>
+                <div className="font-display text-2xl font-bold tabular-nums text-brand-via-fg">{winRate}%</div>
                 <div className="text-xs text-foreground-muted">{locale === "az" ? "qazanma" : "win rate"}</div>
               </div>
               <div className="text-center">
@@ -150,7 +150,7 @@ export default async function TeamProfilePage({
                       key={i}
                       title={won ? (locale === "az" ? "Qalib" : "Win") : locale === "az" ? "Məğlub" : "Loss"}
                       className={`flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold ${
-                        won ? "bg-positive/15 text-positive" : "bg-live/15 text-live"
+                        won ? "bg-positive/15 text-positive" : "bg-live/15 text-live-fg"
                       }`}
                     >
                       {won ? (locale === "az" ? "Q" : "W") : locale === "az" ? "M" : "L"}
@@ -206,7 +206,7 @@ export default async function TeamProfilePage({
                 <Link href={`/events/${e.tournament.slug}`} className="hover:underline">
                   {e.tournament.name}
                 </Link>
-                <span className="font-display font-semibold text-brand-via">#{e.placement}</span>
+                <span className="font-display font-semibold text-brand-via-fg">#{e.placement}</span>
               </li>
             ))}
           </ul>

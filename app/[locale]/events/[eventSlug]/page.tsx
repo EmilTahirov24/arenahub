@@ -161,7 +161,7 @@ export default async function EventDetailPage({
               className="flex items-center gap-2 rounded-lg border border-border-subtle bg-surface p-2 hover:bg-surface-raised"
             >
               {p.placement && (
-                <span className="w-6 text-center text-xs font-semibold text-brand-via">#{p.placement}</span>
+                <span className="w-6 text-center text-xs font-semibold text-brand-via-fg">#{p.placement}</span>
               )}
               <TeamAvatar name={p.team.name} logoUrl={p.team.logoUrl} color={p.team.primaryColor} size={28} />
               <span className="min-w-0 flex-1 truncate text-sm">{p.team.name}</span>

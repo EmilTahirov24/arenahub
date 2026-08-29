@@ -86,7 +86,7 @@ export default async function AdminDashboardPage() {
               s.waiting ? "border-brand-via" : "border-border-subtle"
             }`}
           >
-            <div className={`font-display text-2xl font-bold ${s.waiting ? "text-brand-via" : ""}`}>{s.value}</div>
+            <div className={`font-display text-2xl font-bold ${s.waiting ? "text-brand-via-fg" : ""}`}>{s.value}</div>
             <div className="text-xs text-foreground-muted">{s.label}</div>
           </Link>
         ))}

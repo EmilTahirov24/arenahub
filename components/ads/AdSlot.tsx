@@ -30,7 +30,10 @@ export default async function AdSlot({
       {/* Göstərilmə sayğacı. Qutunun İÇİNDƏ durur, çünki müşahidəçi öz valideyn
           elementini izləyir — yəni ölçülən şey məhz bu bannerin sahəsidir. */}
       <AdImpression adId={ad.id} />
-      <span className="block px-2 pt-1 text-[10px] uppercase tracking-wide text-foreground-muted/60">
+      {/* Opasite modifikatoru yoxdur: `/60` bu etiketi 2.94:1-ə salırdı
+          (axe-core, hər iki temada). Reklam etiketi qanuni tələbdir — onu
+          oxunmaz etmək solğunlaşdırmaqdan pisdir. */}
+      <span className="block px-2 pt-1 text-[10px] uppercase tracking-wide text-foreground-muted">
         Reklam
       </span>
       {/* Link reklamçıya birbaşa yox, sayğac marşrutundan keçir — bax

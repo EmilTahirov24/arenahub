@@ -35,7 +35,7 @@ function ClaimForm({ playerId }: { playerId: string }) {
       </button>
       <div aria-live="polite">
         {!pending && state?.error && (
-          <p className="rounded-md border border-live/40 bg-live/10 px-3 py-2 text-sm text-live">{state.error}</p>
+          <p className="rounded-md border border-live/40 bg-live/10 px-3 py-2 text-sm text-live-fg">{state.error}</p>
         )}
         {!pending && state?.ok && (
           <p className="rounded-md border border-positive/40 bg-positive/10 px-3 py-2 text-sm text-positive">
@@ -64,7 +64,7 @@ export default function ClaimProfileSearch() {
       </form>
 
       {state?.error && (
-        <p className="mt-3 rounded-md border border-live/40 bg-live/10 px-3 py-2 text-sm text-live">{state.error}</p>
+        <p className="mt-3 rounded-md border border-live/40 bg-live/10 px-3 py-2 text-sm text-live-fg">{state.error}</p>
       )}
 
       <div className="mt-3 space-y-2">

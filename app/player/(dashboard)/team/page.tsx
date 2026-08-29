@@ -56,14 +56,14 @@ export default async function PlayerTeamPage() {
               >
                 <CountryFlag code={m.player.country} />
                 {m.player.nickname}
-                {m.playerId === session.id && <span className="text-xs text-brand-via">· siz</span>}
+                {m.playerId === session.id && <span className="text-xs text-brand-via-fg">· siz</span>}
                 {m.isCoach && <span className="text-xs text-foreground-muted">· məşqçi</span>}
                 {m.isStandin && <span className="text-xs text-foreground-muted">· stand-in</span>}
               </div>
             ))}
           </div>
 
-          <Link href={`/az/teams/${myTeam.slug}`} className="text-sm text-brand-via hover:underline">
+          <Link href={`/az/teams/${myTeam.slug}`} className="text-sm text-brand-via-fg hover:underline">
             Komandanın public səhifəsi →
           </Link>
 
@@ -146,7 +146,7 @@ export default async function PlayerTeamPage() {
 
       <div className="mb-2 flex items-center justify-between">
         <h2 className="font-display text-sm font-bold uppercase tracking-wide text-foreground-muted">Tərkib</h2>
-        <Link href="/player/team/roster" className="text-sm text-brand-via hover:underline">
+        <Link href="/player/team/roster" className="text-sm text-brand-via-fg hover:underline">
           Tərkibi idarə et →
         </Link>
       </div>
@@ -161,7 +161,7 @@ export default async function PlayerTeamPage() {
             >
               <CountryFlag code={m.player.country} />
               {m.player.nickname}
-              {m.playerId === session.id && <span className="text-xs text-brand-via">· siz</span>}
+              {m.playerId === session.id && <span className="text-xs text-brand-via-fg">· siz</span>}
               {m.isCoach && <span className="text-xs text-foreground-muted">· məşqçi</span>}
               {m.isStandin && <span className="text-xs text-foreground-muted">· stand-in</span>}
             </div>

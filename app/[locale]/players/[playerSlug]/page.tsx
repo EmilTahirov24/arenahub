@@ -125,7 +125,7 @@ export default async function PlayerProfilePage({
         <div className="flex gap-6">
           {careerRating != null && (
             <div className="text-center">
-              <div className="font-display text-3xl font-bold text-brand-via">{careerRating.toFixed(2)}</div>
+              <div className="font-display text-3xl font-bold text-brand-via-fg">{careerRating.toFixed(2)}</div>
               <div className="text-xs text-foreground-muted">{locale === "az" ? "karyera reytinqi" : "career rating"}</div>
             </div>
           )}
@@ -151,7 +151,7 @@ export default async function PlayerProfilePage({
                 <span>
                   {a.tournament.name} <span className="text-foreground-muted">· {a.team.name}</span>
                 </span>
-                <span className="font-display font-semibold text-brand-via">#{a.placement}</span>
+                <span className="font-display font-semibold text-brand-via-fg">#{a.placement}</span>
               </Link>
             ))}
           </div>
