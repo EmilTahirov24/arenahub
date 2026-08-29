@@ -185,14 +185,32 @@ async function main() {
   // Xülasə kartda görünən yeganə mətndir — onsuz kart bir sətir başlıqdan
   // ibarət qalır. Burada da heç nə uydurulmur: matç sayı, oyun bölgüsü və ən
   // yüksək səviyyəli turnir öz sətirlərimizdən yığılır.
-  const lead = groups[0]?.[0]?.tournament?.name;
+  const lead = groups[0]?.[0]?.tournament;
+
+  // Sıralama əvvəlcə səviyyəyə, sonra matç sayına baxır. Yəni səviyyəsi
+  // yüksək turnir olmayan həftədə birinci qrup sadəcə ƏN ÇOX MATÇI olandır —
+  // adətən aşağı səviyyəli seçmə mərhələsi. Canlı saytda bu, belə görünürdü:
+  // «Ən böyük hadisə: LGC/2026/Rising/Stage 4/Swiss Stage». Cümlə yalan
+  // deyildi, amma vəd etdiyi şey deyildi.
+  //
+  // Ona görə söz hesablanana uyğunlaşır: S və ya A səviyyəsi varsa «ən böyük
+  // hadisə», əks halda «ən çox matç».
+  const leadIsMajor = lead?.tier === "S" || lead?.tier === "A";
+
   function excerpt(locale: "az" | "en") {
     const az = locale === "az";
     const head = az
       ? `${matches.length} matç başa çatdı — ${gameLine}.`
       : `${matches.length} matches finished — ${gameLine}.`;
     if (!lead) return head;
-    return az ? `${head} Ən böyük hadisə: ${lead}.` : `${head} Biggest event: ${lead}.`;
+    const label = leadIsMajor
+      ? az
+        ? "Ən böyük hadisə"
+        : "Biggest event"
+      : az
+        ? "Ən çox matç"
+        : "Most matches";
+    return `${head} ${label}: ${lead.name}.`;
   }
 
   console.log("BAŞLIQ:  " + titleAz);

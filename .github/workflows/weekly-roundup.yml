@@ -18,8 +18,14 @@ on:
     # Bazar ertəsi, keçən həftə tam bitəndən sonra.
     - cron: "23 6 * * 1"
   workflow_dispatch:
+  # Skriptin özü də siyahıdadır: mətn dəyişəndə köhnə məqalələr köhnə mətnlə
+  # qalırdı və dəyişikliyi görmək üçün bazar ertəsini gözləmək lazım gəlirdi.
+  # Yenidən yazmaq təhlükəsizdir — slug eynidir, `publishedAt` isə əhatə olunan
+  # həftədən gəlir, ona görə sıralama tərpənmir.
   push:
-    paths: [".github/workflows/weekly-roundup.yml"]
+    paths:
+      - ".github/workflows/weekly-roundup.yml"
+      - "scripts/generate-weekly-roundup.ts"
 
 concurrency:
   group: weekly-roundup
