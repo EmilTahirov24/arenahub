@@ -7,27 +7,39 @@ qutunu **özün** işarələ və göndər. Təxminən iki dəqiqəlik işdir.
 
 ---
 
-## Sahələr
+## Sahələr — formadakı sıra ilə
 
-| Formadakı ad | Cavab |
-|---|---|
-| **Name** *(məcburi)* | `Emil Tahirov` |
-| **Email** *(məcburi)* | `emil.tahirov24@gmail.com` |
-| **Link to your project's website** *(könüllü)* | `https://arenahub-wheat.vercel.app` |
-| **Your role** *(məcburi)* | **Software Developer** |
-| **Category of your project** *(məcburi)* | **Livescore** |
-| **Which title(s) will your project support?** *(məcburi)* | **CS2** və **Dota2** |
-| **Size of your team** *(məcburi)* | **1** |
-| **How did you hear about GRID?** *(məcburi)* | **Search Engine (Google / Yahoo / Bing)** |
-| **Description of your project** *(məcburi)* | ↓ aşağıdakı mətn |
-| **I have read and accept the Terms and Conditions** | ☐ — **bunu sən işarələyirsən** |
+Sıra 2026-08-30-da canlı formadan yoxlanılıb. Əvvəlki versiyada sayt linki
+üçüncü sahə kimi yazılmışdı; həqiqətdə o, Description-dan **sonra** gəlir.
+
+| № | Formadakı ad | Cavab |
+|---|---|---|
+| 1 | **Name** *(məcburi)* | `Emil Tahirov` |
+| 2 | **Email** *(məcburi)* | `emil.tahirov24@gmail.com` |
+| 3 | **Your role** *(məcburi)* | **Software Developer** |
+| 4 | **Category of your project** *(məcburi)* | **Livescore** |
+| 5 | **Description of your project** *(məcburi)* | ↓ aşağıdakı mətn |
+| 6 | **Link to your project's website** *(könüllü)* | `https://arenahub-wheat.vercel.app` |
+| 7 | **Which title(s) will your project support?** *(məcburi)* | **CS2** |
+| 8 | **Size of your team** *(məcburi)* | **1** |
+| 9 | **How did you hear about GRID?** *(məcburi)* | **Search Engine (Google / Yahoo / Bing)** |
+| 10 | **I have read and accept the Terms and Conditions** | ☐ — **bunu sən işarələyirsən** |
+
+Sonda **Submit**.
+
+### «Which title(s)» barədə
+
+Ad cəm formasındadır, amma sahə **tək seçimli açılan siyahıdır**: yalnız
+`CS2`, `Dota2` və `Other` var, çoxlu seçim yoxdur. **CS2** seçilir, çünki
+saytdakı ən böyük bölmə odur. Dota 2 itmir — Description mətni hər ikisini adı
+ilə istəyir, sahə isə yalnız GRID-in daxili təsnifatıdır.
 
 ### «Category» barədə
 
 **Livescore** seçildi, çünki saytın əsas funksiyası matç cədvəli və
 nəticələrdir. **Data Visualisation** da uyğun gələ bilər — reytinq cədvəli və
 statistika səhifələri var. Fikrin başqadırsa, dəyişməkdə sərbəstsən; bu seçim
-müraciətin qəbulunu müəyyən etmir, yalnız GRID-in daxili təsnifatıdır.
+müraciətin qəbulunu müəyyən etmir.
 
 ---
 
@@ -38,8 +50,8 @@ ArenaHub is a bilingual (Azerbaijani/English) esports results and statistics
 site that I build and run on my own. It covers CS2, Dota 2, VALORANT and
 League of Legends: upcoming and live fixtures, completed results with map
 scores, team and player pages, tournament pages with prize breakdowns, and an
-Elo-style ranking computed from recorded results. It currently holds 2,315
-completed matches and over 800 teams.
+Elo-style ranking computed from recorded results. It currently holds 2,355
+completed matches, 832 teams and 1,390 players.
 
 It exists because there is almost no esports coverage in Azerbaijani. Every
 page is available in both languages, and the site has a dedicated section for
@@ -85,6 +97,10 @@ göstəriciləri və oyun daxili hadisələr verir.
 bağlamaq ayrıca işdir və o, cavabdan sonra planlaşdırılır — indi başlamağın
 mənası yoxdur, çünki sənədlərə və açara çıxış təsdiqlə gəlir.
 
-**Rəqəmlər.** Mətndəki 2 315 nəticə və 800+ komanda **canlı saytdan
-ölçülüb** (2026-08-29), təxmin deyil. Müraciəti gec göndərsən, rəqəm bir az
-artmış olacaq — bu, problem deyil, amma istəsən yenidən ölçə bilərəm.
+**Rəqəmlər.** Mətndəki 2 355 nəticə, 832 komanda və 1 390 oyunçu **canlı
+admin panelindən ölçülüb** (2026-08-30, 00:35), təxmin deyil.
+
+İdxal artıq hər 20 dəqiqədə işlədiyi üçün rəqəmlər gündə bir neçə dəfə artır.
+Bir-iki gün gecikmə problem deyil — mətn «currently holds» deyir, yəni ölçü
+anını göstərir və azaltmır. Bir həftədən çox gözləyəcəksənsə de, yenidən
+ölçüm; uydurma rəqəm yazmaq bu layihədə qadağandır.
