@@ -20,6 +20,7 @@ import {
   isPlayerSortKey,
   sortPlayerRows,
 } from "@/lib/playerTable";
+import { bestTextOn } from "@/lib/contrast";
 
 export async function generateMetadata({
   params,
@@ -111,7 +112,7 @@ export default async function PlayersPage({
             className="rounded-full border px-3 py-1 text-xs font-medium transition-colors"
             style={
               activeGame === game.slug
-                ? { backgroundColor: game.accentColor, borderColor: game.accentColor, color: "#0a0b10" }
+                ? { backgroundColor: game.accentColor, borderColor: game.accentColor, color: bestTextOn(game.accentColor) }
                 : undefined
             }
           >

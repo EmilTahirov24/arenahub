@@ -9,6 +9,7 @@ import GameAccent from "@/components/common/GameAccent";
 import { countryName } from "@/lib/countries";
 import { ratingDelta } from "@/lib/elo";
 import { localeAlternates } from "@/lib/localeAlternates";
+import { bestTextOn } from "@/lib/contrast";
 
 export async function generateMetadata({
   params,
@@ -142,7 +143,7 @@ export default async function TeamsPage({
             className="rounded-full border px-3 py-1 text-xs font-medium transition-colors"
             style={
               activeGame === game.slug
-                ? { backgroundColor: game.accentColor, borderColor: game.accentColor, color: "#0a0b10" }
+                ? { backgroundColor: game.accentColor, borderColor: game.accentColor, color: bestTextOn(game.accentColor) }
                 : undefined
             }
           >

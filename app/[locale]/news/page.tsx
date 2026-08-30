@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import PageShell from "@/components/layout/PageShell";
 import NewsCard from "@/components/news/NewsCard";
 import { localeAlternates } from "@/lib/localeAlternates";
+import { bestTextOn } from "@/lib/contrast";
 
 export async function generateMetadata({
   params,
@@ -76,7 +77,7 @@ export default async function NewsPage({
             key={game.id}
             href={{ pathname: "/news", query: { game: game.slug } }}
             className="rounded-full border px-3 py-1 text-xs font-medium transition-colors"
-            style={gameSlug === game.slug ? { backgroundColor: game.accentColor, borderColor: game.accentColor, color: "#0a0b10" } : undefined}
+            style={gameSlug === game.slug ? { backgroundColor: game.accentColor, borderColor: game.accentColor, color: bestTextOn(game.accentColor) } : undefined}
           >
             <span className={gameSlug === game.slug ? "" : "text-foreground-muted hover:text-foreground"}>{game.shortName}</span>
           </Link>
