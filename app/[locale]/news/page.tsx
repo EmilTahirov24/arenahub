@@ -35,25 +35,36 @@ export default async function NewsPage({
 
   const games = await activeGames();
 
-  // Filtr pili yalnız arxasında məqalə olan oyun üçün göstərilir.
+  // Oyun filtri iki mənbədən işləyir.
   //
-  // Əvvəl dördü də həmişə görünürdü və dördü də «Xəbər tapılmadı» verirdi:
-  // həftəlik icmal bütün oyunları əhatə edir, ona görə `gameId`-si yoxdur.
-  // Yəni səhifə dörd düymə vəd edir, dördü də adamı boş ekrana aparırdı. Boş
-  // vəd verməkdənsə düyməni göstərməmək düzdür.
-  const counts = await prisma.newsArticle.groupBy({
-    by: ["gameId"],
-    where: { publishedAt: { not: null }, gameId: { not: null } },
-    _count: { _all: true },
+  // Əl ilə yazılan xəbərin `gameId`-si olur. Həftəlik icmalın isə yoxdur, çünki
+  // o, bütün oyunları əhatə edir — və məhz buna görə filtr əvvəl HƏMİŞƏ boş
+  // nəticə verirdi: dörd düymə vəd edirdi, dördü də adamı boş ekrana aparırdı.
+  //
+  // İcmal artıq həftədə matçı olan oyunların slug-larını `tags`-a yazır. Ona
+  // görə filtr «bu oyunun məqaləsi VƏ YA bu oyunu əhatə edən icmal» deməkdir.
+  // Uydurma deyil: etiket həmin həftədə həqiqətən oynanılmış oyunlardır.
+  const matchesGame = (slug: string) => ({
+    OR: [{ game: { slug } }, { tags: { has: slug } }],
   });
-  const withArticles = new Set(counts.map((c) => c.gameId));
-  const filterGames = games.filter((g) => withArticles.has(g.id));
+
+  const where = {
+    publishedAt: { not: null },
+    ...(gameSlug && games.some((g) => g.slug === gameSlug) ? matchesGame(gameSlug) : {}),
+  };
+
+  // Pil yalnız arxasında məqalə olan oyun üçün göstərilir. Sayğac filtrin ÖZ
+  // qaydası ilə hesablanır, yoxsa düymə görünüb boş nəticə verə bilər.
+  const perGame = await Promise.all(
+    games.map(async (g) => ({
+      game: g,
+      n: await prisma.newsArticle.count({ where: { publishedAt: { not: null }, ...matchesGame(g.slug) } }),
+    })),
+  );
+  const filterGames = perGame.filter((x) => x.n > 0).map((x) => x.game);
 
   const articles = await prisma.newsArticle.findMany({
-    where: {
-      publishedAt: { not: null },
-      ...(gameSlug ? { game: { slug: gameSlug } } : {}),
-    },
+    where,
     // Ana səhifə ilə eyni sıra: seçilmiş xəbər əvvəldə.
     orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
     take: 24,
