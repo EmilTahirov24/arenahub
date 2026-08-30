@@ -3,6 +3,12 @@
 # Niyə burada: skript yalnız bazaya yazır və production parolu Vercel-də
 # "Secret" kimi bağlıdır, yəni yerli maşından işlətmək mümkün deyil.
 #
+# İki mənbədən işləyir. Birincisi eyni adın təkrarıdır (avtomatik tapılır).
+# İkincisi `data/team-aliases.json`: eyni təşkilatın FƏRQLİ adları, məsələn
+# PARIVISION və onun keçmiş adı TEAM VISION. Onlar avtomatik tapılmır və
+# tapılmamalıdır — ad oxşarlığı sübut deyil. Siyahı əl ilə yazılır və hər sətir
+# Liquipedia yönləndirməsi ilə təsdiqlənir.
+#
 # Bir dəfəlik təmizlikdir. Səbəb `lib/orgNames.ts`-də düzəldilib — eyni adlı
 # sətirlər artıq qeyri-müəyyən sayılmır, ona görə yeni təkrar yaranmır. Bu iş
 # həmin dövrənin artıq yaratdıqlarını yığışdırır.
@@ -18,6 +24,7 @@ on:
   push:
     paths:
       - "scripts/merge-duplicate-teams.ts"
+      - "data/team-aliases.json"
       - ".github/workflows/merge-duplicate-teams.yml"
 
 concurrency:

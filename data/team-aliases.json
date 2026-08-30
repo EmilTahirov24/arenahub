@@ -1,0 +1,14 @@
+[
+  {
+    "game": "dota2",
+    "keep": "PARIVISION",
+    "drop": "TEAM VISION",
+    "evidence": "liquipedia.net/dota2 API: TEAM VISION -> PARIVISION yönləndirməsi (yoxlanıldı 2026-08-30). TEAM VISION təşkilatın keçmiş adıdır."
+  },
+  {
+    "game": "cs2",
+    "keep": "FaZe Clan",
+    "drop": "FaZe",
+    "evidence": "liquipedia.net/counterstrike API: FaZe -> FaZe Clan yönləndirməsi (yoxlanıldı 2026-08-30). Eyni təşkilatın qısa adı."
+  }
+]
