@@ -123,13 +123,21 @@ if ($LASTEXITCODE -ne 0) {
 # Log skriptin özü tərəfindən yazılır. Əvvəl burada `>> log` arqument sətrinə
 # qoyulmuşdu — Task Scheduler onu yönləndirmə kimi yox, PowerShell-ə əlavə
 # arqument kimi ötürür, yəni log heç vaxt yaranmırdı.
+# `-WindowStyle Hidden` və aşağıdakı `-Hidden` birlikdə lazımdır.
+#
+# Bunsuz hər 20 dəqiqədə ekranda PowerShell pəncərəsi AÇILIB BAĞLANIR. İş bir
+# saniyə çəkir, amma pəncərə görünür və adamı işindən ayırır — 2026-08-30-da
+# sahibi məhz bundan şikayət etdi. Fon işi görünməməlidir.
+#
+# İkisi fərqli şeyi həll edir: `-WindowStyle Hidden` PowerShell-in öz pəncərəsini
+# gizlədir, `-Hidden` isə tapşırığı gizli qeyd edir.
 $action = New-ScheduledTaskAction -Execute "powershell.exe" `
-  -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$trigger`""
+  -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$trigger`""
 
 $triggerTask = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) `
   -RepetitionInterval (New-TimeSpan -Minutes 20)
 
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -Hidden `
   -DontStopOnIdleEnd -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
 
 Register-ScheduledTask -TaskName $taskName -Action $action `
