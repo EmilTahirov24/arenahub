@@ -9,6 +9,8 @@ import PageShell from "@/components/layout/PageShell";
 import AdSlot from "@/components/ads/AdSlot";
 import GameChip from "@/components/common/GameChip";
 import TeamAvatar from "@/components/common/TeamAvatar";
+import JsonLd from "@/components/seo/JsonLd";
+import { articleJsonLd } from "@/lib/structuredData";
 import { localeAlternates } from "@/lib/localeAlternates";
 import { siteFormat } from "@/lib/dates";
 
@@ -60,6 +62,17 @@ export default async function NewsArticlePage({
 
   return (
     <PageShell showDefaultWidgets={false}>
+      <JsonLd
+        data={articleJsonLd(locale, {
+          slug: article.slug,
+          title: tr.title,
+          excerpt: tr.excerpt,
+          publishedAt: article.publishedAt,
+          updatedAt: article.updatedAt,
+          coverImageUrl: article.coverImageUrl,
+          authorName: article.author?.name ?? null,
+        })}
+      />
       <article className="mx-auto max-w-3xl">
         <div className="mb-3 flex items-center gap-2">
           {article.game && <GameChip name={article.game.shortName} color={article.game.accentColor} />}
