@@ -475,6 +475,14 @@ async function main() {
   // oxuyucusu onu adsız oxuyur və parol menecerləri tanımır. Bu formalar
   // giriş tələb etdiyi üçün yoxlama burada, public dəstdə deyil.
   await check("admin formalarının sahələri etiketlidir", async () => {
+    // Yalnız `/new` səhifələri yoxlanılırdı və boşluq buradan çıxdı: canlı
+    // idarə səhifəsində 7 sahə etiketsiz qalmışdı (2026-08-30-da canlı saytda
+    // tapıldı). O səhifə sətir formalarından ibarətdir, yəni ən çox unudulan
+    // yerdir — indi siyahıdadır.
+    //
+    // Redaktə səhifələri də əlavə edildi: onlar `/new` ilə eyni komponenti
+    // işlədir, amma eyni olduqlarına GÜVƏNMƏK əvəzinə yoxlamaq ucuzdur.
+    const liveMatch = await prisma.match.findFirst({ select: { id: true }, orderBy: { scheduledAt: "desc" } });
     const pages = [
       "/admin/games/new",
       "/admin/teams/new",
@@ -482,6 +490,8 @@ async function main() {
       "/admin/tournaments/new",
       "/admin/news/new",
       "/admin/ads/new",
+      "/admin/users/new",
+      ...(liveMatch ? [`/admin/matches/${liveMatch.id}`, `/admin/matches/${liveMatch.id}/live`] : []),
     ];
     const problems: string[] = [];
 

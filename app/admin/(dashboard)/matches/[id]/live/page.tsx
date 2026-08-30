@@ -72,8 +72,11 @@ export default async function MatchLiveControlPage({ params }: { params: Promise
           >
             <input type="hidden" name="mapId" value={map.id} />
             <div className="mb-2 flex items-center gap-2">
-              <input name="mapName" defaultValue={map.mapName} className={`${inputClass} min-w-0 flex-1`} />
-              <select name="status" defaultValue={map.status} className={`${inputClass} w-32 shrink-0`}>
+              {/* Bu sətir formaları dardır və görünən etiket düzülüşü sıxardı,
+                  ona görə ad `aria-label` ilə verilir: ekran oxuyucusu üçün
+                  sahənin adı var, gözlə baxan üçün artıq mətn yoxdur. */}
+              <input name="mapName" aria-label="Xəritə adı" defaultValue={map.mapName} className={`${inputClass} min-w-0 flex-1`} />
+              <select name="status" aria-label="Xəritə statusu" defaultValue={map.status} className={`${inputClass} w-32 shrink-0`}>
                 {MAP_STATUSES.map((s) => (
                   <option key={s} value={s}>
                     {s}
@@ -82,10 +85,10 @@ export default async function MatchLiveControlPage({ params }: { params: Promise
               </select>
             </div>
             <div className="mb-2 flex items-center gap-2">
-              <input name="teamAScore" type="number" min={0} defaultValue={map.teamAScore} className={`${inputClass} w-20`} />
+              <input name="teamAScore" type="number" min={0} aria-label={`${match.teamA.name} hesabı`} defaultValue={map.teamAScore} className={`${inputClass} w-20`} />
               <span className="text-xs text-foreground-muted">{match.teamA.name}</span>
               <span className="mx-2 text-foreground-muted">—</span>
-              <input name="teamBScore" type="number" min={0} defaultValue={map.teamBScore} className={`${inputClass} w-20`} />
+              <input name="teamBScore" type="number" min={0} aria-label={`${match.teamB.name} hesabı`} defaultValue={map.teamBScore} className={`${inputClass} w-20`} />
               <span className="text-xs text-foreground-muted">{match.teamB.name}</span>
             </div>
           </AdminRowForm>
@@ -100,8 +103,8 @@ export default async function MatchLiveControlPage({ params }: { params: Promise
       >
         <p className={labelClass}>Yeni xəritə əlavə et</p>
         <div className="mb-2 flex items-center gap-2">
-          <input name="mapName" placeholder="Mirage, Game 1..." required className={`${inputClass} min-w-0 flex-1`} />
-          <select name="status" defaultValue="LIVE" className={`${inputClass} w-32 shrink-0`}>
+          <input name="mapName" aria-label="Yeni xəritənin adı" placeholder="Mirage, Game 1..." required className={`${inputClass} min-w-0 flex-1`} />
+          <select name="status" aria-label="Yeni xəritənin statusu" defaultValue="LIVE" className={`${inputClass} w-32 shrink-0`}>
             {MAP_STATUSES.map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -110,9 +113,9 @@ export default async function MatchLiveControlPage({ params }: { params: Promise
           </select>
         </div>
         <div className="mb-2 flex items-center gap-2">
-          <input name="teamAScore" type="number" min={0} defaultValue={0} className={`${inputClass} w-20`} />
+          <input name="teamAScore" type="number" min={0} aria-label={`${match.teamA.name} hesabı`} defaultValue={0} className={`${inputClass} w-20`} />
           <span className="mx-2 text-foreground-muted">—</span>
-          <input name="teamBScore" type="number" min={0} defaultValue={0} className={`${inputClass} w-20`} />
+          <input name="teamBScore" type="number" min={0} aria-label={`${match.teamB.name} hesabı`} defaultValue={0} className={`${inputClass} w-20`} />
         </div>
       </AdminRowForm>
 
@@ -132,17 +135,17 @@ export default async function MatchLiveControlPage({ params }: { params: Promise
         ))}
       </div>
       <form action={addVeto} className="mb-8 flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-border-subtle p-3">
-        <select name="teamId" className={inputClass}>
+        <select name="teamId" aria-label="Veto komandası" className={inputClass}>
           <option value="">Decider</option>
           <option value={match.teamAId}>{match.teamA.name}</option>
           <option value={match.teamBId}>{match.teamB.name}</option>
         </select>
-        <select name="action" defaultValue="BAN" className={inputClass}>
+        <select name="action" aria-label="Veto əməliyyatı" defaultValue="BAN" className={inputClass}>
           <option value="BAN">BAN</option>
           <option value="PICK">PICK</option>
           <option value="DECIDER">DECIDER</option>
         </select>
-        <input name="mapName" placeholder="Map adı" required className={inputClass} />
+        <input name="mapName" aria-label="Veto xəritəsi" placeholder="Map adı" required className={inputClass} />
         <button type="submit" className={secondaryButtonClass}>
           + Əlavə et
         </button>
