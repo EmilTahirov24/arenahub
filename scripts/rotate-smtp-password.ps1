@@ -24,7 +24,13 @@
 param(
   # Sınaq məktubunun ünvanı. Boş qalsa .env-dəki SMTP_USER işlədilir: hesabın
   # özünə göndərmək çatdırılmanı sübut edir və skriptə şəxsi ünvan yazmır.
-  [string]$To = ""
+  [string]$To = "",
+
+  # Sual vermədən işləyir: parolu mübadilə buferindən götürür. Sahibi Google-da
+  # açarı kopyalayır, skripti başqası işlədir — parol heç bir söhbətə, log-a və
+  # ya arqument sətrinə düşmür. Arqument kimi vermək variantı QƏSDƏN yoxdur:
+  # orada olsaydı, proses siyahısında görünərdi.
+  [switch]$Yes
 )
 
 $ErrorActionPreference = "Stop"
@@ -38,18 +44,46 @@ if (-not (Test-Path $envFile)) { Write-Error ".env tapılmadı: $envFile" }
 
 # --- 1. Parolu al -----------------------------------------------------------
 
-Write-Output ""
-Write-Output "Yeni Gmail app password-u yapışdır (yazılan görünməyəcək):"
-$secure = Read-Host -AsSecureString
-$bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
-try {
-  $plain = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
-} finally {
-  [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+$plain = $null
+
+# Mübadilə buferi əvvəlcə yoxlanılır: açar Google-dan məhz kopyalanaraq gəlir.
+# Gizli sahəyə yapışdırmaq praktikada qarışıqlıq yaradırdı — ekran boş qalır və
+# adam yazının getdiyinə əmin olmur. Parol EKRANA ÇIXMIR: yalnız ilk 4 hərf və
+# uzunluq göstərilir, bu da «düzgün olanı kopyalamışam?» sualına bəs edir.
+$clip = ""
+try { $clip = (Get-Clipboard -Raw -ErrorAction Stop) } catch {}
+if ($clip) { $clip = ($clip -replace '\s', '') }
+
+if ($clip -and $clip.Length -eq 16 -and $clip -match '^[a-z]{16}$') {
+  Write-Output ""
+  Write-Output "Mübadilə buferində app password tapıldı:"
+  Write-Output "  $($clip.Substring(0,4))············  (16 hərf)"
+  if ($Yes) {
+    Write-Output "-Yes verilib: bu açar işlədilir."
+    $plain = $clip
+  } else {
+    $istifade = Read-Host "Bunu işlədim? (h/y)"
+    if ($istifade -eq "h" -or $istifade -eq "H") { $plain = $clip }
+  }
 }
 
-# Google onu "abcd efgh ijkl mnop" kimi göstərir; boşluqlar hissəsi deyil.
-$plain = ($plain -replace '\s', '')
+if (-not $plain -and $Yes) {
+  Write-Error "Mübadilə buferində app password yoxdur. Google-da açarı kopyala (Ctrl+C) və yenidən işlət."
+}
+
+if (-not $plain) {
+  Write-Output ""
+  Write-Output "Yeni Gmail app password-u yapışdır (yazılan görünməyəcək):"
+  $secure = Read-Host -AsSecureString
+  $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+  try {
+    $plain = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+  } finally {
+    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+  }
+  # Google onu "abcd efgh ijkl mnop" kimi göstərir; boşluqlar hissəsi deyil.
+  $plain = ($plain -replace '\s', '')
+}
 
 if ($plain.Length -ne 16 -or $plain -notmatch '^[a-z]{16}$') {
   Write-Error "Bu, app password kimi görünmür: boşluqsuz 16 kiçik hərf olmalıdır (uzunluq: $($plain.Length)). Adi Google şifrəsi işləmir."
