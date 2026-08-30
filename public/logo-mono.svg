@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Tək rəngli variant: çap, ştamp və rəngin idarə olunmadığı yerlər üçün.
+       `currentColor` işlədilir, yəni rəngi işlədən yer təyin edir. -->
+  <path fill-rule="evenodd" clip-rule="evenodd"
+        d="M32 11 L57 53 H7 Z M32 27.5 L44.5 48 H19.5 Z" fill="currentColor" />
+</svg>

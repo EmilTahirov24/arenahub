@@ -5,6 +5,7 @@ import LocaleSwitcher from "./LocaleSwitcher";
 import ThemeToggle from "./ThemeToggle";
 import AuthMenu, { type AccountMenu } from "./AuthMenu";
 import MobileNav from "./MobileNav";
+import BrandMark from "./BrandMark";
 import CommandPalette from "@/components/search/CommandPalette";
 import { logoutToSite } from "@/app/[locale]/actions";
 
@@ -64,7 +65,11 @@ export default async function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-border-subtle bg-background/90 backdrop-blur">
       <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-3">
-        <Link href="/" className="font-display text-xl font-bold tracking-tight">
+        {/* Nişan yalnız favicon-da qalmışdı — sayt başlığında brend mətnlə
+            təmsil olunurdu, paylaşım şəkillərində isə boş kvadratla. Üç yerdə
+            üç fərqli görüntü idi; indi hər üçü eyni «A» nişanını daşıyır. */}
+        <Link href="/" className="flex items-center gap-2 font-display text-xl font-bold tracking-tight">
+          <BrandMark className="h-7 w-7 shrink-0" />
           <span className="brand-gradient-text">{t("site.name")}</span>
         </Link>
 
