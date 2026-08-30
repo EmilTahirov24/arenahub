@@ -88,3 +88,19 @@ export function readableOn(color: string, background: string, min = 4.5): string
   }
   return toHex(target);
 }
+
+/**
+ * Bərk `background` üzərinə qoyulacaq mətn rəngi: qara və ya ağ — hansı daha
+ * yaxşı kontrast verirsə.
+ *
+ * Filtr pilləri fonu `Game.accentColor`-dan götürüb mətni SABİT `#0a0b10`
+ * yazırdı. Üç oyun üçün bu doğru idi, Dota 2 üçün yox: `#dc2626` fonunda tünd
+ * mətn 4.07:1 verir (ölçüldü, axe-core 2026-08-30), ağ isə 4.83:1.
+ *
+ * Ölçülən dəyərlər: CS2 qara 9.63, VALORANT qara 5.86, Dota 2 AĞ 4.83,
+ * LoL qara 8.87. Yəni sabit seçim bir oyunda həmişə səhv olacaqdı və növbəti
+ * əlavə olunan oyun üçün də zəmanət yox idi — ona görə seçim hesablanır.
+ */
+export function bestTextOn(background: string, dark = "#0a0b10", light = "#ffffff"): string {
+  return contrastRatio(dark, background) >= contrastRatio(light, background) ? dark : light;
+}
