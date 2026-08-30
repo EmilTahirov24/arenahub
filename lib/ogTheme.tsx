@@ -59,14 +59,25 @@ export function Frame({ children, accent }: { children: React.ReactNode; accent?
 export function Wordmark() {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-      <div
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: 10,
-          background: `linear-gradient(135deg, ${C.from}, ${C.via}, ${C.to})`,
-        }}
-      />
+      {/* Əvvəl burada boş qradiyent kvadrat vardı — yəni paylaşım şəkli
+          brendin nişanını GÖSTƏRMİRDİ, halbuki nişan favicon-da onsuz da
+          mövcud idi. İndi eyni «A» üçbucağıdır.
+
+          Satori `fill-rule` və CSS dəyişənlərini oxumur, ona görə burada
+          plitəli variant işlədilir: fon üçbucağın içindəki üçbucaqla kəsilir
+          və rənglər `C`-dən açıq yazılır. */}
+      <svg width="38" height="38" viewBox="0 0 64 64">
+        <defs>
+          <linearGradient id="wm" x1="7" y1="11" x2="57" y2="53" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stopColor={C.from} />
+            <stop offset="0.52" stopColor={C.via} />
+            <stop offset="1" stopColor={C.to} />
+          </linearGradient>
+        </defs>
+        <rect width="64" height="64" rx="15" fill={C.background} />
+        <path d="M32 11 L57 53 H7 Z" fill="url(#wm)" />
+        <path d="M32 27.5 L44.5 48 H19.5 Z" fill={C.background} />
+      </svg>
       <div style={{ fontSize: 30, fontWeight: 700, color: C.foreground, letterSpacing: -0.5 }}>
         ArenaHub
       </div>
