@@ -136,3 +136,69 @@ export function siteJsonLd(locale: string) {
     },
   };
 }
+
+export function tournamentJsonLd(
+  locale: string,
+  tournament: {
+    name: string;
+    slug: string;
+    startDate: Date;
+    endDate: Date;
+    status: string;
+    location?: string | null;
+    logoUrl?: string | null;
+    game: { name: string };
+  },
+) {
+  // Matç səhifəsindəki qayda burada da tətbiq olunur: schema.org-un
+  // `EventStatusType`-ında «bitmiş» yoxdur, ona görə keçmiş turnirdə status
+  // ümumiyyətlə yazılmır. Bitmiş turniri «EventScheduled» adlandırmaq səhv
+  // olardı.
+  const scheduled = tournament.status === "UPCOMING" || tournament.status === "ONGOING";
+
+  return compact({
+    "@context": "https://schema.org",
+    "@type": "SportsEvent",
+    name: tournament.name,
+    url: url(locale, `/events/${tournament.slug}`),
+    startDate: tournament.startDate.toISOString(),
+    endDate: tournament.endDate.toISOString(),
+    sport: tournament.game.name,
+    image: tournament.logoUrl ?? undefined,
+    eventStatus: scheduled ? "https://schema.org/EventScheduled" : undefined,
+    // Yer bilinməyəndə yazılmır — bir çox turnir onlayn keçir və yanlış şəhər
+    // yazmaqdansa sahəni buraxmaq düzgündür.
+    location: tournament.location
+      ? { "@type": "Place", name: tournament.location }
+      : undefined,
+  });
+}
+
+export function articleJsonLd(
+  locale: string,
+  article: {
+    slug: string;
+    title: string;
+    excerpt?: string | null;
+    publishedAt?: Date | null;
+    updatedAt?: Date | null;
+    coverImageUrl?: string | null;
+    authorName?: string | null;
+  },
+) {
+  return compact({
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    headline: article.title,
+    url: url(locale, `/news/${article.slug}`),
+    description: article.excerpt ?? undefined,
+    datePublished: article.publishedAt ? article.publishedAt.toISOString() : undefined,
+    dateModified: article.updatedAt ? article.updatedAt.toISOString() : undefined,
+    image: article.coverImageUrl ?? undefined,
+    inLanguage: locale,
+    // Müəllif adı bilinəndə yazılır. Həftəlik icmalların müəllifi admin
+    // hesabıdır və bu, doğru məlumatdır — uydurma imza qoyulmur.
+    author: article.authorName ? { "@type": "Person", name: article.authorName } : undefined,
+    publisher: { "@type": "Organization", name: "ArenaHub", url: siteUrl() },
+  });
+}

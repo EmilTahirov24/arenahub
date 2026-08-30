@@ -11,6 +11,8 @@ import GameChip from "@/components/common/GameChip";
 import MatchCard from "@/components/matches/MatchCard";
 import Bracket from "@/components/events/Bracket";
 import { placeRangeLabel, formatMoney, prizeForPlacement } from "@/lib/prizes";
+import JsonLd from "@/components/seo/JsonLd";
+import { tournamentJsonLd } from "@/lib/structuredData";
 import { localeAlternates } from "@/lib/localeAlternates";
 import { siteFormat } from "@/lib/dates";
 
@@ -97,6 +99,9 @@ export default async function EventDetailPage({
 
   return (
     <PageShell>
+      {/* Matç, komanda və oyunçu səhifələrində struktur data onsuz da vardı;
+          turnir tək istisna idi. */}
+      <JsonLd data={tournamentJsonLd(locale, tournament)} />
       <div className="mb-6 flex items-start gap-4 rounded-xl border border-border-subtle bg-surface p-6">
         {/* Loqo admin paneldən yüklənir; indiyə qədər heç yerdə göstərilmirdi.
             Yoxdursa blok tam əvvəlki kimi görünür. */}

@@ -78,11 +78,6 @@
     "game": "cs2"
   },
   {
-    "slug": "cs2-faze",
-    "name": "FaZe",
-    "game": "cs2"
-  },
-  {
     "slug": "cs2-faze-clan",
     "name": "FaZe Clan",
     "game": "cs2"
@@ -481,11 +476,6 @@
   {
     "slug": "dota2-team-synapse",
     "name": "Team Synapse",
-    "game": "dota2"
-  },
-  {
-    "slug": "dota2-team-vision",
-    "name": "TEAM VISION",
     "game": "dota2"
   },
   {
