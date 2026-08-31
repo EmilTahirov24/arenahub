@@ -44,22 +44,50 @@
   --ambient-a: color-mix(in oklab, var(--brand-from) 14%, transparent);
   --ambient-b: color-mix(in oklab, var(--brand-to) 10%, transparent);
 
+  /*
+   * Yüksəklik. Qaranlıq temada kölgə YOXDUR və bu, unutqanlıq deyil: orada
+   * yuxarıdakı qat daha AÇIQ olur, ayrılma işıqlılıqla oxunur. İşıqlı temada bu
+   * mümkün deyil — kart ağdan daha açıq ola bilmir — ona görə yüksəkliyi yalnız
+   * kölgə göstərir. Sayt qaranlıq üçün qurulduğundan bütün interfeysdə cəmi iki
+   * kölgə vardı, və işıqlı tema məhz buna görə «düz sənəd» kimi görünürdü.
+   */
+  --shadow-card: none;
+  --shadow-pop: none;
+
   --font-display: var(--font-space-grotesk);
   --font-sans: var(--font-inter);
+
+  /* Brauzerin öz elementləri — sürüşdürücü, açılan siyahı, form sahələri —
+     temaya uyğunlaşsın. Bunsuz işıqlı temada tünd sürüşdürücü qalırdı. */
+  color-scheme: dark;
 }
 
 :root[data-theme="light"] {
-  --background: #f6f6fb;
+  /* Səhifə fonu ağdan aydın aralanır ki, ağ kartlar onun ÜZƏRİNDƏ otursun.
+     Əvvəlki #f6f6fb ağ kartdan cəmi 1.077 fərqlənirdi — praktiki olaraq eyni
+     rəng; indiki dəyər 1.180 verir. Boz deyil, bir az bənövşəyi-mavi meyillidir,
+     yəni marka rəngləri ilə eyni ailədən.
+     Ölçüldü: əsas mətn 15.48:1, solğun mətn 5.35:1 (hədd 4.5). */
+  --background: #e9ecf6;
   --surface: #ffffff;
+  /* DƏYİŞMİR. `components/common/GameChip.tsx` `LIGHT_SURFACE` sabitini məhz bu
+     dəyərə bağlayıb və dörd oyunun pil mətni ona qarşı ölçülüb. */
   --surface-raised: #f0f0f7;
   --border-subtle: #e2e2ec;
   --foreground: #14141f;
   --foreground-muted: #5c5f70;
 
-  /* The same strength that reads as a soft glow on near-black turns muddy on
-     an off-white ground, so it is halved rather than reused. */
-  --ambient-a: color-mix(in oklab, var(--brand-from) 7%, transparent);
-  --ambient-b: color-mix(in oklab, var(--brand-to) 6%, transparent);
+  --shadow-card: 0 1px 2px rgb(17 20 40 / 0.05), 0 2px 8px rgb(17 20 40 / 0.06);
+  --shadow-pop: 0 2px 6px rgb(17 20 40 / 0.07), 0 12px 28px rgb(17 20 40 / 0.1);
+
+  color-scheme: light;
+
+  /* Əvvəl 7%/6% idi və ağ fonda tamamilə görünmürdü — səhifənin yuxarısı boş ağ
+     sahə kimi qalırdı. Qradiyentin mərkəzi ekrandan yuxarıdadır, yəni hero
+     mətninin yerində güc onsuz da xeyli azalır; buna baxmayaraq mətnin altındakı
+     REAL piksel brauzerdə ölçülüb, nəzəri ən pis hal deyil. */
+  --ambient-a: color-mix(in oklab, var(--brand-from) 16%, transparent);
+  --ambient-b: color-mix(in oklab, var(--brand-to) 13%, transparent);
 
   /* Darker counterparts of the status colours. The dark-theme values are
      chosen to glow against near-black and simply disappear on white, so they
@@ -217,4 +245,63 @@ body::before {
 
 :root[data-theme="light"] .game-chip {
   color: var(--chip-fg-light, currentColor);
+}
+
+/*
+ * Yüksəldilmiş qutular. Bir qayda 160 `bg-surface` istifadəsinin hamısını
+ * tutur, çünki kod bazasında şablon sabitdir: kart, cədvəl və vidcet həmişə
+ * `rounded-lg|xl` + `border-border-subtle` + `bg-surface` yazılır, kiçik
+ * elementlər isə (düymə, pil, avatar, axtarış sahəsi) `rounded-md` və
+ * `rounded-full` işlədir — yəni onlar kölgə almır.
+ *
+ * `hover:bg-surface` də toxunulmur: Tailwind onu ayrı seçiciyə çevirir, burada
+ * isə yalnız sabit `.bg-surface` sinfi hədəflənir.
+ *
+ * Qaranlıq temada dəyər `none`-dur, yəni qayda hər iki temada var, effekt yalnız
+ * lazım olanda.
+ */
+:is(.rounded-lg, .rounded-xl).bg-surface {
+  box-shadow: var(--shadow-card);
+}
+
+/*
+ * Avatar nişanı. Eyni səbəb `game-chip`-dəki ilə eynidir: rəng komponentdə
+ * hesablanır, inline stil isə temaya reaksiya verə bilmir, ona görə hər iki
+ * variant dəyişən kimi verilir və seçimi CSS edir.
+ *
+ * Qaranlıqda tünd fon + ağ mətn, işıqlıda açıq çalar + tünd mətn. İkincisi
+ * yalnız yüngül görünmür, həm də daha təhlükəsizdir: ölçülən ən pis hal
+ * qaranlıqda 5.14:1, işıqlıda 6.18:1 — bax `lib/avatarColor.ts`.
+ */
+.avatar-badge {
+  background: var(--avatar-dark);
+  color: var(--avatar-ink-dark);
+}
+
+:root[data-theme="light"] .avatar-badge {
+  background: var(--avatar-light);
+  color: var(--avatar-ink-light);
+}
+
+/*
+ * Komanda loqosu. `<img>` deyil, fon şəkli — çünki temaya görə İKİ fərqli fayl
+ * arasında seçim lazımdır və gizlədilmiş `<img>` brauzer tərəfindən yenə də
+ * endirilir. Fon şəklində yalnız tətbiq olunan variant yüklənir.
+ *
+ * Səbəb ölçüldü: 127 loqonun 58-i tam ağdır (tünd fon üçün çəkilib) və ağ kartda
+ * tamamilə görünmürdü. Liquipedia hər ikisini verir; `scripts/fetch-team-logos.ts`
+ * ikisini də endirir.
+ *
+ * `contain`: geniş söznişan kəsilməsin.
+ */
+.team-logo {
+  display: block;
+  background-image: var(--logo-dark);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+:root[data-theme="light"] .team-logo {
+  background-image: var(--logo-light);
 }

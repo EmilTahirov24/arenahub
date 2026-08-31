@@ -82,7 +82,7 @@ const IMAGE_EXT = [".png", ".svg", ".webp"];
  * one per line, so this is the shape the data actually has — and it keeps the
  * whole function free of escapes, which is what broke the first attempt.
  */
-function logoFileFrom(wikitext: string): string | null {
+function logoFileFrom(wikitext: string): { dark: string; light: string } | null {
   const values = new Map<string, string>();
   for (const line of wikitext.split("\n")) {
     const trimmed = line.trim();
@@ -102,7 +102,20 @@ function logoFileFrom(wikitext: string): string | null {
       ? value.split("_").join(" ")
       : null;
 
-  return usable(values.get("imagedark")) ?? usable(values.get("image")) ?? null;
+  // İKİ variant qaytarılır, biri yox.
+  //
+  // Əvvəl yalnız `imagedark` götürülürdü — «sayt qaranlıqdır» deyə. Nəticə
+  // işıqlı temada ölçüldü (2026-08-31): 127 loqonun 58-i TAM AĞDIR, yəni ağ
+  // kartda tamamilə görünmür, daha 31-i sərhəddədir. Yəni işıqlı temada
+  // komandaların təxminən yarısının loqosu sadəcə yox idi.
+  //
+  // Liquipedia infoboksu hər ikisini saxlayır: `image` açıq fon, `imagedark`
+  // tünd fon üçün. Yoxlanıldı — Spirit, Paper Rex, Tundra, Dplus, BRUTE:
+  // beşinin də fərqli işıqlı variantı var. Yalnız bir fayl olanda (`allmode`)
+  // ikisi eyni gəlir və bu, düzgündür: həmin loqo onsuz da hər fonda işləyir.
+  const dark = usable(values.get("imagedark")) ?? usable(values.get("image"));
+  const light = usable(values.get("image")) ?? usable(values.get("imagedark"));
+  return dark && light ? { dark, light } : null;
 }
 
 const MODES = ["allmode", "darkmode", "lightmode"];
@@ -122,10 +135,12 @@ const MODES = ["allmode", "darkmode", "lightmode"];
  * the crossed swords. Same for `G2 Esports allmode.png`. A stale logo is worse
  * than a wide one, so the year stays.
  *
- * lightmode is generated as a candidate only when it was already the source:
- * the site is dark, and a logo drawn for white paper disappears on it.
+ * `alternates` mode ailəsini saxlayır. Tünd variant axtarılanda işıqlı fayl
+ * namizəd olmamalıdır və əksinə — yoxsa «kvadrata ən yaxın» seçimi tünd loqonu
+ * işıqlı yuvaya qoyar və düzəltdiyimiz problem geri qayıdar. `allmode` hər iki
+ * siyahıdadır, çünki o, tərifinə görə hər fonda işləyir.
  */
-function variantsOf(file: string): string[] {
+function variantsOf(file: string, alternates: string[] = ["allmode", "darkmode"]): string[] {
   const dot = file.lastIndexOf(".");
   const stem = dot < 0 ? file : file.slice(0, dot);
   const ext = dot < 0 ? ".png" : file.slice(dot);
@@ -140,7 +155,7 @@ function variantsOf(file: string): string[] {
     const mode = MODES.find((m) => s.endsWith(` ${m}`));
     if (!mode) continue;
     const head = s.slice(0, s.length - mode.length);
-    for (const other of ["allmode", "darkmode"]) out.add(head + other + ext);
+    for (const other of alternates) out.add(head + other + ext);
   }
   return [...out];
 }
@@ -176,7 +191,14 @@ async function main() {
   console.log(`komanda: ${teams.length}${only ? ` (${only})` : ""}${apply ? "" : "  (QURU İŞLƏTMƏ)"}\n`);
 
   // 1. Hər komandanın infoboksundan fayl adı.
-  const found: { slug: string; name: string; wiki: string; file: string; title: string }[] = [];
+  const found: {
+    slug: string;
+    name: string;
+    wiki: string;
+    file: string;
+    fileLight: string;
+    title: string;
+  }[] = [];
   for (const team of teams) {
     const wiki = wikiForGame(team.game);
     if (!wiki) {
@@ -208,8 +230,16 @@ async function main() {
       console.log(`—  ${team.name.padEnd(20)} infoboksda şəkil yoxdur`);
       continue;
     }
-    console.log(`+  ${team.name.padEnd(20)} ${file}`);
-    found.push({ slug: team.slug, name: team.name, wiki, file, title: page?.title ?? "" });
+    const sameFile = file.dark === file.light;
+    console.log(`+  ${team.name.padEnd(20)} ${file.dark}${sameFile ? "" : `  |  işıqlı: ${file.light}`}`);
+    found.push({
+      slug: team.slug,
+      name: team.name,
+      wiki,
+      file: file.dark,
+      fileLight: file.light,
+      title: page?.title ?? "",
+    });
   }
 
   if (found.length === 0) {
@@ -257,6 +287,9 @@ async function main() {
   for (const f of found) {
     if (!perWiki.has(f.wiki)) perWiki.set(f.wiki, new Set());
     for (const c of variantsOf(f.file)) perWiki.get(f.wiki)!.add(`File:${c}`);
+    for (const c of variantsOf(f.fileLight, ["allmode", "lightmode"])) {
+      perWiki.get(f.wiki)!.add(`File:${c}`);
+    }
   }
 
   const byTitle = new Map<string, { url: string; size: number; width: number; height: number }>();
@@ -283,19 +316,25 @@ async function main() {
    * hündürlüyə sığdırılanda hərflər bir neçə piksel qalır.
    */
   const urlByTitle = new Map<string, { url: string; size: number }>();
-  for (const f of found) {
-    const options = variantsOf(f.file)
+  const resolve = (file: string, alternates?: string[]) => {
+    const options = variantsOf(file, alternates)
       .map((c) => ({ title: `File:${c}`, hit: byTitle.get(`File:${c}`) }))
       .filter((o): o is { title: string; hit: NonNullable<ReturnType<typeof byTitle.get>> } => Boolean(o.hit));
-    if (options.length === 0) continue;
+    if (options.length === 0) return;
     const best = options.sort(
       (a, b) =>
         Math.abs(Math.log(a.hit.width / a.hit.height)) - Math.abs(Math.log(b.hit.width / b.hit.height)),
     )[0];
-    urlByTitle.set(`File:${f.file}`, { url: best.hit.url, size: best.hit.size });
-    if (best.title !== `File:${f.file}`) {
-      console.log(`   ${f.slug}: kvadrat variant seçildi — ${best.title.replace("File:", "")}`);
+    urlByTitle.set(`File:${file}`, { url: best.hit.url, size: best.hit.size });
+    return best.title;
+  };
+
+  for (const f of found) {
+    const bestDark = resolve(f.file);
+    if (bestDark && bestDark !== `File:${f.file}`) {
+      console.log(`   ${f.slug}: kvadrat variant seçildi — ${bestDark.replace("File:", "")}`);
     }
+    if (f.fileLight !== f.file) resolve(f.fileLight, ["allmode", "lightmode"]);
   }
 
   console.log("");
@@ -325,36 +364,48 @@ async function main() {
   let written = 0;
   let bytes = 0;
 
-  for (const f of found) {
-    const hit = urlByTitle.get(`File:${f.file}`);
-    if (!hit) {
-      console.log(`!  ${f.slug.padEnd(24)} URL tapılmadı`);
-      continue;
-    }
-    const res = await fetch(hit.url, { headers: { "User-Agent": USER_AGENT } });
-    if (!res.ok) {
-      console.log(`!  ${f.slug.padEnd(24)} yüklənmədi (${res.status})`);
-      continue;
-    }
-    const raw = Buffer.from(await res.arrayBuffer());
-    // `contain` saxlayır ki, geniş loqo kəsilməsin; fon şəffaf qalır.
-    const png = await sharp(raw)
-      // Kvadrata DOLDURULMUR. Əvvəl hər loqo 256x256 şəffaf kətana yerləşdirilirdi;
-      // geniş söznişan (Vitality 3.46, LOUD 5.4 nisbətində) beləliklə kətanın
-      // üçdə birini tuturdu və 28 piksellik xanada 8 piksellik zolağa çevrilirdi.
-      // İndi öz nisbəti saxlanılır və uzun kənar SIZE olur; xananın enini
-      // components/common/TeamAvatar.tsx verir.
-      .trim({ threshold: 1 })
-      .resize(SIZE, SIZE, { fit: "inside" })
-      .png({ compressionLevel: 9 })
-      .toBuffer();
+  /**
+   * Kvadrata DOLDURULMUR. Əvvəl hər loqo 256x256 şəffaf kətana yerləşdirilirdi;
+   * geniş söznişan (Vitality 3.46, LOUD 5.4 nisbətində) beləliklə kətanın üçdə
+   * birini tuturdu və 28 piksellik xanada 8 piksellik zolağa çevrilirdi. İndi öz
+   * nisbəti saxlanılır və uzun kənar SIZE olur; xananın enini
+   * components/common/TeamAvatar.tsx verir.
+   */
+  const shrink = (raw: Buffer) =>
+    sharp(raw).trim({ threshold: 1 }).resize(SIZE, SIZE, { fit: "inside" }).png({ compressionLevel: 9 }).toBuffer();
 
-    const rel = `/teams/${f.slug}.png`;
-    await writeFile(path.join(OUT_DIR, `${f.slug}.png`), png);
-    manifest[f.slug] = rel;
+  /** Bir faylı endirib normallaşdırır. */
+  const grab = async (title: string) => {
+    const hit = urlByTitle.get(`File:${title}`);
+    if (!hit) return null;
+    const res = await fetch(hit.url, { headers: { "User-Agent": USER_AGENT } });
+    if (!res.ok) return null;
+    const raw = Buffer.from(await res.arrayBuffer());
+    return { rawSize: raw.length, png: await shrink(raw) };
+  };
+
+  for (const f of found) {
+    const dark = await grab(f.file);
+    if (!dark) {
+      console.log(`!  ${f.slug.padEnd(24)} yüklənmədi`);
+      continue;
+    }
+
+    await writeFile(path.join(OUT_DIR, `${f.slug}.png`), dark.png);
+    manifest[f.slug] = `/teams/${f.slug}.png`;
+    bytes += dark.png.length;
+
+    // İşıqlı variant HƏMİŞƏ yazılır — ayrı fayl olmasa belə eyni şəkil. Səbəb
+    // sadəlikdir: komponent `<slug>-light.png`-in mövcudluğunu yoxlamır, sadəcə
+    // ünvanı çıxarır. Fərqli fayl gəlməyəndə iki nüsxə eyni olur və bu, düzgün
+    // nəticədir — `allmode` loqo hər fonda işləyir.
+    const light = f.fileLight === f.file ? dark : ((await grab(f.fileLight)) ?? dark);
+    await writeFile(path.join(OUT_DIR, `${f.slug}-light.png`), light.png);
+    bytes += light.png.length;
+
     written++;
-    bytes += png.length;
-    console.log(`+  ${f.slug.padEnd(24)} ${(raw.length / 1024).toFixed(0)} KB -> ${(png.length / 1024).toFixed(0)} KB`);
+    const note = light === dark ? "" : `  + işıqlı ${(light.png.length / 1024).toFixed(0)} KB`;
+    console.log(`+  ${f.slug.padEnd(24)} ${(dark.rawSize / 1024).toFixed(0)} KB -> ${(dark.png.length / 1024).toFixed(0)} KB${note}`);
   }
 
   const ordered = Object.fromEntries(Object.entries(manifest).sort(([a], [b]) => a.localeCompare(b)));

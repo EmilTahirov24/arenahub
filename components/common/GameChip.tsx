@@ -11,8 +11,17 @@ import { composite, readableOn } from "@/lib/contrast";
 // ən nikbin hal. Nəticədə hesablanan rənglər 4.06–4.32 verdi — düzəliş
 // edilmişdi, amma yenə həddin altında. Ölçülən fonlar (`#f1e9e2`, `#f2dfe7`,
 // `#eedce2`, `#ece9ea`) məhz `--surface-raised` ilə üst-üstə düşür.
+// İşıqlı dəyər `--surface-raised` (#f0f0f7) DEYİL, ondan bir az tünddür.
+//
+// Səbəb 2026-08-31-də ölçüldü: hero zolağının marka çaları gücləndiriləndə
+// (`globals.css`, --ambient-a/b) pillərin altındakı ən pis fon artıq ən açıq
+// SƏTH deyil, həmin çalar oldu. axe dörd pil üçün 4.34–4.43 verdi — hədd 4.5.
+//
+// Dəyər uydurulmayıb: brauzerdə hero mətninin altındakı REAL pikselin ən tünd
+// nöqtəsi ölçüldü və #e4e4f4 çıxdı. Pillər ondan da aşağıdadır, yəni orada fon
+// daha açıqdır — bu dəyər ehtiyatlı tərəfdədir.
 const DARK_SURFACE = "#171a22";
-const LIGHT_SURFACE = "#f0f0f7";
+const LIGHT_SURFACE = "#e4e4f4";
 
 export default function GameChip({
   name,
