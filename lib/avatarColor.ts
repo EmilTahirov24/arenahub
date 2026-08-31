@@ -1,3 +1,5 @@
+import { bestTextOn } from "./contrast";
+
 /**
  * Loqosu olmayan komanda üçün sabit rəng.
  *
@@ -41,4 +43,50 @@ export function avatarColor(name: string, primaryColor?: string | null): string 
   if (primaryColor) return primaryColor;
   const hue = hash(name.trim().toLowerCase()) % 360;
   return `hsl(${hue} 58% 28%)`;
+}
+
+/**
+ * Nişanın hər iki tema üçün fonu və mətn rəngi.
+ *
+ * Çalar eynidir, işıqlılıq əksinədir. Səbəb qaranlıq temanın qərarını təkrar
+ * etməməkdir: 28% işıqlılıq AĞ mətn üçün seçilmişdi, ağ səhifədə isə həmin
+ * rəng qara kərpic kimi oxunur — /az/players sətirlərində on iki tünd dairə.
+ *
+ * İşıqlı variant açıq çalardan bir az tündünə keçir və mətni tünddür. Ölçülən
+ * ən pis hal (360 çaların hamısı, qradiyentin TÜND ucunda):
+ *
+ *   qaranlıq  hsl(h 58% 28%) → #0a0b10, ağ mətn      5.14:1  (h=60, sarı)
+ *   işıqlı    hsl(h 58% 88%) → hsl(h 58% 72%), tünd  6.18:1  (h=240, mavi)
+ *
+ * Yəni işıqlı variant indikindən daha təhlükəsizdir. Ağ kartdan da ayrılır:
+ * fərq 1.14–1.52.
+ *
+ * Komandanın öz rəngi bilinirsə, o hər iki temada saxlanılır — mətn rəngi isə
+ * ona qarşı hesablanır, `lib/contrast.ts`-dəki `bestTextOn` ilə.
+ */
+export type AvatarPaint = {
+  dark: string;
+  light: string;
+  inkDark: string;
+  inkLight: string;
+};
+
+export function avatarPaint(name: string, primaryColor?: string | null): AvatarPaint {
+  if (primaryColor) {
+    const ink = bestTextOn(primaryColor);
+    return {
+      dark: `linear-gradient(135deg, ${primaryColor}, #0a0b10)`,
+      light: `linear-gradient(135deg, ${primaryColor}, ${primaryColor})`,
+      inkDark: "#ffffff",
+      inkLight: ink,
+    };
+  }
+
+  const hue = hash(name.trim().toLowerCase()) % 360;
+  return {
+    dark: `linear-gradient(135deg, hsl(${hue} 58% 28%), #0a0b10)`,
+    light: `linear-gradient(135deg, hsl(${hue} 58% 88%), hsl(${hue} 58% 72%))`,
+    inkDark: "#ffffff",
+    inkLight: "#14141f",
+  };
 }

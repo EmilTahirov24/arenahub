@@ -51,8 +51,24 @@ const themeInitScript = `
 (function () {
   try {
     var stored = localStorage.getItem("theme");
-    var theme = stored || "dark";
+    // Seçim edilməyibsə cihazın öz rejimi. Əvvəl burada sadəcə "dark" yazılırdı,
+    // yəni sistemi işıqlı rejimdə olan ziyarətçi işıqlı temanı düyməyə basmadan
+    // heç vaxt görmürdü.
+    //
+    // Atribut hər halda TƏYİN OLUNUR — media sorğusuna buraxılmır — çünki bütün
+    // işıqlı qaydalar data-theme="light" seçicisinə bağlıdır və onları ikiqat
+    // yazmaq hər yeni rəngdə iki yerdə düzəliş tələb edərdi.
+    var theme = stored ||
+      (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
     document.documentElement.setAttribute("data-theme", theme);
+
+    // Seçim edilməyibsə, açıq pəncərədə sistem rejimi dəyişəndə sayt da dəyişir.
+    if (!stored && window.matchMedia) {
+      window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", function (e) {
+        if (localStorage.getItem("theme")) return;
+        document.documentElement.setAttribute("data-theme", e.matches ? "light" : "dark");
+      });
+    }
   } catch (e) {}
   try {
     var m = location.pathname.match(/^\\/(az|en)(\\/|$)/);

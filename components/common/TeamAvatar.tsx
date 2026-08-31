@@ -1,6 +1,5 @@
-import Image from "next/image";
 import { initials } from "@/lib/initials";
-import { avatarColor } from "@/lib/avatarColor";
+import { avatarPaint } from "@/lib/avatarColor";
 
 /**
  * Loqo xanası hündürlüyündən genişdir.
@@ -17,6 +16,24 @@ import { avatarColor } from "@/lib/avatarColor";
  */
 const SLOT = 1.45;
 
+/**
+ * Ağ fonda işləyən variantın ünvanı.
+ *
+ * Liquipedia hər loqonu iki cür saxlayır və idxal ikisini də endirir
+ * (`scripts/fetch-team-logos.ts`): `<slug>.png` tünd fon üçün, `<slug>-light.png`
+ * açıq fon üçün. Bu vacibdir, ölçüldü — 127 loqonun 58-i TAM AĞDIR və işıqlı
+ * temada ağ kartda tamamilə görünmürdü.
+ *
+ * Fayl həmişə mövcuddur: ayrıca işıqlı variant olmayanda idxal eyni şəkli
+ * ikinci ad altında yazır, ona görə burada yoxlama lazım deyil.
+ *
+ * Admin panelindən yüklənən loqolar (blob storage) bu adlandırmaya girmir və
+ * olduğu kimi qalır — onları yükləyən adam fonu özü seçir.
+ */
+function lightVariant(url: string): string {
+  return url.startsWith("/teams/") ? url.replace(/\.png$/, "-light.png") : url;
+}
+
 export default function TeamAvatar({
   name,
   logoUrl,
@@ -32,30 +49,39 @@ export default function TeamAvatar({
 
   if (logoUrl) {
     return (
-      <Image
-        src={logoUrl}
-        alt={name}
-        width={slotWidth}
-        height={size}
-        unoptimized
-        /* `contain`, `cover` deyil: kvadrat olmayan xanada `cover` loqonun
-           yanlarını kəsərdi və söznişandan yalnız orta hərflər qalardı. */
-        className="shrink-0 object-contain"
-        style={{ width: slotWidth, height: size }}
+      <span
+        role="img"
+        aria-label={name}
+        className="team-logo shrink-0"
+        style={
+          {
+            width: slotWidth,
+            height: size,
+            "--logo-dark": `url("${logoUrl}")`,
+            "--logo-light": `url("${lightVariant(logoUrl)}")`,
+          } as React.CSSProperties
+        }
       />
     );
   }
 
+  const paint = avatarPaint(name, color);
+
   return (
     <div className="flex shrink-0 items-center justify-center" style={{ width: slotWidth, height: size }}>
       <div
-        className="flex items-center justify-center rounded-md font-display font-bold text-white"
-        style={{
-          width: size,
-          height: size,
-          fontSize: size * 0.36,
-          background: `linear-gradient(135deg, ${avatarColor(name, color)}, #0a0b10)`,
-        }}
+        className="avatar-badge font-display flex items-center justify-center rounded-md font-bold"
+        style={
+          {
+            width: size,
+            height: size,
+            fontSize: size * 0.36,
+            "--avatar-dark": paint.dark,
+            "--avatar-light": paint.light,
+            "--avatar-ink-dark": paint.inkDark,
+            "--avatar-ink-light": paint.inkLight,
+          } as React.CSSProperties
+        }
       >
         {initials(name)}
       </div>

@@ -85,7 +85,7 @@ export default function CommandPalette() {
       {open && (
         <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/60 px-4 pt-24" onClick={close}>
           <div
-            className="w-full max-w-lg overflow-hidden rounded-xl border border-border-subtle bg-surface shadow-2xl"
+            className="w-full max-w-lg overflow-hidden rounded-xl border border-border-subtle bg-surface shadow-[var(--shadow-pop)]"
             onClick={(e) => e.stopPropagation()}
           >
             <input

@@ -13,6 +13,17 @@ export default function ThemeToggle() {
     const current = document.documentElement.getAttribute("data-theme");
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(current === "light" ? "light" : "dark");
+
+    // Seçim edilməyibsə tema cihazın rejimindən gəlir və pəncərə açıq ikən
+    // dəyişə bilir. Atributu layout-dakı skript yeniləyir; buradakı abunə
+    // yalnız düymənin nişanını həqiqətlə eyni saxlayır.
+    const media = window.matchMedia("(prefers-color-scheme: light)");
+    const sync = (e: MediaQueryListEvent) => {
+      if (localStorage.getItem("theme")) return;
+      setTheme(e.matches ? "light" : "dark");
+    };
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
   }, []);
 
   function toggle() {

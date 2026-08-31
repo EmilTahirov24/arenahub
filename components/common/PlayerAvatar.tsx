@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { initials } from "@/lib/initials";
-import { avatarColor } from "@/lib/avatarColor";
+import { avatarPaint } from "@/lib/avatarColor";
 
 export default function PlayerAvatar({
   name,
@@ -27,17 +27,24 @@ export default function PlayerAvatar({
     );
   }
 
+  const paint = avatarPaint(name, color);
+
   return (
     <div
-      className="flex shrink-0 items-center justify-center rounded-full font-display font-bold text-white"
-      style={{
-        width: size,
-        height: size,
-        fontSize: size * 0.36,
-        // Komanda avatarı ilə eyni səbəb: /az/players siyahısında da
-        // fotosuz oyunçular tam eyni rəngdə idi.
-        background: `linear-gradient(135deg, ${avatarColor(name, color)}, #0a0b10)`,
-      }}
+      className="avatar-badge font-display flex shrink-0 items-center justify-center rounded-full font-bold"
+      style={
+        {
+          width: size,
+          height: size,
+          fontSize: size * 0.36,
+          // Komanda avatarı ilə eyni səbəb: /az/players siyahısında da
+          // fotosuz oyunçular tam eyni rəngdə idi.
+          "--avatar-dark": paint.dark,
+          "--avatar-light": paint.light,
+          "--avatar-ink-dark": paint.inkDark,
+          "--avatar-ink-light": paint.inkLight,
+        } as React.CSSProperties
+      }
     >
       {initials(name)}
     </div>
