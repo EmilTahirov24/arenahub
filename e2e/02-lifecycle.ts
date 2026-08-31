@@ -132,6 +132,26 @@ async function main() {
     assert(/10[\s,.]?000/.test(body), "mükafat məbləği sətirdə görünmür");
   });
 
+  // Mükafatların çoxu tək yerədir. Eyni rəqəmi iki dəfə yazdırmaq forma ilə
+  // mübarizəyə çevrilirdi, ona görə boş «Yerə» tək yer deməkdir.
+  await check("boş «Yerə» tək yer sətri yazır", async () => {
+    await gotoPage(page, `${BASE}/admin/tournaments/${tournamentId}`);
+    await page.fill('input[name="placeFrom"]', "2");
+    await page.fill('input[name="placeTo"]', "4");
+    await page.fill('input[name="amount"]', "5000");
+    await submitForm(page, FORM.addPrize);
+
+    await gotoPage(page, `${BASE}/admin/tournaments/${tournamentId}`);
+    await page.fill('input[name="placeFrom"]', "3");
+    await page.fill('input[name="amount"]', "7000");
+    await submitForm(page, FORM.addPrize);
+
+    await page.reload({ waitUntil: "domcontentloaded" });
+    const body = await visibleText(page);
+    assert(body.includes("3-ci yer"), "boş «Yerə» tək yer sətri yaratmadı");
+    assert(body.includes("2-4-ci yerlər"), "aralıq sətri itdi");
+  });
+
   // AGENTS.md: forma ya yönləndirməli, ya görünən nəyisə dəyişməli, ya da mesaj
   // qaytarmalıdır. Yer yazmaq bunların heç birini etmir — input elə həmin dəyərlə
   // yenidən render olunur, yəni «yaz» düyməsi ölü görünür.
@@ -144,6 +164,22 @@ async function main() {
     await clickAndSettle(page, form.locator('button[type="submit"]'));
     const body = await visibleText(page);
     assert(/yazıldı|saxlanıldı|✓/i.test(body), "yer yazıldı, amma ekranda heç bir təsdiq yoxdur");
+  });
+
+  // 3-cü yer həm «2-4-cü yerlər $5 000», həm «3-cü yer $7 000» sətrinə düşür.
+  // Sıra ilə ilk uyğun gələni götürsək, geniş aralıq qazanar və admin panelə
+  // yazılan $7 000 saytda heç vaxt görünməzdi.
+  await check("dar mükafat sətri geniş aralığı üstələyir", async () => {
+    await gotoPage(page, `${BASE}/admin/tournaments/${tournamentId}`);
+    const row = page.locator(`div:has(> span:text-is("${teamBName} "))`).first();
+    const form = (await row.count()) ? row.locator(FORM.placement) : page.locator(FORM.placement).last();
+    await form.locator('input[name="placement"]').fill("3");
+    await clickAndSettle(page, form.locator('button[type="submit"]'));
+
+    const t = await prisma.tournament.findUnique({ where: { id: tournamentId }, select: { slug: true } });
+    await gotoPage(page, `${BASE}/az/events/${t?.slug}`);
+    const body = await visibleText(page);
+    assert(/7[\s,.]?000/.test(body), "3-cü yerə dar sətrin məbləği yazılmadı");
   });
 
   console.log("\nMatç\n");

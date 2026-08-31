@@ -88,7 +88,10 @@ export async function setParticipantPlacement(
 export async function addPrize(tournamentId: string, formData: FormData) {
   await requireAdmin();
   const placeFrom = Number(formData.get("placeFrom"));
-  const placeTo = Number(formData.get("placeTo"));
+  // Boş «Yerə» = tək yer. Mükafatların çoxu tək yerədir (1-ci, 2-ci, 3-cü) və
+  // eyni rəqəmi iki dəfə yazdırmaq forma ilə mübarizəyə çevrilirdi.
+  const placeToRaw = String(formData.get("placeTo") ?? "").trim();
+  const placeTo = placeToRaw === "" ? placeFrom : Number(placeToRaw);
   const amount = Number(formData.get("amount"));
   if (!placeFrom || !placeTo || placeTo < placeFrom) {
     throw new Error("Yer aralığı düzgün deyil");

@@ -3,7 +3,19 @@
 import { useMemo, useState } from "react";
 import { inputClass, labelClass, primaryButtonClass } from "@/components/admin/formStyles";
 import type { Match, Team, Game, Tournament } from "@/app/generated/prisma/client";
-import { STAGE_SUGGESTIONS } from "@/lib/stages";
+import { STAGE_SUGGESTIONS, isBracketStage, stageName } from "@/lib/stages";
+
+/**
+ * Mərhələ siyahısı BAĞLIDIR — lib/stages.ts onu belə saxlayır.
+ *
+ * Əvvəl bu sahə sərbəst mətn idi (datalist ilə). Nəticə səssiz uğursuzluq
+ * olurdu: «Çeyrək final» yazan adam düzgün yazdığını düşünürdü, amma
+ * normaliseStage azərbaycanca adı tanımır — matç kartında ad görünür,
+ * cədvələ isə HEÇ VAXT düşmür. İndi seçim siyahıdandır: ekranda azərbaycanca
+ * görünür, bazaya kanonik ingiliscə ad yazılır.
+ */
+const BRACKET_STAGES = STAGE_SUGGESTIONS.filter((s) => isBracketStage(s));
+const OTHER_STAGES = STAGE_SUGGESTIONS.filter((s) => !isBracketStage(s));
 
 const STATUSES = ["UPCOMING", "LIVE", "FINISHED", "POSTPONED", "CANCELLED"] as const;
 
@@ -17,15 +29,18 @@ export default function MatchForm({
   games,
   teams,
   tournaments,
+  defaultTournament,
   action,
 }: {
   match?: Match;
   games: Game[];
   teams: Team[];
   tournaments: Tournament[];
+  /** Turnir səhifəsindən gələndə oyun və turnir öncədən doldurulur. */
+  defaultTournament?: Tournament;
   action: (formData: FormData) => Promise<void>;
 }) {
-  const [gameId, setGameId] = useState(match?.gameId ?? "");
+  const [gameId, setGameId] = useState(match?.gameId ?? defaultTournament?.gameId ?? "");
 
   const teamsForGame = useMemo(() => teams.filter((t) => !gameId || t.gameId === gameId), [teams, gameId]);
   const tournamentsForGame = useMemo(
@@ -55,7 +70,13 @@ export default function MatchForm({
       </div>
       <div>
         <label htmlFor="match-tournamentId" className={labelClass}>Turnir (istəyə bağlı)</label>
-        <select id="match-tournamentId" name="tournamentId" defaultValue={match?.tournamentId ?? ""} className={inputClass} disabled={!gameId}>
+        <select
+          id="match-tournamentId"
+          name="tournamentId"
+          defaultValue={match?.tournamentId ?? defaultTournament?.id ?? ""}
+          className={inputClass}
+          disabled={!gameId}
+        >
           <option value="">— yoxdur —</option>
           {tournamentsForGame.map((t) => (
             <option key={t.id} value={t.id}>
@@ -127,21 +148,32 @@ export default function MatchForm({
       </div>
       <div>
         <label htmlFor="match-stage" className={labelClass}>Mərhələ</label>
-        {/* Siyahıdan seçilən ad bracket-ə düşür; sərbəst yazılan ad matç
-            kartında görünür, amma cədvələ girmir — `lib/stages.ts`. */}
-        <input
-          id="match-stage"
-          name="stage"
-          list="match-stage-options"
-          defaultValue={match?.stage ?? ""}
-          className={inputClass}
-          placeholder="Final, Semifinal..."
-        />
-        <datalist id="match-stage-options">
-          {STAGE_SUGGESTIONS.map((s) => (
-            <option key={s} value={s} />
-          ))}
-        </datalist>
+        <select id="match-stage" name="stage" defaultValue={match?.stage ?? ""} className={inputClass}>
+          <option value="">— yoxdur —</option>
+          <optgroup label="Pley-off — cədvəldə çəkilir">
+            {BRACKET_STAGES.map((s) => (
+              <option key={s} value={s}>
+                {stageName(s, "az")}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="Pley-off öncəsi">
+            {OTHER_STAGES.map((s) => (
+              <option key={s} value={s}>
+                {stageName(s, "az")}
+              </option>
+            ))}
+          </optgroup>
+          {/* Köhnə sətirlərdə siyahıdan kənar mətn ola bilər. Onu siyahıya
+              qoymasaq, matçı redaktə etmək mərhələni səssizcə silərdi. */}
+          {match?.stage && !STAGE_SUGGESTIONS.includes(match.stage as (typeof STAGE_SUGGESTIONS)[number]) && (
+            <option value={match.stage}>{match.stage} — cədvələ girmir</option>
+          )}
+        </select>
+        <p className="mt-1 text-xs text-foreground-muted">
+          Birinci qrupdan seçilən mərhələ turnir səhifəsində <b>pley-off cədvəlinə</b> düşür.
+          «Qrup mərhələsi» isə <b>pley-off öncəsi</b> bölməsində qalır.
+        </p>
       </div>
       <div>
         <label htmlFor="match-status" className={labelClass}>Status</label>

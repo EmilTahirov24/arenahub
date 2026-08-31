@@ -26,8 +26,24 @@ export function formatMoney(amount: number) {
   return "$" + amount.toLocaleString("en-US").replace(/,/g, " ");
 }
 
-/** The prize a given finishing position earns, or null if it is outside every range. */
+/**
+ * The prize a given finishing position earns, or null if it is outside every range.
+ *
+ * Aralıqlar üst-üstə düşəndə ƏN DAR olan qazanır. Səbəb istifadə şəklindədir:
+ * «1-4-cü yerlər $20 000» yazıb sonra «2-ci yer $50 000» əlavə edən adamın
+ * niyyəti açıqdır — 2-ci yerə ayrıca məbləğ verir. Sıra ilə ilk uyğun gələni
+ * götürsəydik, sətirlər `placeFrom` üzrə düzüldüyü üçün geniş aralıq həmişə
+ * birinci gələr və konkret sətri gizlədərdi: admin panelə yazılan məbləğ
+ * saytda heç vaxt görünməzdi.
+ */
 export function prizeForPlacement(rows: PrizeRow[], placement: number | null) {
   if (placement == null) return null;
-  return rows.find((r) => placement >= r.placeFrom && placement <= r.placeTo)?.amount ?? null;
+  let best: PrizeRow | null = null;
+  for (const row of rows) {
+    if (placement < row.placeFrom || placement > row.placeTo) continue;
+    if (best === null || row.placeTo - row.placeFrom < best.placeTo - best.placeFrom) {
+      best = row;
+    }
+  }
+  return best?.amount ?? null;
 }
