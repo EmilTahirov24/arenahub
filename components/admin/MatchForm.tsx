@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { inputClass, labelClass, primaryButtonClass } from "@/components/admin/formStyles";
 import type { Match, Team, Game, Tournament } from "@/app/generated/prisma/client";
+import { STAGE_SUGGESTIONS } from "@/lib/stages";
 
 const STATUSES = ["UPCOMING", "LIVE", "FINISHED", "POSTPONED", "CANCELLED"] as const;
 
@@ -102,8 +103,11 @@ export default function MatchForm({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label htmlFor="match-bestOf" className={labelClass}>Best of</label>
+          {/* BO2 siyahıda var, çünki bazada var: Dota qrup mərhələsi məhz iki
+              xəritəyə oynanır və 17 matç bu formatdadır. Siyahıda olmasaydı,
+              belə bir matçı redaktə etmək onu səssizcə BO3-ə çevirərdi. */}
           <select id="match-bestOf" name="bestOf" defaultValue={match?.bestOf ?? 3} className={inputClass}>
-            {[1, 3, 5].map((n) => (
+            {[1, 2, 3, 5].map((n) => (
               <option key={n} value={n}>
                 BO{n}
               </option>
@@ -123,7 +127,21 @@ export default function MatchForm({
       </div>
       <div>
         <label htmlFor="match-stage" className={labelClass}>Mərhələ</label>
-        <input id="match-stage" name="stage" defaultValue={match?.stage ?? ""} className={inputClass} placeholder="Final, Semifinal..." />
+        {/* Siyahıdan seçilən ad bracket-ə düşür; sərbəst yazılan ad matç
+            kartında görünür, amma cədvələ girmir — `lib/stages.ts`. */}
+        <input
+          id="match-stage"
+          name="stage"
+          list="match-stage-options"
+          defaultValue={match?.stage ?? ""}
+          className={inputClass}
+          placeholder="Final, Semifinal..."
+        />
+        <datalist id="match-stage-options">
+          {STAGE_SUGGESTIONS.map((s) => (
+            <option key={s} value={s} />
+          ))}
+        </datalist>
       </div>
       <div>
         <label htmlFor="match-status" className={labelClass}>Status</label>

@@ -1,0 +1,111 @@
+# Keeps tournament brackets current — rounds, playoff trees, prize breakdowns.
+#
+# Separate from `import-live.yml` on purpose. That one runs every 20 minutes and
+# reads a single wiki-wide match list; this one walks ~40 event pages and their
+# subpages, and Liquipedia's terms throttle those to one request per 2.5s. A
+# full pass is roughly fifteen minutes, which is fine once a day and impossible
+# every twenty minutes.
+#
+# What it actually fills in: `Match.stage` (Quarterfinal, Upper Bracket Final,
+# Grand Final…), `Match.bracketKey` and `Match.bracketLabel`. Without this the
+# event pages have no playoff tree — that was the state until 2026-08-30, when
+# 2503 matches had no round recorded between them and the bracket component
+# existed but never rendered.
+#
+# Only CS2 and Dota 2 gain rounds. The VALORANT and League wikis keep their
+# brackets in Liquipedia's match database and render them as a CSS grid whose
+# columns cannot be matched to matches from the markup, so those events import
+# their results with no round rather than a guessed one. See the comment on
+# `parseRenderedMatches` in lib/liquipedia.ts.
+#
+# Needs one secret: DATABASE_URL. Liquipedia requires no key, only the
+# descriptive User-Agent the client already sends.
+name: Import tournaments
+
+on:
+  # Once a day, at an odd minute. GitHub's shared scheduler queues free-tier
+  # cron behind paid work and the round hours are the most contended slots, so
+  # :00 would simply wait longer. The exact time does not matter here — a
+  # tournament page changes over days, not minutes.
+  schedule:
+    - cron: "23 4 * * *"
+  # The useful one: a bracket can be pulled in on demand right after an event
+  # finishes, without waiting for the next night.
+  workflow_dispatch:
+  # A scheduled run that fails during `npm ci` is invisible until the next tick,
+  # which here is a full day away. Editing this file proves itself immediately.
+  push:
+    paths: [".github/workflows/import-tournaments.yml"]
+
+# Two passes writing the same matches would race on the create-or-update check.
+concurrency:
+  group: import-tournaments
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    # Measured: CS2 ~10 min, Dota 2 ~5 min, both dominated by the request
+    # throttle rather than by work. The ceiling leaves room for a slow wiki.
+    timeout-minutes: 45
+    # Job-wide rather than per-step: the root package.json has a `postinstall`,
+    # so `npm ci` runs project code too and must not be the one step that is
+    # missing the environment.
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v5
+
+      # package-lock.json is written by npm 11 and carries `allowScripts`, which
+      # only npm 11 understands. Node 22 ships npm 10, so the runner has to stay
+      # on the major the lockfile came from.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Versions
+        run: node -v && npm -v
+
+      - run: npm ci
+
+      # The Prisma client is generated into app/generated and not committed.
+      - run: npx prisma generate
+
+      # Checked after the install so that a failure here is unambiguous: the
+      # dependencies are fine and the only thing missing is the secret.
+      - name: Verify database secret
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL is not set. Add it under Settings → Secrets and variables → Actions → New repository secret."
+            exit 1
+          fi
+          echo "DATABASE_URL is present (${#DATABASE_URL} characters)."
+
+      # Split per game so that one wiki being slow or down does not cost the
+      # other its whole run, and so the log says which half failed.
+      - name: CS2
+        run: npx tsx scripts/import-tournaments.ts --game cs2 --apply
+
+      - name: Dota 2
+        # Runs even when CS2 failed: the two share nothing but the database.
+        if: always()
+        run: npx tsx scripts/import-tournaments.ts --game dota2 --apply
+
+      # VALORANT and League are imported for their results and prize pools. They
+      # gain no rounds, for the reason given at the top of this file.
+      - name: VALORANT
+        if: always()
+        run: npx tsx scripts/import-tournaments.ts --game valorant --apply
+
+      - name: League of Legends
+        if: always()
+        run: npx tsx scripts/import-tournaments.ts --game lol --apply
+
+      # New results change the Elo history, and this importer writes finished
+      # matches — unlike import-live.ts it has no staleness signal to gate on,
+      # so the replay runs unconditionally. It is affordable here: once a day,
+      # not seventy times.
+      - name: Reytinqlər
+        if: always()
+        run: npx tsx scripts/recompute-ratings.ts

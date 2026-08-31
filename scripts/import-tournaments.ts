@@ -112,6 +112,22 @@ const GAMES: { slug: string; wiki: string; rendered: boolean; pages: string[] }[
   },
 ];
 
+/**
+ * Headings that name no bracket in particular — checked only on SUBPAGES.
+ *
+ * Every stage subpage puts its bracket under "Results", so using the heading
+ * would label four different brackets identically and leave the reader unable
+ * to tell the qualifier from the playoffs.
+ *
+ * "Playoffs" is in the list for the same reason: a qualifier subpage has its
+ * own playoff round, and at event level that heading collides with the event's
+ * real playoffs — the Esports World Cup page showed two brackets called
+ * "Playoffs", one of them a qualifier that finished ten days before the groups.
+ * The subpage's own title separates them. On the MAIN page the heading is kept,
+ * because there "Playoffs" means the event's playoffs and nothing else.
+ */
+const GENERIC_HEADING = /^(results?|matches|brackets?|playoffs?|playoff bracket|main event|finals?)$/i;
+
 /** Subpages that never hold match results, so they are not worth fetching. */
 const NOT_A_STAGE = /\/(Statistics|Additional Content|Broadcast\w*|prizepool|Player\w*|Qualification)$/i;
 
@@ -226,7 +242,19 @@ async function main() {
         subpages = (await listSubpages(opts, page)).filter((s) => !NOT_A_STAGE.test(s)).slice(0, 12);
         for (const sub of subpages) {
           const text = await fetchWikitext(opts, sub);
-          if (text) collected.push(...parseMatches(text));
+          if (!text) continue;
+          const found = parseMatches(text);
+          // A subpage names its own bracket better than its heading does: the
+          // heading is almost always the word "Results", which is the same on
+          // every subpage and so tells a reader nothing, while the title
+          // ("…/Rio/Europe/Open 1") says exactly which bracket this is.
+          const fallback = sub.split("/").slice(-2).join(" ") || null;
+          for (const m of found) {
+            if (m.bracket && (!m.bracket.label || GENERIC_HEADING.test(m.bracket.label))) {
+              m.bracket.label = fallback;
+            }
+          }
+          collected.push(...found);
         }
       }
 
@@ -303,7 +331,11 @@ async function main() {
           resolve(m.teamB),
       );
 
-      console.log(`  bazadakı komandalarla: ${usable.length} nəticə, ${scheduled.length} qarşıdakı matç`);
+      const staged = [...usable, ...scheduled].filter((m) => m.stage).length;
+      console.log(
+        `  bazadakı komandalarla: ${usable.length} nəticə, ${scheduled.length} qarşıdakı matç` +
+          `, ${staged} mərhələli`,
+      );
       tournaments++;
       if (!apply) {
         matchesWritten += usable.length + scheduled.length;
@@ -381,6 +413,16 @@ async function writeMatches(
     const scheduledAt = m.date ? new Date(m.date) : new Date();
     const winnerId = m.winner === 1 ? a.id : m.winner === 2 ? b.id : null;
 
+    // A match is identified by who played it, in which event, and when —
+    // never by its position in the list. An index-based key looked fine until
+    // a filter changed: dropping two undecided matches renumbered everything
+    // after them, so the next import would have written the whole tail a
+    // second time under new slugs instead of updating what was already there.
+    const existing = await prisma.match.findFirst({
+      where: { tournamentId, teamAId: a.id, teamBId: b.id, scheduledAt },
+      select: { id: true, stage: true, bracketKey: true, bracketLabel: true },
+    });
+
     const data = {
       scheduledAt,
       status: m.played ? ("FINISHED" as const) : ("UPCOMING" as const),
@@ -395,19 +437,16 @@ async function writeMatches(
       teamAId: a.id,
       teamBId: b.id,
       winnerId,
+      // A known round is never overwritten with nothing. The same fixture can
+      // reach here twice — once from a group table that names no round, once
+      // from the bracket that does — and whichever arrives second would
+      // otherwise decide. Only a real round replaces a real round.
+      stage: m.stage ?? existing?.stage ?? null,
+      bracketKey: m.bracket?.id ?? existing?.bracketKey ?? null,
+      bracketLabel: m.bracket?.label ?? existing?.bracketLabel ?? null,
       tournamentId,
       gameId,
     };
-
-    // A match is identified by who played it, in which event, and when —
-    // never by its position in the list. An index-based key looked fine until
-    // a filter changed: dropping two undecided matches renumbered everything
-    // after them, so the next import would have written the whole tail a
-    // second time under new slugs instead of updating what was already there.
-    const existing = await prisma.match.findFirst({
-      where: { tournamentId, teamAId: a.id, teamBId: b.id, scheduledAt },
-      select: { id: true },
-    });
 
     const match = existing
       ? await prisma.match.update({ where: { id: existing.id }, data })

@@ -17,6 +17,7 @@ import MapCard from "@/components/matches/MapCard";
 import PredictionWidget from "@/components/matches/PredictionWidget";
 import { Link } from "@/i18n/navigation";
 import { localeAlternates } from "@/lib/localeAlternates";
+import { stageName } from "@/lib/stages";
 import JsonLd from "@/components/seo/JsonLd";
 import { matchJsonLd } from "@/lib/structuredData";
 import { siteFormat } from "@/lib/dates";
@@ -172,7 +173,7 @@ export default async function MatchDetailPage({
             {match.tournament.name}
           </Link>
         )}
-        {match.stage && <span>· {match.stage}</span>}
+        {match.stage && <span>· {stageName(match.stage, locale)}</span>}
         <StarRating value={match.starRating} />
       </div>
 

@@ -5,6 +5,7 @@ import StarRating from "@/components/common/StarRating";
 import CountryFlag from "@/components/common/CountryFlag";
 import type { Match, Team, Tournament } from "@/app/generated/prisma/client";
 import { siteFormat } from "@/lib/dates";
+import { stageName } from "@/lib/stages";
 
 type MatchCardProps = {
   match: Match & {
@@ -51,7 +52,7 @@ export default async function MatchCard({ match, showTournament = true }: MatchC
             {showTournament ? (match.tournament?.name ?? t("nav.matches")) : ""}
           </span>
           <span className="flex shrink-0 items-center gap-2">
-            {match.stage && <span>{match.stage}</span>}
+            {match.stage && <span>{stageName(match.stage, locale)}</span>}
             <StarRating value={match.starRating} />
           </span>
         </div>

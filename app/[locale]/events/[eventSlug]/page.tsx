@@ -9,14 +9,22 @@ import PageShell from "@/components/layout/PageShell";
 import TeamAvatar from "@/components/common/TeamAvatar";
 import GameChip from "@/components/common/GameChip";
 import MatchCard from "@/components/matches/MatchCard";
-import Bracket from "@/components/events/Bracket";
+import { BracketList, groupBrackets, splitPlayoff } from "@/components/events/Bracket";
 import { placeRangeLabel, formatMoney, prizeForPlacement } from "@/lib/prizes";
 import JsonLd from "@/components/seo/JsonLd";
 import { tournamentJsonLd } from "@/lib/structuredData";
 import { localeAlternates } from "@/lib/localeAlternates";
 import { siteFormat } from "@/lib/dates";
+import { isBracketStage } from "@/lib/stages";
 
-const BRACKET_STAGES = new Set(["round of 16", "quarterfinal", "semifinal", "3rd place decider", "final"]);
+/**
+ * Mərhələ adları `lib/stages.ts`-dədir.
+ *
+ * Əvvəl burada beş sətirlik bir siyahı vardı və Liquipedia-nın yazdığı adların
+ * heç biri ona düşmürdü — 2503 matçın 0-ının mərhələsi bilinirdi, ona görə
+ * bracket heç vaxt ekrana çıxmırdı. İndi lüğət idxalçı ilə ortaqdır: idxal nə
+ * yazırsa, səhifə də onu tanıyır.
+ */
 
 export async function generateMetadata({
   params,
@@ -197,22 +205,50 @@ export default async function EventDetailPage({
       </div>
 
       {(() => {
-        const bracketMatches = matches.filter((m) => BRACKET_STAGES.has((m.stage ?? "").toLowerCase()));
-        const otherMatches = matches.filter((m) => !BRACKET_STAGES.has((m.stage ?? "").toLowerCase()));
+        /**
+         * Səhifə iki hissədir: turnirin həll olunduğu pley-off, sonra ona
+         * aparan hər şey.
+         *
+         * Pley-off yuxarıdadır, xronoloji sıraya baxmayaraq — səhifəyə girən
+         * adam əvvəlcə kimin qazandığını görmək istəyir, seçmə mərhələsini yox.
+         * Bölgü yalnız bracket olanda qurulur; LoL və VALORANT turnirlərinin
+         * əksəriyyətində mərhələ məlum deyil və səhifə tək siyahı olaraq qalır.
+         */
+        const bracketMatches = matches.filter((m) => isBracketStage(m.stage));
+        const otherMatches = matches.filter((m) => !isBracketStage(m.stage));
+        const { playoff, earlier } = splitPlayoff(groupBrackets(bracketMatches));
+        const hasEarlier = earlier.length > 0 || otherMatches.length > 0;
+
         return (
           <>
-            {bracketMatches.length > 0 && (
+            {playoff && (
+              <div className="mb-8">
+                <h2 className="font-display mb-3 text-lg font-bold">
+                  {locale === "az" ? "Pley-off" : "Playoffs"}
+                </h2>
+                {/* Bölmə başlığı onsuz da «Pley-off» yazır — bracket-in öz adını
+                    təkrar etmək lazım deyil. */}
+                <BracketList groups={[playoff]} locale={locale} showLabels={false} />
+              </div>
+            )}
+
+            {playoff && hasEarlier && (
+              <h2 className="font-display mb-3 text-lg font-bold">
+                {locale === "az" ? "Pley-off öncəsi" : "Before the playoffs"}
+              </h2>
+            )}
+
+            {earlier.length > 0 && (
               <div className="mb-6">
-                <h2 className="font-display mb-3 text-lg font-bold">{locale === "az" ? "Bracket" : "Bracket"}</h2>
-                <Bracket matches={bracketMatches} />
+                <BracketList groups={earlier} locale={locale} />
               </div>
             )}
 
             <h2 className="font-display mb-2 text-lg font-bold">
-              {otherMatches.length > 0 && bracketMatches.length > 0
+              {playoff && hasEarlier
                 ? locale === "az"
-                  ? "Qrup mərhələsi"
-                  : "Group stage"
+                  ? "Digər matçlar"
+                  : "Other matches"
                 : t("nav.matches")}
             </h2>
             <div className="grid gap-3 sm:grid-cols-2">

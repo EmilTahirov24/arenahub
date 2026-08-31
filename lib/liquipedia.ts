@@ -12,6 +12,7 @@
  *
  * No database and no framework imports, so scripts can use it directly.
  */
+import { normaliseStage } from "./stages";
 
 export const LIQUIPEDIA_URL = "https://liquipedia.net";
 
@@ -419,7 +420,20 @@ function cleanValue(value?: string): string {
  * instead, and returns everything between the template name and its own closer.
  */
 function templateBodies(text: string, name: string): string[] {
-  const out: string[] = [];
+  return templateSpans(text, name).map((s) => s.inner);
+}
+
+/**
+ * The same walk, keeping where each template sat in the page.
+ *
+ * A match's round is not written inside the match — it is a comment above the
+ * group of matches that share it, or the title of the list they are in. Placing
+ * a match therefore needs its offset, not just its contents.
+ */
+type TemplateSpan = { inner: string; start: number; end: number };
+
+function templateSpans(text: string, name: string): TemplateSpan[] {
+  const out: TemplateSpan[] = [];
   const opener = new RegExp(`\\{\\{\\s*${name}\\s*(?=[|}\\n])`, "gi");
 
   for (const m of text.matchAll(opener)) {
@@ -434,7 +448,7 @@ function templateBodies(text: string, name: string): string[] {
         depth--;
         i += 2;
         if (depth === 0) {
-          out.push(text.slice(start + m[0].length, i - 2));
+          out.push({ inner: text.slice(start + m[0].length, i - 2), start, end: i });
           break;
         }
       } else {
@@ -577,9 +591,120 @@ export type ParsedMatch = {
   played: boolean;
   /** Series format when the page states it — a fixture has no score to infer it from. */
   bestOf: number | null;
+  /** Canonical round name, or null when the page does not say. See `lib/stages`. */
+  stage: string | null;
+  /**
+   * Liquipedia's id for the bracket this match sits in, and the heading above
+   * it. One page holds several brackets and their rounds share names, so the
+   * round alone cannot say which tree a match belongs to.
+   */
+  bracket: { id: string; label: string | null } | null;
   /** Tournament page title, when the block names it (the wiki-wide list does). */
   tournament?: string | null;
 };
+
+/**
+ * Which round each match on a page belongs to.
+ *
+ * Liquipedia does not put the round inside `{{Match}}`. It writes it once above
+ * the group of matches that share it, as an ordinary HTML comment:
+ *
+ *   {{Bracket|Bracket/8|id=U9J2NxNQ87
+ *   <!-- Quarterfinals -->
+ *   |R1M1={{Match ...}}
+ *   |R1M2={{Match ...}}
+ *   <!-- Semifinals -->
+ *   |R2M1={{Match ...}}
+ *
+ * So a match's round is the last such comment above it, inside the same
+ * bracket. The bracket boundary matters: a page holds several brackets and the
+ * last comment of one must not leak onto the first match of the next.
+ *
+ * The round is NOT derived from the `R1M1` key, tempting as that looks. In a
+ * double-elimination bracket `R1M1` is an upper-bracket quarterfinal while
+ * `R1M5` is lower-bracket round one — the same round number, two different
+ * rounds — so arithmetic on the key would confidently mislabel half the page.
+ *
+ * Comments are also where editors leave notes to each other ("Don't add
+ * unofficial stream, thank you", "Server issues: 8647024943"). `normaliseStage`
+ * accepts only names from a closed vocabulary, so those are simply not rounds.
+ */
+type MatchContext = {
+  stage: string | null;
+  bracket: { id: string; label: string | null } | null;
+};
+
+function stageResolver(wikitext: string): (at: number) => MatchContext {
+  const matchSpans = templateSpans(wikitext, "Match");
+
+  // A comment inside a match body belongs to that match's own contents and
+  // says nothing about the round of the matches that follow it.
+  const inSomeMatch = (at: number) => matchSpans.some((s) => at > s.start && at < s.end);
+
+  const comments: { at: number; label: string }[] = [];
+  for (const m of wikitext.matchAll(/<!--([\s\S]{0,60}?)-->/g)) {
+    const label = normaliseStage(m[1]);
+    if (label && !inSomeMatch(m.index!)) comments.push({ at: m.index!, label });
+  }
+
+  // Section headings, so each bracket can be named. The wikis wrap the title of
+  // a stage in a template — `=== {{Stage|Playoffs}} ===` — which is unwrapped
+  // here so the heading reads as it does on the rendered page.
+  const headings: { at: number; text: string }[] = [];
+  for (const m of wikitext.matchAll(/^(={2,4})\s*(.+?)\s*\1\s*$/gm)) {
+    const text = m[2]
+      .replace(/\{\{\s*Stage\s*\|\s*([^|}]+)[^}]*\}\}/gi, "$1")
+      .replace(/\[\[[^\]|]*\|?([^\]]*)\]\]/g, "$1")
+      .replace(/['"=]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (text) headings.push({ at: m.index!, text });
+  }
+
+  const brackets = templateSpans(wikitext, "Bracket").map((span) => {
+    let label: string | null = null;
+    for (const h of headings) {
+      if (h.at < span.start) label = h.text;
+      else break;
+    }
+    return {
+      start: span.start,
+      end: span.end,
+      // The id is Liquipedia's own and survives edits to the page, so a
+      // re-import files the same match under the same bracket. Only the
+      // fallback is positional, and only when a page omits the id.
+      //
+      // The comment on the next line is part of the parameter's value — the
+      // pipe that ends it comes after it — so it is stripped here. Left in, the
+      // key read "l39GRuAus7 <!-- Quarterfinals -->".
+      id: cleanValue(splitParams(span.inner).named.id?.replace(/<!--[\s\S]*?-->/g, "")) || `pos-${span.start}`,
+      label,
+    };
+  });
+
+  // A match list carries its round in a `title=` parameter instead — that is
+  // how group stages and single rounds outside a bracket are written.
+  const lists: { start: number; end: number; label: string }[] = [];
+  for (const span of templateSpans(wikitext, "Matchlist")) {
+    const label = normaliseStage(cleanValue(splitParams(span.inner).named.title));
+    if (label) lists.push({ start: span.start, end: span.end, label });
+  }
+
+  return (at: number) => {
+    const list = lists.find((l) => at > l.start && at < l.end);
+    if (list) return { stage: list.label, bracket: null };
+
+    const bracket = brackets.find((b) => at > b.start && at < b.end);
+    if (!bracket) return { stage: null, bracket: null };
+
+    let stage: string | null = null;
+    for (const c of comments) {
+      if (c.at > bracket.start && c.at < at) stage = c.label;
+      else if (c.at >= at) break;
+    }
+    return { stage, bracket: { id: bracket.id, label: bracket.label } };
+  };
+}
 
 /**
  * Every match on a tournament page.
@@ -600,9 +725,10 @@ export type ParsedMatch = {
  */
 export function parseMatches(wikitext: string): ParsedMatch[] {
   const out: ParsedMatch[] = [];
+  const stageAt = stageResolver(wikitext);
 
-  for (const body of templateBodies(wikitext, "Match")) {
-    const { named } = splitParams(body);
+  for (const span of templateSpans(wikitext, "Match")) {
+    const { named } = splitParams(span.inner);
     const a = parseOpponent(named.opponent1);
     const b = parseOpponent(named.opponent2);
     if (!a?.name || !b?.name) continue;
@@ -638,6 +764,7 @@ export function parseMatches(wikitext: string): ParsedMatch[] {
       maps,
       played: /^(true|y|yes|1)$/i.test(cleanValue(named.finished)) || scoreA > 0 || scoreB > 0 || maps.length > 0,
       bestOf: intOrNull(named.bestof),
+      ...stageAt(span.start),
     });
   }
 
@@ -710,6 +837,15 @@ export function parseRenderedMatches(html: string, wiki: string): ParsedMatch[] 
       winner: scoreA > scoreB ? 1 : scoreB > scoreA ? 2 : null,
       maps: parseRenderedMaps(popup, wiki),
       played: finished && (scoreA > 0 || scoreB > 0),
+      // A rendered bracket does name its rounds, in a header row above the
+      // grid — but the grid is CSS, so which column a match sits in cannot be
+      // read from the markup order. On the League page a four-header row sits
+      // above three matches, one header being "Qualified", which holds no
+      // match at all. Any pairing would be a guess, and a match filed under
+      // the wrong round is a fabricated claim about a real team, so these
+      // pages keep no round rather than an invented one.
+      stage: null,
+      bracket: null,
       tournament: tournamentNameFrom(popup),
     });
   }
