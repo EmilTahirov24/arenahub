@@ -12,11 +12,12 @@
 # 2503 matches had no round recorded between them and the bracket component
 # existed but never rendered.
 #
-# Only CS2 and Dota 2 gain rounds. The VALORANT and League wikis keep their
-# brackets in Liquipedia's match database and render them as a CSS grid whose
-# columns cannot be matched to matches from the markup, so those events import
-# their results with no round rather than a guessed one. See the comment on
-# `parseRenderedMatches` in lib/liquipedia.ts.
+# All four games gain rounds, by two different routes. CS2 and Dota 2 state the
+# round in their wikitext; VALORANT and League keep their brackets in
+# Liquipedia's match database, where the round is in the SHAPE of the rendered
+# markup instead — see `renderedStages` in lib/liquipedia.ts. Both routes refuse
+# to guess: a bracket whose parse disagrees with the results is imported with no
+# rounds at all rather than with wrong ones.
 #
 # Needs one secret: DATABASE_URL. Liquipedia requires no key, only the
 # descriptive User-Agent the client already sends.
@@ -92,8 +93,9 @@ jobs:
         if: always()
         run: npx tsx scripts/import-tournaments.ts --game dota2 --apply
 
-      # VALORANT and League are imported for their results and prize pools. They
-      # gain no rounds, for the reason given at the top of this file.
+      # These two read one rendered page per event at one request per 31s, so
+      # they are the slow half of the run — and the reason the timeout is 45
+      # minutes rather than 20.
       - name: VALORANT
         if: always()
         run: npx tsx scripts/import-tournaments.ts --game valorant --apply

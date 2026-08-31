@@ -244,13 +244,18 @@ export default async function EventDetailPage({
               </div>
             )}
 
-            <h2 className="font-display mb-2 text-lg font-bold">
-              {playoff && hasEarlier
-                ? locale === "az"
-                  ? "Digər matçlar"
-                  : "Other matches"
-                : t("nav.matches")}
-            </h2>
+            {/* Başlıq yalnız altında nəsə olanda çəkilir. Bracket bütün
+                matçları udanda — VCT mərhələlərində olduğu kimi, 12 matçın
+                12-si — boş «Matçlar» başlığı qalırdı. */}
+            {(otherMatches.length > 0 || matches.length === 0) && (
+              <h2 className="font-display mb-2 text-lg font-bold">
+                {playoff && hasEarlier
+                  ? locale === "az"
+                    ? "Digər matçlar"
+                    : "Other matches"
+                  : t("nav.matches")}
+              </h2>
+            )}
             <div className="grid gap-3 sm:grid-cols-2">
               {otherMatches.map((match) => (
                 <MatchCard key={match.id} match={match} />

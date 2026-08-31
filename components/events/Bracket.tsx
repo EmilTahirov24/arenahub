@@ -30,8 +30,8 @@ const COL_W = SLOT_W + COL_GAP;
 const HEADER_H = 22;
 /** İkili eliminasiyada «Yuxarı bracket» yazısının öz sətri. */
 const LANE_LABEL_H = 18;
-/** Yuxarı və aşağı bracket arasındakı boşluq, sətir sayı ilə. */
-const LANE_GAP = 0.7;
+/** Yuxarı və aşağı bracket arasındakı boşluq, pikselə. */
+const LANE_SPACING = 34;
 
 /* ------------------------------------------------------------------ *
  * Ağacın dataya görə qurulması
@@ -182,99 +182,22 @@ function Slot({ match, x, y }: { match: BracketMatch; x: number; y: number }) {
   );
 }
 
-function Tree({
-  columns,
-  rows,
-  edges,
-  locale,
-  width,
-  height,
-  topPad,
-  lanes,
-}: {
+/**
+ * Bir zolaq: yuxarı bracket, aşağı bracket, ya da sağdakı həlledici sütun.
+ *
+ * Hər zolağın ÖZ başlıq sətri var. Əvvəl başlıqlar bir sətirdə çəkilirdi və
+ * yuxarı ilə aşağı bracket-in sütun sayı fərqli olanda üst-üstə düşürdü:
+ * VCT EMEA-da yuxarının «Yarı final»ı aşağının «Çeyrək final»ı ilə eyni
+ * yerdə oturub oxunmaz hala gəlmişdi.
+ */
+type Lane = {
+  name: string | null;
   columns: Column[];
+  /** Zolağın öz daxilindəki sətir nömrələri. */
   rows: Map<string, number>;
-  edges: { from: string; to: string }[];
-  locale: string;
-  width: number;
-  height: number;
-  /** Sütun adları və zolaq adı üçün yuxarıda ayrılan yer. */
-  topPad: number;
-  /** İkili eliminasiyada iki yarımın adı və başladığı sətir. */
-  lanes: { text: string; row: number }[];
-}) {
-  const xOf = (col: number) => col * COL_W;
-  const yOf = (id: string) => (rows.get(id) ?? 0) * ROW_H;
-  const colOf = new Map<string, number>();
-  for (const c of columns) for (const m of c.matches) colOf.set(m.id, c.col);
-
-  return (
-    <div className="relative" style={{ width, height: height + topPad }}>
-      {/* Sütun adları */}
-      {columns.map((column) => (
-        <div
-          key={column.info.label}
-          style={{ left: xOf(column.col), width: SLOT_W, height: HEADER_H }}
-          className="font-display absolute top-0 truncate text-center text-[11px] font-bold uppercase leading-[22px] tracking-wide text-foreground-muted"
-        >
-          {stageRoundName(column.info.label, locale)}
-        </div>
-      ))}
-
-      {/* Zolaq adları öz sətrindədir. Əvvəl xanaların üstündə üzürdü və sol
-          sütunun adını örtürdü — «YUXARI BRACKET» ilə «1-Cİ RAUND» bir-birinin
-          üstünə düşmüşdü. */}
-      {lanes.map((lane) => (
-        <div
-          key={lane.text}
-          style={{ top: topPad + lane.row * ROW_H - LANE_LABEL_H, height: LANE_LABEL_H }}
-          className="font-display absolute left-0 text-[10px] font-bold uppercase leading-[18px] tracking-wide text-foreground-muted"
-        >
-          {lane.text}
-        </div>
-      ))}
-
-      {/* Xətlər kartların altındadır: künc radiusu onları örtsün. */}
-      <svg
-        aria-hidden
-        className="pointer-events-none absolute text-border-subtle"
-        style={{ left: 0, top: topPad, width, height }}
-        width={width}
-        height={height}
-      >
-        {edges.map((edge) => {
-          const fromCol = colOf.get(edge.from);
-          const toCol = colOf.get(edge.to);
-          if (fromCol == null || toCol == null) return null;
-          const x1 = xOf(fromCol) + SLOT_W;
-          const y1 = yOf(edge.from) + SLOT_H / 2;
-          const x2 = xOf(toCol);
-          const y2 = yOf(edge.to) + SLOT_H / 2;
-          const mid = x1 + (x2 - x1) / 2;
-          return (
-            <path
-              key={`${edge.from}-${edge.to}`}
-              d={`M ${x1} ${y1} H ${mid} V ${y2} H ${x2}`}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            />
-          );
-        })}
-      </svg>
-
-      {columns.map((column) =>
-        column.matches.map((match) => (
-          <Slot key={match.id} match={match} x={xOf(column.col)} y={yOf(match.id) + topPad} />
-        )),
-      )}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ *
- * Bir bracket
- * ------------------------------------------------------------------ */
+  /** Zolağın neçə sətir tutduğu. */
+  rowCount: number;
+};
 
 export default function Bracket({ matches, locale }: { matches: BracketMatch[]; locale: string }) {
   const byLabel = new Map<string, { info: StageInfo; matches: BracketMatch[] }>();
@@ -310,56 +233,118 @@ export default function Bracket({ matches, locale }: { matches: BracketMatch[]; 
   }
   const edges = buildEdges(placed);
 
-  const mainRows = assignRows(main, edges);
-  centreLooseColumns(main, mainRows, edges);
-  const mainHeight = main.length ? Math.max(...[...mainRows.values()]) + 1 : 0;
+  const doubleElimination = main.length > 0 && lower.length > 0;
 
-  const lowerRows = assignRows(lower, edges);
-  centreLooseColumns(lower, lowerRows, edges);
+  const buildLane = (name: string | null, columns: Column[]): Lane | null => {
+    if (columns.length === 0) return null;
+    const rows = assignRows(columns, edges);
+    centreLooseColumns(columns, rows, edges);
+    return { name, columns, rows, rowCount: Math.max(...[...rows.values()], 0) + 1 };
+  };
 
-  const rows = new Map(mainRows);
-  const offset = mainHeight ? mainHeight + LANE_GAP : 0;
-  for (const [id, r] of lowerRows) rows.set(id, r + offset);
+  const lanes = [
+    buildLane(doubleElimination ? laneName("main", locale) : null, main),
+    buildLane(doubleElimination ? laneName("lower", locale) : null, lower),
+  ].filter((l): l is Lane => l !== null);
 
-  const bodyHeight = Math.max(...[...rows.values(), 0]) + 1;
+  // Mütləq yerlər piksellə hesablanır: hər zolaq öz adını və başlıq sətrini
+  // gətirir, ona görə sətir nömrəsi tək başına «y» vermir.
+  const y = new Map<string, number>();
+  const headerRows: { at: number; columns: Column[] }[] = [];
+  const laneLabels: { at: number; text: string }[] = [];
+
+  let cursor = 0;
+  for (const lane of lanes) {
+    if (lane.name) {
+      laneLabels.push({ at: cursor, text: lane.name });
+      cursor += LANE_LABEL_H;
+    }
+    headerRows.push({ at: cursor, columns: lane.columns });
+    cursor += HEADER_H;
+    for (const [id, row] of lane.rows) y.set(id, cursor + row * ROW_H);
+    cursor += (lane.rowCount - 1) * ROW_H + SLOT_H + LANE_SPACING;
+  }
+
+  const bodyHeight = Math.max(cursor - LANE_SPACING, SLOT_H);
 
   // Sağdakı sütun bütün hündürlüyün ortasında oturur.
-  let deciderRow = (bodyHeight - 1) / 2;
-  for (const column of decider) {
-    for (const match of column.matches) {
-      rows.set(match.id, deciderRow);
-      deciderRow += 1;
+  if (decider.length > 0) {
+    const all = decider.flatMap((c) => c.matches);
+    let top = Math.max((bodyHeight - all.length * ROW_H) / 2, HEADER_H);
+    headerRows.push({ at: top - HEADER_H, columns: decider });
+    for (const match of all) {
+      y.set(match.id, top);
+      top += ROW_H;
     }
   }
 
   const columns = [...main, ...lower, ...decider];
-  const totalRows = Math.max(...[...rows.values(), 0]) + 1;
   const width = (Math.max(...columns.map((c) => c.col)) + 1) * COL_W - COL_GAP;
-  const height = totalRows * ROW_H - (ROW_H - SLOT_H);
-
-  const doubleElimination = main.length > 0 && lower.length > 0;
-  const lanes = doubleElimination
-    ? [
-        { text: laneName("main", locale), row: 0 },
-        { text: laneName("lower", locale), row: offset },
-      ]
-    : [];
+  const height = Math.max(bodyHeight, ...[...y.values()].map((v) => v + SLOT_H));
 
   return (
     <div className="overflow-x-auto pb-2">
-      <Tree
-        columns={columns}
-        rows={rows}
-        edges={edges}
-        locale={locale}
-        width={width}
-        height={height}
-        topPad={HEADER_H + (doubleElimination ? LANE_LABEL_H : 0)}
-        lanes={lanes}
-      />
+      <div className="relative" style={{ width, height }}>
+        {laneLabels.map((lane) => (
+          <div
+            key={lane.text}
+            style={{ top: lane.at, height: LANE_LABEL_H }}
+            className="font-display absolute left-0 text-[10px] font-bold uppercase leading-[18px] tracking-wide text-foreground-muted"
+          >
+            {lane.text}
+          </div>
+        ))}
+
+        {headerRows.map((row, i) =>
+          row.columns.map((column) => (
+            <div
+              key={`${i}-${column.info.label}`}
+              style={{ left: column.col * COL_W, top: row.at, width: SLOT_W, height: HEADER_H }}
+              className="font-display absolute truncate text-center text-[11px] font-bold uppercase leading-[22px] tracking-wide text-foreground-muted"
+            >
+              {stageRoundName(column.info.label, locale)}
+            </div>
+          )),
+        )}
+
+        {/* Xətlər kartların altındadır: künc radiusu onları örtsün. */}
+        <svg
+          aria-hidden
+          className="pointer-events-none absolute left-0 top-0 text-border-subtle"
+          width={width}
+          height={height}
+        >
+          {edges.map((edge) => {
+            const from = placed.get(edge.from);
+            const to = placed.get(edge.to);
+            const y1 = y.get(edge.from);
+            const y2 = y.get(edge.to);
+            if (!from || !to || y1 == null || y2 == null) return null;
+            const x1 = from.col * COL_W + SLOT_W;
+            const x2 = to.col * COL_W;
+            const mid = x1 + (x2 - x1) / 2;
+            return (
+              <path
+                key={`${edge.from}-${edge.to}`}
+                d={`M ${x1} ${y1 + SLOT_H / 2} H ${mid} V ${y2 + SLOT_H / 2} H ${x2}`}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              />
+            );
+          })}
+        </svg>
+
+        {columns.map((column) =>
+          column.matches.map((match) => (
+            <Slot key={match.id} match={match} x={column.col * COL_W} y={y.get(match.id) ?? 0} />
+          )),
+        )}
+      </div>
     </div>
   );
 }
+
 
 /* ------------------------------------------------------------------ *
  * Səhifədəki bracket-lərin qruplaşdırılması
