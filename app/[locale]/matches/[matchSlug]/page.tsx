@@ -18,6 +18,7 @@ import PredictionWidget from "@/components/matches/PredictionWidget";
 import { Link } from "@/i18n/navigation";
 import { localeAlternates } from "@/lib/localeAlternates";
 import { stageName } from "@/lib/stages";
+import { parseStream, showStream } from "@/lib/streams";
 import JsonLd from "@/components/seo/JsonLd";
 import { matchJsonLd } from "@/lib/structuredData";
 import { siteFormat } from "@/lib/dates";
@@ -132,6 +133,29 @@ export default async function MatchDetailPage({
   const isUpcoming = match.status === "UPCOMING";
   const isFinished = match.status === "FINISHED";
 
+  /**
+   * Yayım linki.
+   *
+   * Bitmiş matçda kanal linki GÖSTƏRİLMİR: «twitch.tv/blast» həmin an nə
+   * yayımlanırsa ona aparır, yəni dünənki matçın səhifəsindəki «İzlə» düyməsi
+   * bu gün tamam başqa matça göndərir. Konkret videoya işarə edən link isə
+   * qalıcıdır və təkrar kimi qalır — bax lib/streams.ts.
+   */
+  const stream = parseStream(match.streamUrl);
+  const watchLabel = !stream
+    ? ""
+    : isLive
+      ? locale === "az"
+        ? "Canlı izlə"
+        : "Watch live"
+      : isFinished
+        ? locale === "az"
+          ? "Təkrarı izlə"
+          : "Watch replay"
+        : locale === "az"
+          ? "Yayım"
+          : "Stream";
+
   const dateTimeFmt = siteFormat(locale, { dateStyle: "medium", timeStyle: "short" });
 
   const statsByTeam = new Map<string, typeof match.playerStats>();
@@ -221,17 +245,26 @@ export default async function MatchDetailPage({
                 <span className="text-xs text-foreground-muted">BO{match.bestOf}</span>
               </>
             )}
-            {/* The hover deepens the border rather than the wash: at 20% the
+            {/* Canlı olanda qırmızı və nəbzli; qalan hallarda sakit — matç
+                bitəndən sonra yanıb-sönən «canlı» nişanı yalan danışır.
+                The hover deepens the border rather than the wash: at 20% the
                 red text on its own tint drops to 4.29:1. */}
-            {match.streamUrl && (
+            {showStream(stream, match.status) && stream && (
               <a
-                href={match.streamUrl}
+                href={stream.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-live/40 bg-live/10 px-3 py-1 text-xs font-semibold text-live-fg hover:border-live/80 hover:bg-live/15"
+                className={
+                  isLive
+                    ? "mt-2 inline-flex items-center gap-1.5 rounded-full border border-live/40 bg-live/10 px-3 py-1 text-xs font-semibold text-live-fg hover:border-live/80 hover:bg-live/15"
+                    : "mt-2 inline-flex items-center gap-1.5 rounded-full border border-border-subtle px-3 py-1 text-xs font-semibold text-foreground-muted hover:border-brand-via/50 hover:text-foreground"
+                }
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-live" />
-                {locale === "az" ? "İzlə" : "Watch"}
+                {isLive && <span className="h-1.5 w-1.5 animate-glow-pulse rounded-full bg-live" />}
+                {watchLabel}
+                {stream.platform !== "other" && (
+                  <span className="font-normal opacity-70">· {stream.label}</span>
+                )}
               </a>
             )}
           </div>

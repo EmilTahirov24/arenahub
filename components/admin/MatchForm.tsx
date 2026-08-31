@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import AdminForm from "@/components/admin/AdminForm";
 import { inputClass, labelClass, primaryButtonClass } from "@/components/admin/formStyles";
+import type { AdminSaveState } from "@/lib/adminFormState";
 import type { Match, Team, Game, Tournament } from "@/app/generated/prisma/client";
 import { STAGE_SUGGESTIONS, isBracketStage, stageName } from "@/lib/stages";
 
@@ -38,7 +40,7 @@ export default function MatchForm({
   tournaments: Tournament[];
   /** Turnir səhifəsindən gələndə oyun və turnir öncədən doldurulur. */
   defaultTournament?: Tournament;
-  action: (formData: FormData) => Promise<void>;
+  action: (state: AdminSaveState, formData: FormData) => Promise<AdminSaveState>;
 }) {
   const [gameId, setGameId] = useState(match?.gameId ?? defaultTournament?.gameId ?? "");
 
@@ -49,7 +51,7 @@ export default function MatchForm({
   );
 
   return (
-    <form action={action} className="max-w-lg space-y-4">
+    <AdminForm action={action} submitClassName={primaryButtonClass}>
       <div>
         <label htmlFor="match-gameId" className={labelClass}>Oyun</label>
         <select
@@ -186,12 +188,25 @@ export default function MatchForm({
         </select>
       </div>
       <div>
-        <label htmlFor="match-streamUrl" className={labelClass}>Stream URL</label>
-        <input id="match-streamUrl" name="streamUrl" defaultValue={match?.streamUrl ?? ""} className={inputClass} />
+        <label htmlFor="match-streamUrl" className={labelClass}>Canlı yayım linki</label>
+        <input
+          id="match-streamUrl"
+          name="streamUrl"
+          type="url"
+          inputMode="url"
+          defaultValue={match?.streamUrl ?? ""}
+          className={inputClass}
+          placeholder="https://www.youtube.com/watch?v=..."
+        />
+        <p className="mt-1 text-xs text-foreground-muted">
+          YouTube, Twitch, Kick və ya təşkilatçının öz saytı — tam ünvan yazılır.
+          Matç səhifəsində <b>«Canlı izlə»</b> düyməsi kimi görünür.
+          <br />
+          Konkret <b>videoya</b> gedən link (youtube.com/watch?v=… və ya twitch.tv/videos/…) matç bitəndən sonra
+          <b> təkrar</b> kimi qalır. <b>Kanala</b> gedən link (twitch.tv/kanal) isə bitmiş matçda gizlədilir —
+          o, həmin an nə yayımlanırsa ona aparır, yəni başqa matça.
+        </p>
       </div>
-      <button type="submit" className={primaryButtonClass}>
-        Yadda saxla
-      </button>
-    </form>
+    </AdminForm>
   );
 }
