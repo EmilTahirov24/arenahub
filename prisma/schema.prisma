@@ -336,6 +336,14 @@ model Match {
   teamAScore  Int         @default(0)
   teamBScore  Int         @default(0)
   stage       String?
+  /// Which bracket on the source page this match belongs to — Liquipedia's own
+  /// bracket id. One event holds several: IEM Kraków has a play-in, two group
+  /// brackets and the playoffs, each with its own quarterfinal. Without this the
+  /// site drew them as one tree and showed five quarterfinals in one column.
+  bracketKey   String?
+  /// What that bracket is called, from the heading above it ("Playoffs",
+  /// "Group A"). Display only; `bracketKey` is what identifies the bracket.
+  bracketLabel String?
   starRating  Int         @default(1)
   streamUrl   String?
   createdAt   DateTime    @default(now())
