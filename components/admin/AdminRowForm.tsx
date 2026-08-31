@@ -45,7 +45,8 @@ export default function AdminRowForm({
         {/* aria-live: təsdiq yalnız çəkilmir, həm də səsləndirilir — düymənin
             özündə başqa heç bir əlamət yoxdur. */}
         <span aria-live="polite" className="text-xs">
-          {!pending && state?.ok && <span className="text-positive">Yadda saxlanıldı ✓</span>}
+          {!pending && state?.ok && !state.note && <span className="text-positive">Yadda saxlanıldı ✓</span>}
+          {!pending && state?.note && <span className="text-brand-via-fg">{state.note}</span>}
           {!pending && state?.error && <span className="text-live">{state.error}</span>}
         </span>
       </div>
