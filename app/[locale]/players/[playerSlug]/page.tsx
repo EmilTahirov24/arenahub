@@ -5,6 +5,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { Link } from "@/i18n/navigation";
 import { parseSocials } from "@/lib/socials";
+import { photoCredit } from "@/lib/playerPhotos";
 import PageShell from "@/components/layout/PageShell";
 import OwnerEditLink from "@/components/layout/OwnerEditLink";
 import PlayerAvatar from "@/components/common/PlayerAvatar";
@@ -81,12 +82,28 @@ export default async function PlayerProfilePage({
   );
 
   const socials = parseSocials(player.socials);
+  const credit = photoCredit(player.photoUrl);
 
   return (
     <PageShell>
       <JsonLd data={playerJsonLd(locale, player, currentMembership?.team)} />
       <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl border border-border-subtle bg-surface p-6">
-        <PlayerAvatar name={player.nickname} photoUrl={player.photoUrl} color={currentMembership?.team.primaryColor} size={72} />
+        <div className="flex flex-col items-center gap-1">
+          <PlayerAvatar name={player.nickname} photoUrl={player.photoUrl} color={currentMembership?.team.primaryColor} size={72} />
+          {/* Müəllifin adı lisenziyanın şərtidir, nəzakət deyil — CC BY və
+              CC BY-SA onu tələb edir. Tam siyahı /credits səhifəsindədir. */}
+          {credit && (
+            <a
+              href={credit.source}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="max-w-[92px] truncate text-center text-[10px] leading-tight text-foreground-muted hover:text-foreground hover:underline"
+              title={`${credit.author} · ${credit.license}`}
+            >
+              {credit.author}
+            </a>
+          )}
+        </div>
         <div className="flex-1">
           <div className="mb-1 flex items-center gap-2">
             <GameChip name={player.game.shortName} color={player.game.accentColor} />
