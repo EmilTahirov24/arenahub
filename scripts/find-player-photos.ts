@@ -71,6 +71,31 @@ const ESPORTS = /\b(esports?|e-sports?|electronic sports?|pro(fessional)? gamer|
 /** Licences that permit reuse with attribution. Anything else is not used. */
 const FREE_LICENCE = /^(cc[ -]by([ -]sa)?([ -]\d(\.\d)?)?|cc0|public domain|pd)/i;
 
+/**
+ * Events whose name in a file title ties the picture to esports.
+ *
+ * Used only by the second pass (`--commons`), which searches Commons for a
+ * player's REAL name. That pass is far less safe than Wikidata and needs its
+ * own gate — see `commonsPass`.
+ */
+const EVENT =
+  /\b(iem|esl|blast|pgl|dreamhack|lck|lec|lpl|lcs|vct|csgo|cs:go|the international|valorant champions|e-?sports?)\b/i;
+
+/**
+ * Minimum handle length for the "the file title names the player" test.
+ *
+ * Ölçüldü: «33» ləqəbi `20190407 103310-COLLAGE.jpg` faylına uydu, çünki rəqəm
+ * sətrin içindədir. Qısa ləqəb sübut deyil.
+ */
+const MIN_HANDLE = 3;
+
+/** Ləqəb fayl adında AYRICA SÖZ kimi keçirmi. */
+function titleNamesPlayer(title: string, nickname: string): boolean {
+  if (nickname.length < MIN_HANDLE) return false;
+  const safe = nickname.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^a-z0-9])${safe}([^a-z0-9]|$)`, "i").test(title);
+}
+
 type Candidate = {
   slug: string;
   nickname: string;
@@ -87,7 +112,92 @@ type Candidate = {
   width: number;
   height: number;
   imageUrl: string;
+  /** Hansı yolla tapılıb — nəzərdən keçirmə zamanı vacibdir. */
+  via: "wikidata" | "commons-realname";
 };
+
+/**
+ * Second pass: search Commons for the player's real name.
+ *
+ * Wikidata is the safe route and it is exhausted — a deeper search (limit 20
+ * instead of 5) over the top-20 teams' rosters found zero additional pictures.
+ * The players who remain simply have no Wikidata item.
+ *
+ * A real name is much less ambiguous than a handle ("Dan Madesclaire" against
+ * "donk"), but on its own it is still not enough. Measured on the first 70
+ * players: 16 hits, and NINE of them were wrong — a 1941 portrait of a Czech
+ * actor, a micrograph of a cyanobacterium, a football stadium, a butterfly, a
+ * US Marines training photo.
+ *
+ * So a name match alone is not accepted as evidence. The file's own title must
+ * also tie it to this player: either it contains the handle, or it names an
+ * esports event. That gate keeps apEX ("ApEX IEM Chicago...") and XANTARES
+ * ("Xantares in 2020") and rejects all nine wrong ones. Some correct pictures
+ * are lost with it, and that is the right way round — every candidate still
+ * goes to a person to look at afterwards.
+ */
+async function commonsPass(
+  players: { slug: string; nickname: string; country: string | null; firstName: string | null; lastName: string | null; game: { slug: string } }[],
+): Promise<Candidate[]> {
+  const out: Candidate[] = [];
+  for (const p of players) {
+    if (!p.firstName || !p.lastName) continue;
+    const real = `${p.firstName} ${p.lastName}`;
+    let hits: { title: string }[] = [];
+    try {
+      const s = await wiki("commons.wikimedia.org", {
+        action: "query",
+        list: "search",
+        srsearch: `"${real}" filetype:bitmap`,
+        srnamespace: "6",
+        srlimit: "4",
+      });
+      hits = s?.query?.search ?? [];
+    } catch {
+      continue;
+    }
+    // Ad özü sübut deyil: fayl adı ya ləqəbi, ya turniri adlandırmalıdır.
+    const usable = hits.filter(
+      (h) => titleNamesPlayer(h.title, p.nickname) || EVENT.test(h.title),
+    );
+    if (!usable.length) continue;
+
+    const info = await wiki("commons.wikimedia.org", {
+      action: "query",
+      titles: usable.map((h) => h.title).join("|"),
+      prop: "imageinfo",
+      iiprop: "extmetadata|url|size",
+    });
+    for (const pg of info?.query?.pages ?? []) {
+      const ii = pg?.imageinfo?.[0];
+      if (!ii) continue;
+      const text = (k: string) =>
+        ((ii.extmetadata ?? {})[k]?.value ?? "").toString().replace(/<[^>]*>/g, "").trim();
+      const license = text("LicenseShortName");
+      if (!FREE_LICENCE.test(license)) continue;
+      out.push({
+        slug: p.slug,
+        nickname: p.nickname,
+        game: p.game.slug,
+        ourCountry: p.country,
+        entity: "—",
+        description: `Commons axtarışı: «${real}»`,
+        wikidataCountry: null,
+        countryAgrees: null,
+        file: pg.title,
+        license,
+        author: text("Artist") || "—",
+        source: `https://commons.wikimedia.org/wiki/${encodeURIComponent(pg.title)}`,
+        width: ii.width ?? 0,
+        height: ii.height ?? 0,
+        imageUrl: ii.url ?? "",
+        via: "commons-realname",
+      });
+      break;
+    }
+  }
+  return out;
+}
 
 async function main() {
   const limit = Number(arg("--limit")) || 0;
@@ -272,7 +382,17 @@ async function main() {
       width: ii?.width ?? 0,
       height: ii?.height ?? 0,
       imageUrl: ii?.url ?? "",
+      via: "wikidata",
     });
+  }
+
+  // İkinci mənbə: yalnız Wikidata heç nə verməyən oyunçular üçün.
+  if (process.argv.includes("--commons")) {
+    const covered = new Set(out.map((c) => c.slug));
+    const rest = players.filter((p) => !covered.has(p.slug));
+    console.log(`
+Commons (əsl ad) yoxlanılır: ${rest.length} oyunçu...`);
+    out.push(...(await commonsPass(rest)));
   }
 
   out.sort((a, b) => a.nickname.localeCompare(b.nickname));
