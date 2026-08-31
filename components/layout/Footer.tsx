@@ -55,6 +55,12 @@ export default async function Footer() {
               (CC BY-SA 3.0)
             </a>
           </span>
+          {/* Oyunçu şəkilləri CC BY / CC BY-SA-dır və müəllifin adı lisenziyanın
+              şərtidir. 40 pikselik avatarın yanında ad yazmaq mümkün deyil, ona
+              görə tam siyahı ayrıca səhifədədir. */}
+          <Link href="/credits" className="hover:text-foreground hover:underline">
+            {t("footer.credits")}
+          </Link>
           <Link href="/terms" className="hover:text-foreground hover:underline">
             {t("footer.terms")}
           </Link>
