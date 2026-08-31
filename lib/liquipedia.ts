@@ -791,8 +791,322 @@ export function parseMatches(wikitext: string): ParsedMatch[] {
  * Team names come back as page titles, the same form `resolveTeamCodes`
  * returns, so both routes feed the caller identical names.
  */
+/* ------------------------------------------------------------------ *
+ * Rounds on a rendered page
+ * ------------------------------------------------------------------ */
+
+/** From `<div` at `start`, the index just past its matching `</div>`. */
+function divEnd(html: string, start: number): number {
+  const re = /<div[\s>]|<\/div>/g;
+  re.lastIndex = start;
+  let depth = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) {
+    if (m[0] === "</div>") {
+      depth--;
+      if (depth === 0) return re.lastIndex;
+    } else depth++;
+  }
+  return html.length;
+}
+
+/** Class list membership. `\b` is useless here: `-` is a word boundary, so
+ *  `\bbrkts-match\b` also matches `brkts-match-info-popup`. */
+function hasClass(attrs: string, token: string): boolean {
+  const cls = /class="([^"]*)"/.exec(attrs)?.[1];
+  return cls ? cls.split(/\s+/).includes(token) : false;
+}
+
+/**
+ * The round names in one header row, left to right.
+ *
+ * Each name is written three times over — full, short, abbreviated — for the
+ * three widths the bracket renders at, and the full form is repeated once as
+ * the div's own text before the options begin. Only the first is wanted.
+ */
+function roundHeaderNames(row: string): string[] {
+  const out: string[] = [];
+  for (const m of row.matchAll(
+    /<div class="brkts-header brkts-header-div"[^>]*>([\s\S]*?)<div class="brkts-header-option"/g,
+  )) {
+    let text = decodeEntities(m[1].replace(/<[^>]+>/g, "")).replace(/\s+/g, " ").trim();
+    const half = text.length / 2;
+    if (text.length % 2 === 0 && text.slice(0, half) === text.slice(half)) text = text.slice(0, half);
+    if (text) out.push(text);
+  }
+  return out;
+}
+
+type RenderedMatch = { key: string; winner: string | null; teams: string[]; bracketId: string | null };
+
+/**
+ * Section heading above a point in the page, so a bracket can be named.
+ *
+ * The rendered page keeps the same headings the wikitext has — "Playoffs",
+ * "Group Stage", "Main Event" — which is what the event page groups by.
+ */
+function headingBefore(html: string, at: number): string | null {
+  let text: string | null = null;
+  for (const m of html.matchAll(/<h[234][^>]*>([\s\S]{0,120}?)<\/h[234]>/g)) {
+    if (m.index! >= at) break;
+    const cleaned = decodeEntities(m[1].replace(/<[^>]+>/g, "")).replace(/\s+/g, " ").trim();
+    if (cleaned) text = cleaned;
+  }
+  return text;
+}
+
+/** Identity shared with `parseRenderedMatches`, so the two can be joined. */
+function renderedKey(teamA: string, teamB: string, timestamp: string): string {
+  return `${teamA}|${teamB}|${timestamp}`;
+}
+
+/** Teams, winner and identity of one `brkts-match` block. */
+function readMatchBlock(block: string, wiki: string): RenderedMatch | null {
+  const sides = splitOn(block, '<div class="match-info-header-opponent');
+  if (sides.length < 2) return null;
+  const left = sides.find((s) => s.startsWith(" match-info-header-opponent-left")) ?? sides[0];
+  const right = sides.find((s) => s !== left) ?? sides[1];
+  const teamA = teamNameFrom(left, wiki);
+  const teamB = teamNameFrom(right, wiki);
+  if (!teamA || !teamB) return null;
+
+  const scores = [...block.matchAll(/scoreholder-score[^"]*"[^>]*>\s*([\dWLF-]+)\s*</g)].map((m) => m[1]);
+  const a = Number.parseInt(scores[0] ?? "", 10) || 0;
+  const b = Number.parseInt(scores[1] ?? "", 10) || 0;
+  const timestamp = block.match(/data-timestamp="(\d+)"/)?.[1] ?? "";
+
+  return {
+    key: renderedKey(teamA, teamB, timestamp),
+    winner: a > b ? teamA : b > a ? teamB : null,
+    teams: [teamA, teamB],
+    // Every match links to its own page in Liquipedia's match database, and the
+    // id there is prefixed with the bracket's own — "Match:ID CHAMP25GrA 0001".
+    // That prefix is stable across edits to the page, which a byte offset into
+    // the HTML is not: a paragraph added above would renumber every bracket and
+    // split each one in two on the next import.
+    bracketId: block.match(/title="Match:ID ([^ "]+)/)?.[1] ?? null,
+  };
+}
+
+/**
+ * Which round each match on a RENDERED page belongs to.
+ *
+ * These wikis publish no match data in wikitext, so the round is not written
+ * anywhere as text. It is in the shape of the markup: Liquipedia renders a
+ * bracket as a recursive tree, where the container of a match also contains the
+ * whole sub-bracket that feeds it —
+ *
+ *   brkts-round-body                 <- the final
+ *     brkts-round-lower
+ *       brkts-round-body             <- a semifinal
+ *         brkts-round-lower
+ *           brkts-round-body  ...    <- its two quarterfinals
+ *         brkts-round-center  match  <- the semifinal itself
+ *     brkts-round-center  match      <- the final itself
+ *
+ * so **how deeply a match is nested is its round**, counted from the right. The
+ * header row above lists the round names left to right, and the two line up.
+ *
+ * An earlier pass through this file concluded the mapping could not be read and
+ * left these wikis without rounds. That was wrong, and wrong in a specific way:
+ * it looked for one container per column and found a single `brkts-round-body`
+ * holding everything, without noticing that the columns were nested inside it.
+ *
+ * Nothing here is trusted on structure alone. `verifyChain` re-derives the
+ * bracket from the results — the winner of a match must appear in the next
+ * round — and a bracket that fails is returned with no rounds at all rather
+ * than with guessed ones.
+ */
+function renderedStages(
+  html: string,
+  wiki: string,
+): Map<string, { stage: string; bracketId: string; bracketLabel: string | null }> {
+  const out = new Map<string, { stage: string; bracketId: string; bracketLabel: string | null }>();
+  const headerRows = [...html.matchAll(/<div class="brkts-round-header"/g)].map((m) => m.index!);
+  const rows: ParsedRow[] = [];
+
+  for (let i = 0; i < headerRows.length; i++) {
+    const names = roundHeaderNames(html.slice(headerRows[i], divEnd(html, headerRows[i])));
+    if (names.length === 0) continue;
+
+    // A double-elimination bracket nests its lower half inside the upper one and
+    // gives it its own header row, so each row owns only the markup up to the
+    // next row. Reading past it would file lower-bracket matches under upper
+    // rounds — the two halves reach identical depths.
+    const from = divEnd(html, headerRows[i]);
+    const stopAt = headerRows[i + 1] ?? html.length;
+
+    const byDepth = new Map<number, RenderedMatch[]>();
+    const re = /<div([^>]*)>|<\/div>/g;
+    re.lastIndex = from;
+    const isBodyStack: boolean[] = [];
+    let open = 0;
+    let bodyDepth = 0;
+    let m: RegExpExecArray | null;
+
+    while ((m = re.exec(html))) {
+      if (m.index >= stopAt) break;
+      if (m[0] === "</div>") {
+        open--;
+        if (open < 0) break;
+        if (isBodyStack.pop()) bodyDepth--;
+        continue;
+      }
+      const attrs = m[1] ?? "";
+      open++;
+      const isBody = hasClass(attrs, "brkts-round-body");
+      isBodyStack.push(isBody);
+      if (isBody) bodyDepth++;
+      if (hasClass(attrs, "brkts-match")) {
+        const parsed = readMatchBlock(html.slice(m.index, divEnd(html, m.index)), wiki);
+        if (parsed) (byDepth.get(bodyDepth) ?? byDepth.set(bodyDepth, []).get(bodyDepth)!).push(parsed);
+      }
+    }
+
+    // Deepest first: that is the leftmost column, the one the header row names
+    // first. A trailing header with no matches ("Qualified" is a column of
+    // qualified-team boxes, not games) simply goes unused.
+    const columns = [...byDepth.keys()].sort((a, b) => b - a).map((d) => byDepth.get(d)!);
+    if (columns.length === 0 || columns.length > names.length) continue;
+    if (!verifyChain(columns)) continue;
+
+    // The bracket's own id, taken from the matches in it. A double-elimination
+    // bracket writes two header rows but is ONE bracket, and its two halves
+    // share this id — which is what keeps the upper and lower rounds of the
+    // same event in one tree on the site.
+    const bracketId =
+      columns.flat().map((m) => m.bracketId).find(Boolean) ?? `r${headerRows[i]}`;
+    const bracketLabel = headingBefore(html, headerRows[i]);
+
+    for (let c = 0; c < columns.length; c++) {
+      const stage = normaliseStage(names[c]);
+      if (!stage) continue;
+      for (const match of columns[c]) {
+        out.set(match.key, { stage, bracketId, bracketLabel });
+      }
+    }
+
+    rows.push({ names, columns, bracketId, bracketLabel });
+  }
+
+  attachGrandFinal(html, wiki, rows, out);
+  return out;
+}
+
+type ParsedRow = {
+  names: string[];
+  columns: RenderedMatch[][];
+  bracketId: string;
+  bracketLabel: string | null;
+};
+
+/**
+ * The grand final, which no header row's own region contains.
+ *
+ * A double-elimination bracket is one tree with the lower half nested inside
+ * the upper, and Liquipedia puts the lower half's header row *inside* that
+ * tree. Each row therefore owns the markup up to the next row — and the grand
+ * final sits at the very outside, after the nested row, so it falls outside
+ * every region. It is left with no round, and the most-watched match of the
+ * event ends up in the "other matches" list.
+ *
+ * It is recovered by who is in it rather than by where it sits: the grand final
+ * is the match between the winner of the upper bracket and the winner of the
+ * lower one. Both are already known here, so the claim is checked rather than
+ * guessed — no pair, no round.
+ */
+function attachGrandFinal(
+  html: string,
+  wiki: string,
+  rows: ParsedRow[],
+  out: Map<string, { stage: string; bracketId: string; bracketLabel: string | null }>,
+): void {
+  const winnerOfLastColumn = (row: ParsedRow): string | null => {
+    const last = row.columns[row.columns.length - 1];
+    return last?.length === 1 ? last[0].winner : null;
+  };
+
+  const blocks = allMatchBlocks(html, wiki);
+  const done = new Set<string>();
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    if (done.has(row.bracketId)) continue;
+
+    // The two halves of one bracket. A single-elimination bracket has only one
+    // row and therefore no grand final to find.
+    const other = rows.find((r, j) => j !== i && r.bracketId === row.bracketId);
+    if (!other) continue;
+
+    const upper = winnerOfLastColumn(row);
+    const lower = winnerOfLastColumn(other);
+    if (!upper || !lower || upper === lower) continue;
+
+    // Exactly one, or none. Two teams that met twice outside the bracket give
+    // no way to tell which meeting was the final, and a coin toss between them
+    // is precisely the kind of guess this file refuses to make.
+    const candidates = blocks
+      .map(([, match]) => match)
+      .filter((m) => !out.has(m.key) && m.teams.includes(upper) && m.teams.includes(lower));
+    if (candidates.length !== 1) continue;
+
+    out.set(candidates[0].key, {
+      stage: "Grand Final",
+      bracketId: row.bracketId,
+      bracketLabel: row.bracketLabel,
+    });
+    done.add(row.bracketId);
+  }
+}
+
+/**
+ * Every match block on the page, in document order.
+ *
+ * Match lists are included as well as brackets, because the grand final is
+ * often not drawn inside the bracket at all — the VCT league pages put it in a
+ * list of its own below, and searching only the bracket would never find it.
+ */
+function allMatchBlocks(html: string, wiki: string): [number, RenderedMatch][] {
+  const out: [number, RenderedMatch][] = [];
+  for (const m of html.matchAll(/<div([^>]*)>/g)) {
+    const attrs = m[1] ?? "";
+    if (!hasClass(attrs, "brkts-match") && !hasClass(attrs, "brkts-matchlist-match")) continue;
+    const parsed = readMatchBlock(html.slice(m.index!, divEnd(html, m.index!)), wiki);
+    if (parsed) out.push([m.index!, parsed]);
+  }
+  return out;
+}
+
+/**
+ * Does the parsed shape agree with who actually won?
+ *
+ * A bracket narrows, and a team reaches a round by winning the previous one.
+ * Both are checked against the results, so a misread of the markup is caught
+ * before it becomes a claim about a real team's run.
+ *
+ * Unplayed rounds are skipped rather than failed: a bracket that has only begun
+ * has nothing to contradict yet.
+ */
+function verifyChain(columns: RenderedMatch[][]): boolean {
+  for (let i = 0; i + 1 < columns.length; i++) {
+    if (columns[i].length < columns[i + 1].length) return false;
+
+    const winners = new Set(columns[i].map((m) => m.winner).filter(Boolean) as string[]);
+    if (winners.size === 0) continue;
+
+    const nextTeams = new Set(columns[i + 1].flatMap((m) => m.teams));
+    if (![...winners].some((w) => nextTeams.has(w))) return false;
+  }
+  return true;
+}
+
 export function parseRenderedMatches(html: string, wiki: string): ParsedMatch[] {
   const out: ParsedMatch[] = [];
+
+  // Rounds come from the shape of the bracket markup rather than from any text
+  // in the popups, so they are worked out once for the page and joined on by
+  // the same identity the deduplication below uses.
+  const stages = renderedStages(html, wiki);
 
   // Two containers, one shape. A tournament page wraps each match in a popup
   // attached to its bracket; the wiki-wide match list on `Liquipedia:Matches`
@@ -825,6 +1139,8 @@ export function parseRenderedMatches(html: string, wiki: string): ParsedMatch[] 
     const timestamp = Number.parseInt(popup.match(/data-timestamp="(\d+)"/)?.[1] ?? "", 10);
     const finished = /data-finished="finished"/.test(popup);
 
+    const round = stages.get(renderedKey(teamA, teamB, popup.match(/data-timestamp="(\d+)"/)?.[1] ?? ""));
+
     out.push({
       teamA,
       teamB,
@@ -837,15 +1153,11 @@ export function parseRenderedMatches(html: string, wiki: string): ParsedMatch[] 
       winner: scoreA > scoreB ? 1 : scoreB > scoreA ? 2 : null,
       maps: parseRenderedMaps(popup, wiki),
       played: finished && (scoreA > 0 || scoreB > 0),
-      // A rendered bracket does name its rounds, in a header row above the
-      // grid — but the grid is CSS, so which column a match sits in cannot be
-      // read from the markup order. On the League page a four-header row sits
-      // above three matches, one header being "Qualified", which holds no
-      // match at all. Any pairing would be a guess, and a match filed under
-      // the wrong round is a fabricated claim about a real team, so these
-      // pages keep no round rather than an invented one.
-      stage: null,
-      bracket: null,
+      // Null unless the bracket both parsed and agreed with the results — see
+      // `renderedStages`. A match outside any bracket (a group table, the
+      // wiki-wide match list) has no round to have.
+      stage: round?.stage ?? null,
+      bracket: round ? { id: round.bracketId, label: round.bracketLabel } : null,
       tournament: tournamentNameFrom(popup),
     });
   }
