@@ -6,6 +6,20 @@ import AdminPagination from "@/components/admin/AdminPagination";
 import type { Prisma } from "@/app/generated/prisma/client";
 import { siteFormat } from "@/lib/dates";
 
+
+/**
+ * Admin panelində ani naviqasiya məqsəd deyil.
+ *
+ * Bu səhifələr hər açılışda bazadan TƏZƏ data oxuyur — admin dünənki siyahını
+ * görməməlidir. Next isə keşlənməmiş oxunu ani naviqasiyanın qarşısını alan
+ * hal kimi bildirir və dev konsolunu bu xəbərdarlıqla doldurur; e2e onları
+ * problem kimi yığır və REAL konsol səhvləri həmin siyahıda itir.
+ *
+ * `instant = false` seçimi sənədin təklif etdiyi «Allow blocking route»
+ * variantıdır: production davranışı dəyişmir, sadəcə niyyət yazılır.
+ */
+export const instant = false;
+
 const TIER_COLOR: Record<string, string> = { S: "#facc15", A: "#22d3ee", B: "#a3a3a3", C: "#78716c" };
 
 const PER_PAGE = 50;

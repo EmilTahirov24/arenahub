@@ -10,6 +10,20 @@ import { groupBrackets, splitPlayoff } from "@/components/events/Bracket";
 import { isBracketStage, stageName, describeStage } from "@/lib/stages";
 import { siteFormat } from "@/lib/dates";
 
+
+/**
+ * Admin panelində ani naviqasiya məqsəd deyil.
+ *
+ * Bu səhifələr hər açılışda bazadan TƏZƏ data oxuyur — admin dünənki siyahını
+ * görməməlidir. Next isə keşlənməmiş oxunu ani naviqasiyanın qarşısını alan
+ * hal kimi bildirir və dev konsolunu bu xəbərdarlıqla doldurur; e2e onları
+ * problem kimi yığır və REAL konsol səhvləri həmin siyahıda itir.
+ *
+ * `instant = false` seçimi sənədin təklif etdiyi «Allow blocking route»
+ * variantıdır: production davranışı dəyişmir, sadəcə niyyət yazılır.
+ */
+export const instant = false;
+
 export default async function EditTournamentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [tournament, games] = await Promise.all([
@@ -132,8 +146,13 @@ export default async function EditTournamentPage({ params }: { params: Promise<{
           {participants.length === 0 && <p className="text-sm text-foreground-muted">Qatılan komanda yoxdur.</p>}
         </div>
 
-        <form action={addParticipantWithId} className="mt-4 flex items-end gap-2">
-          <div className="flex-1">
+        <AdminRowForm
+          action={addParticipantWithId}
+          submitLabel="Əlavə et"
+          submitClassName={secondaryButtonClass}
+          className="mt-4 flex flex-wrap items-end gap-2"
+        >
+          <div className="min-w-[12rem] flex-1">
             <label htmlFor="tournaments-id-teamId" className={labelClass}>Komanda</label>
             <select id="tournaments-id-teamId" name="teamId" required className={inputClass}>
               <option value="">Seçin</option>
@@ -146,12 +165,9 @@ export default async function EditTournamentPage({ params }: { params: Promise<{
           </div>
           <div className="w-24">
             <label htmlFor="tournaments-id-seed" className={labelClass}>Seed</label>
-            <input id="tournaments-id-seed" name="seed" type="number" className={inputClass} />
+            <input id="tournaments-id-seed" name="seed" type="number" min="1" className={inputClass} />
           </div>
-          <button type="submit" className={secondaryButtonClass}>
-            Əlavə et
-          </button>
-        </form>
+        </AdminRowForm>
       </div>
 
       <div className="mt-10 max-w-lg">
@@ -221,7 +237,12 @@ export default async function EditTournamentPage({ params }: { params: Promise<{
           {prizes.length === 0 && <p className="text-sm text-foreground-muted">Bölgü yazılmayıb.</p>}
         </div>
 
-        <form action={addPrizeWithId} className="mt-4 flex flex-wrap items-end gap-2">
+        <AdminRowForm
+          action={addPrizeWithId}
+          submitLabel="Əlavə et"
+          submitClassName={secondaryButtonClass}
+          className="mt-4 flex flex-wrap items-end gap-2"
+        >
           <div className="w-20">
             <label htmlFor="tournaments-id-placeFrom" className={labelClass}>Yerdən</label>
             <input id="tournaments-id-placeFrom" name="placeFrom" type="number" min="1" required className={inputClass} />
@@ -246,17 +267,26 @@ export default async function EditTournamentPage({ params }: { params: Promise<{
             <label htmlFor="tournaments-id-label" className={labelClass}>Qeyd</label>
             <input id="tournaments-id-label" name="label" placeholder="Winner" className={inputClass} />
           </div>
-          <button type="submit" className={secondaryButtonClass}>
-            Əlavə et
+        </AdminRowForm>
+      </div>
+
+      <div className="mt-8">
+        {/* Ölçüldü: turnir silinəndə matçlar SİLİNMİR — tournamentId null olur
+            və matç saytda turnirsiz qalır. Bu, geri qaytarıla bilməyən
+            əməliyyatdır, ona görə nəticəsi düymədən ƏVVƏL yazılır. */}
+        {tournamentMatches.length > 0 && (
+          <p className="mb-2 max-w-lg rounded-md border border-live/40 bg-live/10 px-3 py-2 text-xs text-live">
+            Bu turnirin <b>{tournamentMatches.length} matçı</b> var. Turnir silinəndə matçlar silinmir —
+            turnirsiz qalır və saytda turnir adı olmadan görünür.
+            {participants.length > 0 && <> İştirakçı sətirləri və mükafat bölgüsü isə silinir.</>}
+          </p>
+        )}
+        <form action={deleteWithId}>
+          <button type="submit" className={dangerButtonClass}>
+            Turniri sil
           </button>
         </form>
       </div>
-
-      <form action={deleteWithId} className="mt-8">
-        <button type="submit" className={dangerButtonClass}>
-          Turniri sil
-        </button>
-      </form>
     </div>
   );
 }

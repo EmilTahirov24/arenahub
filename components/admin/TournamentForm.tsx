@@ -1,5 +1,7 @@
 import ImageUpload from "@/components/forms/ImageUpload";
+import AdminForm from "@/components/admin/AdminForm";
 import { inputClass, labelClass, primaryButtonClass } from "@/components/admin/formStyles";
+import type { AdminSaveState } from "@/lib/adminFormState";
 import type { Tournament, Game } from "@/app/generated/prisma/client";
 
 const TIERS = ["S", "A", "B", "C"] as const;
@@ -17,10 +19,10 @@ export default function TournamentForm({
 }: {
   tournament?: Tournament;
   games: Game[];
-  action: (formData: FormData) => Promise<void>;
+  action: (state: AdminSaveState, formData: FormData) => Promise<AdminSaveState>;
 }) {
   return (
-    <form action={action} className="max-w-lg space-y-4">
+    <AdminForm action={action} submitClassName={primaryButtonClass}>
       <div>
         <label htmlFor="tournament-name" className={labelClass}>Ad</label>
         <input id="tournament-name" name="name" required defaultValue={tournament?.name} className={inputClass} />
@@ -97,9 +99,6 @@ export default function TournamentForm({
           ))}
         </select>
       </div>
-      <button type="submit" className={primaryButtonClass}>
-        Yadda saxla
-      </button>
-    </form>
+    </AdminForm>
   );
 }
