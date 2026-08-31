@@ -339,7 +339,13 @@ async function main() {
     const raw = Buffer.from(await res.arrayBuffer());
     // `contain` saxlayır ki, geniş loqo kəsilməsin; fon şəffaf qalır.
     const png = await sharp(raw)
-      .resize(SIZE, SIZE, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      // Kvadrata DOLDURULMUR. Əvvəl hər loqo 256x256 şəffaf kətana yerləşdirilirdi;
+      // geniş söznişan (Vitality 3.46, LOUD 5.4 nisbətində) beləliklə kətanın
+      // üçdə birini tuturdu və 28 piksellik xanada 8 piksellik zolağa çevrilirdi.
+      // İndi öz nisbəti saxlanılır və uzun kənar SIZE olur; xananın enini
+      // components/common/TeamAvatar.tsx verir.
+      .trim({ threshold: 1 })
+      .resize(SIZE, SIZE, { fit: "inside" })
       .png({ compressionLevel: 9 })
       .toBuffer();
 
