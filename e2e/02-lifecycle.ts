@@ -261,6 +261,34 @@ async function main() {
     assert(body.includes("status: LIVE"), "status LIVE olmadı");
   });
 
+  await check("oxunmayan yayım linki səbəbi ilə rədd olunur", async () => {
+    await gotoPage(page, `${BASE}/admin/matches/${matchId}`);
+    await page.fill('input[name="streamUrl"]', "blast");
+    // Sahə type="url"-dur, yəni brauzer onsuz da göndərməyə qoymur. Server
+    // tərəfini sınamaq üçün brauzerin yoxlaması söndürülür: panelə gələn sorğu
+    // həmişə formadan gəlmir.
+    await page.evaluate(() => {
+      document.querySelectorAll<HTMLFormElement>("form").forEach((el) => (el.noValidate = true));
+    });
+    await submitForm(page, FORM.match).catch(() => {});
+    const body = await visibleText(page);
+    assert(/https:\/\/ ilə başlamalıdır/.test(body), "səbəb yazılmadı");
+    const row = await prisma.match.findUnique({ where: { id: matchId }, select: { streamUrl: true } });
+    assert(row?.streamUrl == null, `yararsız link bazaya düşdü: ${row?.streamUrl}`);
+  });
+
+  await check("canlı matçda kanal linki «Canlı izlə» kimi görünür", async () => {
+    await gotoPage(page, `${BASE}/admin/matches/${matchId}`);
+    await page.fill('input[name="streamUrl"]', "https://www.twitch.tv/blastpremier");
+    await submitForm(page, FORM.match);
+
+    const m = await prisma.match.findUnique({ where: { id: matchId }, select: { slug: true } });
+    await gotoPage(page, `${BASE}/az/matches/${m!.slug}`);
+    const body = await visibleText(page);
+    assert(/Canlı izlə/.test(body), "canlı yayım düyməsi yoxdur");
+    assert(/Twitch/.test(body), "platformanın adı yazılmır");
+  });
+
   await check("birinci xəritə seriya skorunu 1:0 edir", async () => {
     await gotoPage(page, `${BASE}/admin/matches/${matchId}/live`);
     const form = page.locator(FORM.newMap);
@@ -351,6 +379,20 @@ async function main() {
     const body = await visibleText(page);
     assert(body.includes(teamAName), "iştirakçı görünmür");
     assert(/10[\s,.]?000/.test(body), "mükafat məbləği görünmür");
+  });
+
+  await check("bitmiş matçda kanal linki gizlənir", async () => {
+    // twitch.tv/kanal həmin an nə yayımlanırsa ona aparır. Dünənki matçın
+    // səhifəsində «İzlə» düyməsi saxlamaq adamı BAŞQA matça göndərmək deməkdir.
+    const m = await prisma.match.findUnique({
+      where: { id: matchId },
+      select: { slug: true, status: true, streamUrl: true },
+    });
+    assert(m?.status === "FINISHED", `matç hələ bitməyib: ${m?.status}`);
+    assert(m?.streamUrl, "yayım linki yazılmayıb — yoxlama mənasızdır");
+    await gotoPage(page, `${BASE}/az/matches/${m!.slug}`);
+    const body = await visibleText(page);
+    assert(!/Canlı izlə|Təkrarı izlə/.test(body), "bitmiş matçda ölü yayım düyməsi qaldı");
   });
 
   await check("matçı olan turnirdə silmənin nəticəsi əvvəlcədən yazılır", async () => {
