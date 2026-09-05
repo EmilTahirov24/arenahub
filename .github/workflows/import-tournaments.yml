@@ -60,7 +60,7 @@ jobs:
       # package-lock.json is written by npm 11 and carries `allowScripts`, which
       # only npm 11 understands. Node 22 ships npm 10, so the runner has to stay
       # on the major the lockfile came from.
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
