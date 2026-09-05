@@ -26,33 +26,47 @@ jobs:
   docker:
     name: docker compose up
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
       - name: Start the stack
         run: docker compose up -d --build
 
-      # The container migrates, seeds and builds before serving, so the first
-      # response takes a couple of minutes. Poll rather than sleep on a guess.
+      # The container migrates, seeds and builds before it serves, so the first
+      # response is minutes away. Poll rather than sleep on a guess, and say
+      # what the container is doing while waiting — a silent wait that fails
+      # tells you nothing about which stage it died in.
       - name: Wait for the site
         run: |
-          for i in $(seq 1 60); do
-            if curl -fsS http://localhost:3000/az > /dev/null; then
-              echo "up after ${i} attempts"
+          for i in $(seq 1 90); do
+            if curl -fsS http://localhost:3000/az > /dev/null 2>&1; then
+              echo "site answered after $((i * 10))s"
               exit 0
+            fi
+            if [ $((i % 6)) -eq 0 ]; then
+              echo "--- still waiting, $((i * 10))s in; last container lines: ---"
+              docker compose logs --no-color --tail=5 web || true
             fi
             sleep 10
           done
-          echo "site did not answer in time"
-          docker compose logs --no-color
+          echo "site did not answer within 15 minutes"
           exit 1
 
       - name: The page is really the site
         run: curl -fsS http://localhost:3000/az | grep -q "ArenaHub"
 
-      - name: Logs on failure
+      # Written to the job summary, not just the log: the summary is readable
+      # through the public API, so a failure can be diagnosed without a token.
+      - name: Container logs on failure
         if: failure()
-        run: docker compose logs --no-color
+        run: |
+          {
+            echo '## Container logs'
+            echo '```'
+            docker compose logs --no-color --tail=120 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Stop the stack
         if: always()
