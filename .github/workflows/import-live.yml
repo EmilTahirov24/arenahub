@@ -65,7 +65,7 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # package-lock.json is written by npm 11 and carries `allowScripts`, which
       # only npm 11 understands. Node 22 ships npm 10, so the runner has to stay
