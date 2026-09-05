@@ -131,6 +131,10 @@ change, and it is written down rather than left as a silent pin.
 
 ## Engineering decisions
 
+Six of these are written up properly in [docs/decisions/](docs/decisions/) —
+context, decision, and what following it costs. The summary below is the short
+version.
+
 ### "No error" is not the same as "correct"
 
 The three worst bugs in this project all ran without throwing anything.
