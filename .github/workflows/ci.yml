@@ -1,0 +1,59 @@
+# Type check, lint, unit tests — and proof that `docker compose up` actually
+# works. The README claims it does; this is what makes that a fact rather than
+# an assertion.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    name: Types, lint, unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npm run test
+
+  docker:
+    name: docker compose up
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start the stack
+        run: docker compose up -d --build
+
+      # The container migrates, seeds and builds before serving, so the first
+      # response takes a couple of minutes. Poll rather than sleep on a guess.
+      - name: Wait for the site
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:3000/az > /dev/null; then
+              echo "up after ${i} attempts"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "site did not answer in time"
+          docker compose logs --no-color
+          exit 1
+
+      - name: The page is really the site
+        run: curl -fsS http://localhost:3000/az | grep -q "ArenaHub"
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose down -v

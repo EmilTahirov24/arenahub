@@ -1,0 +1,48 @@
+# One command brings the whole site up:
+#
+#   docker compose up
+#
+# Postgres starts, the migrations run, the database is seeded with demo data,
+# and the site is served on http://localhost:3000.
+#
+# Every value below is a LOCAL DEVELOPMENT default and is meant to be public.
+# Production secrets live in the host's environment (Vercel), never in this file.
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: arenahub
+      POSTGRES_PASSWORD: arenahub
+      POSTGRES_DB: arenahub
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    # The web service waits for this, not for the container to merely exist:
+    # Postgres accepts a TCP connection seconds before it will answer a query.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U arenahub -d arenahub"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  web:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://arenahub:arenahub@db:5432/arenahub?schema=public
+      # Local only. Generate a real one with: openssl rand -base64 32
+      AUTH_SECRET: local-development-secret-not-for-production
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      # The seed refuses the old published pair (admin@example.com / changeme),
+      # so these are deliberately different — see prisma/seed.ts.
+      SEED_ADMIN_EMAIL: admin@arenahub.local
+      SEED_ADMIN_PASSWORD: local-admin-password
+      # Demo teams and matches, so the site has something to show on first run.
+      SEED_DEMO: "true"
+
+volumes:
+  db-data:
