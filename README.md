@@ -11,7 +11,8 @@ VALORANT and League of Legends. Fixtures and live scores, playoff brackets drawn
 recorded results, team and player pages, tournament prize breakdowns, and an Elo
 ranking recomputed from match history.
 
-> 🇦🇿 **Azərbaycanca:** [README.az.md](README.az.md)
+> 📄 **[Technical overview](docs/overview.md)** — architecture, invariants, what was
+> measured, and where the system stops  ·  🇦🇿 **[Azərbaycanca](README.az.md)**
 
 ![ArenaHub home page](docs/img/home.png)
 
