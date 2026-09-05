@@ -55,9 +55,8 @@ prerenders pages that read from the database, so it cannot run while the image i
 being built — there is no database then. The container therefore migrates, seeds and
 builds on start, once Postgres reports healthy.
 
-> **Status:** [CI](.github/workflows/ci.yml) runs this command on every push so the
-> claim is checked rather than asserted. The type/lint/unit job is green; the compose
-> job is not passing yet, and this line will say so until it does.
+[CI](.github/workflows/ci.yml) runs this exact command on every push, waits for the
+site and checks the page it serves — so the claim is verified rather than asserted.
 
 <details>
 <summary>Without Docker</summary>
