@@ -1,26 +1,26 @@
 /**
- * Saytın vaxt zonası.
+ * The site's time zone.
  *
- * Bunsuz hər `Intl.DateTimeFormat` serverin zonasında işləyirdi — Vercel-də bu,
- * UTC-dir. Yəni Bakıda saat 13:00-da başlayan matç saytda 09:00 yazılırdı, dörd
- * saat səhv. Matç cədvəli olan bir saytda bu, ən pis səhvdir: adam gecikir və
- * səbəbini bilmir.
+ * Without this, every `Intl.DateTimeFormat` ran in the server's zone — on Vercel
+ * that is UTC. A match starting at 13:00 in Baku was published as 09:00: four
+ * hours early. On a site whose whole purpose is a fixture list this is the worst
+ * possible bug, because the visitor arrives late and never learns why.
  *
- * Ölçülüb (2026-08-29, canlı sayt): `2026-08-29T09:00:00.000Z` matçı səhifədə
- * «09:00», ÖZ paylaşım şəklində isə «13:00» görünürdü — çünki
- * `opengraph-image.tsx` bu qərarı artıq bir dəfə vermişdi və `Asia/Baku`
- * yazırdı. İndi hər yer həmin qərarı paylaşır.
+ * Measured on the live site (2026-08-29): a match at `2026-08-29T09:00:00.000Z`
+ * showed as "09:00" on the page and as "13:00" in the site's own share image —
+ * because `opengraph-image.tsx` had already made this decision once and wrote
+ * `Asia/Baku`. The two disagreed. Now every caller shares the same decision.
  *
- * Azərbaycan 2016-dan yay vaxtına keçmir, yəni offset ilboyu +04:00-dır. Buna
- * baxmayaraq formatlama `timeZone` ilə gedir, sabit rəqəmlə yox — qayda dəyişsə,
- * tək yerdə düzəlir.
+ * Azerbaijan has not observed daylight saving since 2016, so the offset is
+ * +04:00 all year. Formatting still goes through `timeZone` rather than a fixed
+ * number: if the rule ever changes, it changes in one place.
  */
 export const SITE_TIME_ZONE = "Asia/Baku";
 
-/** Bakı vaxtına görə `YYYY-MM-DD`. */
+/** `YYYY-MM-DD` for the Baku day the instant falls in. */
 export function toDateKey(date: Date) {
-  // `en-CA` qəsdən seçilib: yeganə geniş yayılmış dil kodu ki, nəticəni məhz
-  // `YYYY-MM-DD` verir və əl ilə yığmaq lazım gəlmir.
+  // `en-CA` is deliberate: it is the one widely available locale that formats
+  // as exactly `YYYY-MM-DD`, so the parts never have to be assembled by hand.
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: SITE_TIME_ZONE,
     year: "numeric",
@@ -32,19 +32,21 @@ export function toDateKey(date: Date) {
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * `?date=` parametrinin həqiqətən bir gün olub-olmadığını yoxlayır.
+ * Whether the `?date=` parameter really names a day.
  *
- * Bunsuz `?date=abc` ünvanı `dayRange`-dən `Invalid Date` alırdı, Prisma isə
- * onu ISO-ya çevirməyə çalışıb `RangeError` atırdı. Nəticədə /results və
- * /matches səhifələrinin siyahı hissəsi ictimai ünvanla sındırıla bilirdi
- * (qabıq 200 qaytarır, ona görə xəta HTTP kodunda görünmür — axında görünür).
+ * Without this check, `?date=abc` reached `dayRange` as an Invalid Date, and
+ * Prisma threw a `RangeError` converting it to ISO. The list section of
+ * /results and /matches could therefore be broken from a public URL — and the
+ * failure is invisible in the status code, because the prerendered shell still
+ * returns 200 and the error only surfaces in the streamed part.
  *
- * Geri çevirib tutuşdurma qəsdəndir: `2026-02-31` Node-da xəta vermir,
- * səssizcə 3 Marta sürüşür və adam istəmədiyi günün nəticələrini görür.
+ * Formatting the parsed date back and comparing is deliberate: `2026-02-31`
+ * does not throw in Node, it slides silently to 3 March, and the visitor is
+ * shown results for a day they did not ask for.
  *
- * İkinci fayda: `upcomingMatches`/`finishedMatches` keşi arqumentlərlə
- * açarlanır. Yoxlanmasa, hər uydurma tarix ayrıca keş qeydi yaradır və keş
- * sonsuz şişir.
+ * There is a second benefit. The `upcomingMatches`/`finishedMatches` caches are
+ * keyed by their arguments, so without validation every junk date would create
+ * its own cache entry and the cache would grow without limit.
  */
 export function isDateKey(value: string | undefined): value is string {
   if (!value || !DATE_KEY.test(value)) return false;
@@ -53,11 +55,11 @@ export function isDateKey(value: string | undefined): value is string {
 }
 
 /**
- * Həmin BAKI gününün başlanğıcı və sonu, UTC anı kimi.
+ * The start and end of that BAKU day, expressed as UTC instants.
  *
- * Əvvəl sərhədlər UTC yarımgecəsindən götürülürdü, yəni Bakı vaxtı ilə gecə
- * 00:00–04:00 arasındakı matçlar bir əvvəlki günə düşürdü. Adam «bu gün»
- * zolağına basıb öz gecəsinin matçını görmürdü.
+ * The bounds used to be taken from UTC midnight, which put matches played
+ * between 00:00 and 04:00 Baku time into the previous day. Someone clicking
+ * "today" did not see the match they had stayed up for.
  */
 export function dayRange(dateKey: string) {
   const start = new Date(`${dateKey}T00:00:00.000+04:00`);
@@ -65,11 +67,11 @@ export function dayRange(dateKey: string) {
   return { start, end };
 }
 
-/** Filtr zolağı üçün günlər — mərkəzində Bakı vaxtı ilə bu gün. */
+/** Days for the filter strip, centred on today in Baku. */
 export function dateStrip(centerOffsetDays = 0, length = 7) {
-  // Bugünün Bakı tarixi götürülür, sonra həmin günün Bakı yarımgecəsindən
-  // sayılır. `setUTCHours(0,...)` işləmirdi: o, UTC gününü sıfırlayırdı və
-  // Bakıda saat 04:00-dan əvvəl zolaq bir gün geridə qalırdı.
+  // Take today's Baku date first, then count from that day's Baku midnight.
+  // `setUTCHours(0, ...)` did not work: it zeroed the UTC day, so before 04:00
+  // in Baku the whole strip was a day behind.
   const todayKey = toDateKey(new Date());
   const anchor = dayRange(todayKey).start;
 
@@ -81,10 +83,11 @@ export function dateStrip(centerOffsetDays = 0, length = 7) {
 }
 
 /**
- * Saytın standart tarix/vaxt formatlayıcısı.
+ * The site's standard date/time formatter.
  *
- * Birbaşa `new Intl.DateTimeFormat(...)` yazmaq əvəzinə bu işlədilir ki,
- * `timeZone`-u yazmağı unutmaq mümkün olmasın — səhv məhz belə yaranmışdı.
+ * Used instead of writing `new Intl.DateTimeFormat(...)` directly, so that
+ * forgetting `timeZone` is not possible — which is exactly how the four-hour
+ * bug above came about.
  */
 export function siteFormat(locale: string, options: Intl.DateTimeFormatOptions) {
   return new Intl.DateTimeFormat(locale, { timeZone: SITE_TIME_ZONE, ...options });
