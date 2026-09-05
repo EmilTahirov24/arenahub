@@ -118,8 +118,20 @@ jobs:
       # Halving the job matters beyond speed here: this schedule asks for 72 runs
       # a day of a nine-minute job on free shared runners, and GitHub has been
       # delivering fewer and fewer of them. A cheaper job is a better-behaved one.
-      - if: steps.live.outputs.ratings_stale == 'true' || steps.maps.outputs.ratings_stale == 'true'
-        run: npx tsx scripts/recompute-ratings.ts
+      - id: ratings
+        if: steps.live.outputs.ratings_stale == 'true' || steps.maps.outputs.ratings_stale == 'true'
+        run: npx tsx scripts/recompute-ratings.ts 2>&1 | tee ratings.log
+      # The job log needs a token to read, so a failure here could only be
+      # guessed at. Annotations ARE public, so the script's own output is
+      # captured and its tail written into one.
+      - name: Report the ratings failure
+        if: failure() && steps.ratings.outcome == 'failure'
+        run: |
+          msg=$(tail -c 1500 ratings.log 2>/dev/null || echo "no output captured")
+          msg="${msg//'%'/'%25'}"
+          msg="${msg//$'\n'/'%0A'}"
+          msg="${msg//$'\r'/'%0D'}"
+          echo "::error title=recompute-ratings failed::${msg}"
 
       - if: steps.live.outputs.ratings_stale != 'true' && steps.maps.outputs.ratings_stale != 'true'
         run: echo "Heç nə yazılmadı — reytinq yenidən hesablanmadı."
