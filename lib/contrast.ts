@@ -1,19 +1,21 @@
 /**
- * Mətn rənglərini oxunaqlı hala gətirir.
+ * Makes text colours readable against the surface behind them.
  *
- * Niyə lazımdır: `Game.accentColor` admin panelindən gəlir, yəni ixtiyari
- * rəngdir. `GameChip` onu həm mətn, həm də öz solğun fonu kimi işlədirdi və
- * nəticə ölçüldü (axe-core, 2026-08-30, canlı sayt):
+ * Why this exists: `Game.accentColor` is entered in the admin panel, so it is an
+ * arbitrary colour. `GameChip` used it both as the text and as its own washed
+ * background, and the result was measured with axe-core on the live site
+ * (2026-08-30):
  *
- *   qaranlıq tema:  Dota 2 #dc2626 -> 3.39:1   (lazım 4.5)
- *   işıqlı tema:    CS2 #f5a524 -> 1.90:1, LoL #c9aa71 -> 2.07:1,
- *                   VALORANT #ff4655 -> 2.97:1, Dota 2 -> 4.13:1
+ *   dark theme:   Dota 2 #dc2626 -> 3.39:1   (4.5 required)
+ *   light theme:  CS2 #f5a524 -> 1.90:1, LoL #c9aa71 -> 2.07:1,
+ *                 VALORANT #ff4655 -> 2.97:1, Dota 2 -> 4.13:1
  *
- * Yəni işıqlı temada DÖRD oyunun hamısı sınırdı. axe standart olaraq yalnız
- * qaranlıq temanı skan etdiyi üçün bu, hesabatda görünmürdü.
+ * In light mode ALL FOUR games failed. It never appeared in a report because
+ * axe scans the default theme only, and because it skips elements sitting on a
+ * gradient.
  *
- * Ayrı-ayrı rəngləri əl ilə düzəltmək həll deyil: admin sabah beşinci oyunu
- * istənilən rənglə əlavə edə bilər. Ona görə düzəliş hesablanır.
+ * Correcting the four colours by hand would not be a fix: an admin can add a
+ * fifth game tomorrow in any colour at all. So the correction is computed.
  */
 
 type RGB = [number, number, number];
@@ -29,7 +31,7 @@ function toHex(rgb: RGB): string {
   return "#" + rgb.map((c) => Math.round(c).toString(16).padStart(2, "0")).join("");
 }
 
-/** sRGB kanalını xətti işıqlılığa çevirir (WCAG 2.x düsturu). */
+/** One sRGB channel as linear luminance (the WCAG 2.x formula). */
 function channel(c: number): number {
   const s = c / 255;
   return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
@@ -39,7 +41,7 @@ function luminance(rgb: RGB): number {
   return 0.2126 * channel(rgb[0]) + 0.7152 * channel(rgb[1]) + 0.0722 * channel(rgb[2]);
 }
 
-/** İki rəng arasındakı WCAG kontrast nisbəti: 1 (eyni) — 21 (qara/ağ). */
+/** WCAG contrast ratio between two colours: 1 (identical) to 21 (black on white). */
 export function contrastRatio(a: string, b: string): number {
   const ra = parseHex(a);
   const rb = parseHex(b);
@@ -53,7 +55,7 @@ function mix(from: RGB, to: RGB, t: number): RGB {
   return from.map((c, i) => c + (to[i] - c) * t) as RGB;
 }
 
-/** Yarımşəffaf rəngi fonun üstünə yerləşdirib alınan bərk rəngi qaytarır. */
+/** Flattens a translucent colour onto its background and returns the solid result. */
 export function composite(fg: string, alpha: number, bg: string): string {
   const f = parseHex(fg);
   const b = parseHex(bg);
@@ -62,14 +64,16 @@ export function composite(fg: string, alpha: number, bg: string): string {
 }
 
 /**
- * `color`-u `background` üzərində ən azı `min` kontrasta çatana qədər açır və
- * ya qaraldır. Rəngin çaları qorunur — yalnız işıqlılıq dəyişir.
+ * Lightens or darkens `color` until it reaches at least `min` contrast against
+ * `background`. The hue is preserved; only the lightness moves.
  *
- * İstiqamət fonun özündən seçilir: tünd fonda ağa doğru, açıq fonda qaraya
- * doğru. Əks istiqamətə getmək rəngi fona yaxınlaşdırıb vəziyyəti pisləşdirərdi.
+ * The direction is taken from the background itself: towards white on a dark
+ * ground, towards black on a light one. Going the other way would move the
+ * colour closer to the background and make things worse.
  *
- * Heç bir qarışıq kifayət etməsə (praktikada olmur, çünki ağ və qara sərhəd
- * hallarıdır), sərhəd rəngi qaytarılır — səssizcə sınmış dəyər yox.
+ * If no mix is enough — which does not happen in practice, since white and
+ * black are the limits — the boundary colour is returned rather than a value
+ * that silently fails.
  */
 export function readableOn(color: string, background: string, min = 4.5): string {
   const c = parseHex(color);
@@ -79,9 +83,10 @@ export function readableOn(color: string, background: string, min = 4.5): string
 
   const target: RGB = luminance(b) > 0.18 ? [0, 0, 0] : [255, 255, 255];
 
-  // Xətti axtarış qəsdəndir, ikili yox: kontrast qarışıq nisbətinə görə monoton
-  // artır, amma addım kiçik olanda nəticə də rəngə daha yaxın qalır. 2%-lik
-  // addımda ən pis hal 50 iterasiyadır — server komponentində ölçülməz azdır.
+  // A linear scan rather than a binary search, on purpose: contrast rises
+  // monotonically with the mix ratio, but a small step also keeps the result
+  // closer to the original colour. At 2% the worst case is 50 iterations,
+  // which is immeasurably cheap inside a server component.
   for (let t = 0.02; t <= 1.0001; t += 0.02) {
     const candidate = toHex(mix(c, target, t));
     if (contrastRatio(candidate, background) >= min) return candidate;
@@ -90,16 +95,18 @@ export function readableOn(color: string, background: string, min = 4.5): string
 }
 
 /**
- * Bərk `background` üzərinə qoyulacaq mətn rəngi: qara və ya ağ — hansı daha
- * yaxşı kontrast verirsə.
+ * Text colour to put on a solid `background`: black or white, whichever gives
+ * the better contrast.
  *
- * Filtr pilləri fonu `Game.accentColor`-dan götürüb mətni SABİT `#0a0b10`
- * yazırdı. Üç oyun üçün bu doğru idi, Dota 2 üçün yox: `#dc2626` fonunda tünd
- * mətn 4.07:1 verir (ölçüldü, axe-core 2026-08-30), ağ isə 4.83:1.
+ * The filter pills took their background from `Game.accentColor` and wrote the
+ * text in a FIXED `#0a0b10`. That was right for three games and wrong for
+ * Dota 2: on `#dc2626` the dark text gives 4.07:1 and white gives 4.83:1
+ * (measured with axe-core, 2026-08-30).
  *
- * Ölçülən dəyərlər: CS2 qara 9.63, VALORANT qara 5.86, Dota 2 AĞ 4.83,
- * LoL qara 8.87. Yəni sabit seçim bir oyunda həmişə səhv olacaqdı və növbəti
- * əlavə olunan oyun üçün də zəmanət yox idi — ona görə seçim hesablanır.
+ * The measured values: CS2 black 9.63, VALORANT black 5.86, Dota 2 WHITE 4.83,
+ * LoL black 8.87. A fixed choice was always going to be wrong for one game, and
+ * nothing guaranteed the next game added would be any kinder — so the choice is
+ * computed instead.
  */
 export function bestTextOn(background: string, dark = "#0a0b10", light = "#ffffff"): string {
   return contrastRatio(dark, background) >= contrastRatio(light, background) ? dark : light;

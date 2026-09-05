@@ -192,9 +192,14 @@ e2e/              browser suites
 tests/            unit tests
 ```
 
-Some in-code comments are in Azerbaijani, since the project's audience is. The
-reasoning behind each decision is written next to the code that implements it — the
-files linked from this README are in English.
+The user interface is in Azerbaijani because the product is — that is the project,
+not an oversight. Code comments are being moved to English, starting with the files
+this README links to, which are all in English now; new comments and commit messages
+are written in English from here on.
+
+The reasoning behind each decision is written next to the code that implements it,
+rather than collected somewhere it can drift out of date. If a comment explains why
+something is done a particular way, that is the primary record.
 
 ---
 

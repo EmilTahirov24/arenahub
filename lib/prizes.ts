@@ -29,12 +29,12 @@ export function formatMoney(amount: number) {
 /**
  * The prize a given finishing position earns, or null if it is outside every range.
  *
- * Aralıqlar üst-üstə düşəndə ƏN DAR olan qazanır. Səbəb istifadə şəklindədir:
- * «1-4-cü yerlər $20 000» yazıb sonra «2-ci yer $50 000» əlavə edən adamın
- * niyyəti açıqdır — 2-ci yerə ayrıca məbləğ verir. Sıra ilə ilk uyğun gələni
- * götürsəydik, sətirlər `placeFrom` üzrə düzüldüyü üçün geniş aralıq həmişə
- * birinci gələr və konkret sətri gizlədərdi: admin panelə yazılan məbləğ
- * saytda heç vaxt görünməzdi.
+ * When ranges overlap, the NARROWEST one wins. The reason is in how it is used:
+ * someone who writes "2-4th places $5,000" and then adds "3rd place $7,000" has
+ * made their intent plain — third place gets its own amount. Taking the first
+ * match in order would defeat that, because rows are ordered by `placeFrom`, so
+ * the wide range always comes first and hides the specific row: an amount typed
+ * into the admin panel that could never appear on the site.
  */
 export function prizeForPlacement(rows: PrizeRow[], placement: number | null) {
   if (placement == null) return null;

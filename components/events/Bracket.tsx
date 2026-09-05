@@ -14,48 +14,50 @@ import {
 type BracketMatch = Match & { teamA: Team; teamB: Team };
 
 /* ------------------------------------------------------------------ *
- * Ölçülər
+ * Dimensions
  *
- * Bracket mütləq mövqelərlə çəkilir, ona görə ölçülər burada birdəfəlik
- * yazılır: xanaların yeri, birləşdirici xətlərin yolu və qutunun ümumi
- * hündürlüyü hamısı bu rəqəmlərdən hesablanır.
+ * The bracket is drawn with absolute positions, so the numbers live here once:
+ * where a slot sits, the path a connecting line takes and the total height of
+ * the box are all derived from them.
  * ------------------------------------------------------------------ */
 
 const SLOT_W = 208;
 const SLOT_H = 52;
-/** Bir sətir = xana + altındakı boşluq. Mövqelər bunun misli kimi saxlanılır. */
+/** One row = a slot plus the gap under it. Positions are stored as multiples of this. */
 const ROW_H = 66;
 const COL_GAP = 44;
 const COL_W = SLOT_W + COL_GAP;
 const HEADER_H = 22;
-/** İkili eliminasiyada «Yuxarı bracket» yazısının öz sətri. */
+/** The row the "Upper bracket" label gets to itself in a double-elimination tree. */
 const LANE_LABEL_H = 18;
-/** Yuxarı və aşağı bracket arasındakı boşluq, pikselə. */
+/** Gap between the upper and lower brackets, in pixels. */
 const LANE_SPACING = 34;
 
 /* ------------------------------------------------------------------ *
- * Ağacın dataya görə qurulması
+ * Building the tree from the data
  * ------------------------------------------------------------------ */
 
 type Column = { info: StageInfo; matches: BracketMatch[]; col: number };
 
 /**
- * Hər matç üçün: tərəflərinin bura hansı matçdan gəldiyi.
+ * For each match: which match each of its sides arrived from.
  *
- * Qayda yoxlanıla biləndir və uydurmur: komanda bu matçda oynayırsa, bura
- * gəlməzdən əvvəl UDDUĞU ən son matç onun yoludur. Ona görə hər tərəf üçün
- * daha soldakı sütunlardan həmin komandanın qalib olduğu ən son matç axtarılır.
+ * The rule is checkable and invents nothing. If a team plays in this match, the
+ * route it took here is the last match it WON before arriving — so for each
+ * side we look left through the earlier columns for the most recent match that
+ * team won.
  *
- * İki tərəfdən yalnız birinin xətti olması normaldır: aşağı bracket-də bir
- * komanda qalib kimi gəlir, o biri yuxarıdan MƏĞLUB olub düşür. Məğlubiyyət
- * xətti çəkilmir — çəkilsəydi, oxucu onu qələbə yolu kimi oxuyardı.
+ * Only one of the two sides having a line is normal, not a gap: in a lower
+ * bracket one team arrives as a winner while the other drops in having LOST
+ * above. No line is drawn for a loss — drawn, a reader would follow it as a
+ * path to victory.
  */
 function buildEdges(placed: Map<string, { match: BracketMatch; col: number }>) {
   const edges: { from: string; to: string }[] = [];
-  // 3-cü yer matçı ağacın kənarındadır: ora QALİB kimi yox, MƏĞLUB olaraq
-  // düşürlər və o da heç nə qidalandırmır. Qələbə xətti çəksək, oxucu MOUZ-un
-  // çeyrək finalı udub 3-cü yer matçına «yüksəldiyini» oxuyardı — əslində
-  // arada uduzduğu yarımfinal var.
+  // The third-place match sits outside the tree: teams reach it by LOSING,
+  // not by winning, and it feeds nothing. Drawing a victory line into it would
+  // read as MOUZ winning a quarterfinal and being "promoted" to the third-place
+  // match — when in fact there is a lost semifinal in between.
   const all = [...placed.values()].filter(
     ({ match }) => describeStage(match.stage)?.label !== "Third Place Match",
   );
@@ -76,12 +78,12 @@ function buildEdges(placed: Map<string, { match: BracketMatch; col: number }>) {
 }
 
 /**
- * Sətir mövqeləri.
+ * Row positions.
  *
- * Bir matçın yeri onu qidalandıran matçların ortasıdır — bracket-in oxunması
- * elə budur. Qidalandırıcısı bilinməyən matç növbəti boş sətrə düşür; bazada
- * hər komanda yoxdur, ona görə ağacların bir hissəsi natamam gəlir və düzülüş
- * bununla bacarmalıdır, imtina etməməlidir.
+ * A match sits at the average height of the matches feeding it — that is what
+ * makes a bracket readable at a glance. A match whose feeders are unknown falls
+ * to the next free row: not every team is in the database, so some trees arrive
+ * incomplete, and the layout has to cope with that rather than refuse to draw.
  */
 function assignRows(columns: Column[], edges: { from: string; to: string }[]) {
   const feeders = new Map<string, string[]>();
@@ -96,8 +98,8 @@ function assignRows(columns: Column[], edges: { from: string; to: string }[]) {
       return { match, index, pos };
     });
 
-    // Hesablanmış mövqeyə görə sıralanır; bilinməyənlər sonda, öz sıralarını
-    // saxlayaraq. Sonra qonşular üst-üstə düşməsin deyə aralanır.
+    // Sorted by the computed position, with the unknown ones last and keeping
+    // their original order. Neighbours are then pushed apart so none overlap.
     items.sort((a, b) => (a.pos ?? Number.POSITIVE_INFINITY) - (b.pos ?? Number.POSITIVE_INFINITY) || a.index - b.index);
 
     let last = Number.NEGATIVE_INFINITY;
@@ -114,15 +116,15 @@ function assignRows(columns: Column[], edges: { from: string; to: string }[]) {
   return row;
 }
 
-/** Qidalandırıcısı olmayan sütunu şaquli olaraq ortalayır. */
+/** Centres a column vertically when nothing feeds into it. */
 function centreLooseColumns(columns: Column[], row: Map<string, number>, edges: { from: string; to: string }[]) {
   const fed = new Set(edges.map((e) => e.to));
   const height = Math.max(...[...row.values()], 0) + 1;
 
   for (const column of columns) {
     if (column.matches.some((m) => fed.has(m.id))) continue;
-    // Data heç nə demirsə, sütunu yuxarıya yapışdırmaq da bir iddia deyil —
-    // sadəcə çirkindir. Ortalamaq bracket-in tanış formasını verir.
+    // When the data says nothing, pinning the column to the top is not a claim
+    // either — it is just ugly. Centring gives the bracket its familiar shape.
     const shift = (height - column.matches.length) / 2;
     if (shift <= 0) continue;
     for (const m of column.matches) row.set(m.id, (row.get(m.id) ?? 0) + shift);
@@ -130,7 +132,7 @@ function centreLooseColumns(columns: Column[], row: Map<string, number>, edges: 
 }
 
 /* ------------------------------------------------------------------ *
- * Görünüş
+ * Rendering
  * ------------------------------------------------------------------ */
 
 function Slot({ match, x, y }: { match: BracketMatch; x: number; y: number }) {
@@ -183,19 +185,20 @@ function Slot({ match, x, y }: { match: BracketMatch; x: number; y: number }) {
 }
 
 /**
- * Bir zolaq: yuxarı bracket, aşağı bracket, ya da sağdakı həlledici sütun.
+ * One lane: the upper bracket, the lower bracket, or the deciding column on
+ * the right.
  *
- * Hər zolağın ÖZ başlıq sətri var. Əvvəl başlıqlar bir sətirdə çəkilirdi və
- * yuxarı ilə aşağı bracket-in sütun sayı fərqli olanda üst-üstə düşürdü:
- * VCT EMEA-da yuxarının «Yarı final»ı aşağının «Çeyrək final»ı ilə eyni
- * yerdə oturub oxunmaz hala gəlmişdi.
+ * Each lane gets its OWN header row. The headers used to share a single row,
+ * which collided whenever the upper and lower brackets had different numbers of
+ * columns: at VCT EMEA the upper bracket's "Semifinal" landed on top of the
+ * lower bracket's "Quarterfinal" and neither could be read.
  */
 type Lane = {
   name: string | null;
   columns: Column[];
-  /** Zolağın öz daxilindəki sətir nömrələri. */
+  /** Row numbers within this lane. */
   rows: Map<string, number>;
-  /** Zolağın neçə sətir tutduğu. */
+  /** How many rows the lane occupies. */
   rowCount: number;
 };
 
@@ -220,8 +223,9 @@ export default function Bracket({ matches, locale }: { matches: BracketMatch[]; 
 
   const main = inLane("main");
   const lower = inLane("lower");
-  // Böyük final və 3-cü yer matçı ağacın sağında, bir sütunda alt-alta durur:
-  // ikisi də iki yarımın nəticəsidir, öz raundları yoxdur.
+  // The grand final and the third-place match stand one above the other in a
+  // single column on the right: both are outcomes of the two halves and belong
+  // to no round of their own.
   const deciderCol = Math.max(main.length, lower.length);
   const decider = sorted
     .filter((c) => c.info.lane === "decider")
@@ -247,8 +251,8 @@ export default function Bracket({ matches, locale }: { matches: BracketMatch[]; 
     buildLane(doubleElimination ? laneName("lower", locale) : null, lower),
   ].filter((l): l is Lane => l !== null);
 
-  // Mütləq yerlər piksellə hesablanır: hər zolaq öz adını və başlıq sətrini
-  // gətirir, ona görə sətir nömrəsi tək başına «y» vermir.
+  // Absolute positions are computed in pixels: each lane brings its own label
+  // and header row, so a row number alone does not give a y coordinate.
   const y = new Map<string, number>();
   const headerRows: { at: number; columns: Column[] }[] = [];
   const laneLabels: { at: number; text: string }[] = [];
@@ -267,7 +271,7 @@ export default function Bracket({ matches, locale }: { matches: BracketMatch[]; 
 
   const bodyHeight = Math.max(cursor - LANE_SPACING, SLOT_H);
 
-  // Sağdakı sütun bütün hündürlüyün ortasında oturur.
+  // The deciding column sits at the middle of the full height.
   if (decider.length > 0) {
     const all = decider.flatMap((c) => c.matches);
     let top = Math.max((bodyHeight - all.length * ROW_H) / 2, HEADER_H);
@@ -347,31 +351,31 @@ export default function Bracket({ matches, locale }: { matches: BracketMatch[]; 
 
 
 /* ------------------------------------------------------------------ *
- * Səhifədəki bracket-lərin qruplaşdırılması
+ * Grouping the brackets on a page
  * ------------------------------------------------------------------ */
 
 export type BracketGroup = {
   key: string;
   label: string | null;
   matches: BracketMatch[];
-  /** Qrupun ilk matçının vaxtı — sıralama bunun üzərindədir. */
+  /** When the group's first match is played — the ordering is on this. */
   at: number;
 };
 
 /**
- * Matçları aid olduqları bracket-lərə bölür, xronoloji sıra ilə.
+ * Splits matches into the brackets they belong to, in chronological order.
  *
- * Bir turnir sətri bir neçə ağac saxlayır: IEM Kraków-da play-in, iki qrup
- * bracket-i və pley-off var və HƏR BİRİNİN öz çeyrək finalı. Onları
- * `bracketKey` ayırır — mərhələnin adı ayıra bilmir, çünki adlar eynidir və
- * hamısını bir ağac kimi çəkmək bir sütunda beş çeyrək final göstərirdi.
+ * One tournament row holds several trees: IEM Kraków has a play-in, two group
+ * brackets and the playoffs, and EACH has its own quarterfinal. `bracketKey`
+ * is what separates them — the round name cannot, because the names are
+ * identical, and drawing them as one tree put five quarterfinals in a column.
  */
 export function groupBrackets(matches: BracketMatch[]): BracketGroup[] {
   const groups = new Map<string, BracketGroup>();
 
   for (const match of matches) {
-    // Açarsızlar bir yerə yığılır: idxaldan əvvəlki sətirlər və adminin əl ilə
-    // yazdıqları. Onlar da ağac kimi göstərilir, sadəcə adsız.
+    // Rows with no key are gathered together: matches predating the importer and
+    // ones an admin typed in. They are still drawn as a tree, just unnamed.
     const key = match.bracketKey ?? "—";
     const group = groups.get(key) ?? {
       key,
@@ -387,19 +391,19 @@ export function groupBrackets(matches: BracketMatch[]): BracketGroup[] {
   return [...groups.values()].sort((a, b) => a.at - b.at);
 }
 
-/** Adı özünü pley-off elan edən bracket. */
+/** A bracket whose own name declares it the playoffs. */
 const PLAYOFF_LABEL = /playoff|grand final|main event/i;
 
 /**
- * Turnirin həll olunduğu bracket-i qalanlarından ayırır.
+ * Separates the bracket the tournament is decided in from the rest.
  *
- * Əvvəlcə ada baxılır: 18 turnirin 10-unda Liquipedia bracket-in üstünə açıq
- * «Playoffs» yazır. Qalanlarında ad yoxdur, ona görə XRONOLOJİ SONUNCU qrup
- * götürülür — turnir sonda həll olunur, əvvəldə yox.
+ * The name is tried first: in 10 of 18 tournaments Liquipedia writes "Playoffs"
+ * above the bracket outright. The rest carry no name, so the CHRONOLOGICALLY
+ * LAST group is taken — a tournament is decided at its end, not its start.
  *
- * Bu bir təqdimat bölgüsüdür, nəticə haqqında iddia deyil: səhv bölünsə,
- * matçlar yenə düzgün ağacda və düzgün raundda qalır, sadəcə başqa başlığın
- * altında görünür.
+ * This is a presentational split, not a claim about the result: if it splits
+ * wrongly, the matches still sit in the right tree and the right round, they
+ * simply appear under a different heading.
  */
 export function splitPlayoff(groups: BracketGroup[]): {
   playoff: BracketGroup | null;
@@ -408,13 +412,13 @@ export function splitPlayoff(groups: BracketGroup[]): {
   if (groups.length === 0) return { playoff: null, earlier: [] };
 
   const named = groups.filter((g) => g.label && PLAYOFF_LABEL.test(g.label));
-  // Bir neçəsi belə adlanırsa (EWC-də iki «Playoffs» var), sonuncusu əsasdır.
+  // If several are named that way (EWC has two "Playoffs"), the last one is the real one.
   const playoff = named.length > 0 ? named[named.length - 1] : groups[groups.length - 1];
 
   return { playoff, earlier: groups.filter((g) => g !== playoff) };
 }
 
-/** Bir neçə bracket-i ardıcıl, hərəsi öz adı ilə. */
+/** Several brackets one after another, each under its own name. */
 export function BracketList({
   groups,
   locale,
