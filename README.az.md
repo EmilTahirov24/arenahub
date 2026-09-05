@@ -170,6 +170,7 @@ sayğac yaddaşda olduğu üçün `npm run dev`-i yenidən başlatmaq onu sıfı
 | `npx tsx scripts/fetch-team-logos.ts --apply` | `data/logo-teams.json`-dakı komandaların loqosunu Liquipedia-dan `public/teams/` içinə yükləyir (`--game cs2` ilə bir oyun) |
 | `npx tsx scripts/apply-team-logos.ts --apply` | həmin loqoları bazadakı komandalara bağlayır (production parolu lazımdır — GitHub Actions-da qaçır) |
 | `powershell -ExecutionPolicy Bypass -File scripts/setup-trigger.ps1` | **bir dəfəlik quraşdırma:** tokeni soruşur, sınayır, yalnız işləyəndə cədvələ qoyur |
+| `powershell -ExecutionPolicy Bypass -File scripts/setup-github-profile.ps1` | **bir dəfəlik:** repo təsviri/mövzuları, köhnə repo-ları private, profil README-si və profil sahələri. `-WhatIf` yalnız planı göstərir |
 | `powershell -File scripts/trigger-import.ps1` | idxalı əl ilə işə salır (token `scripts/.github-token` faylından, log `scripts/.trigger-log.txt`) |
 | `npx tsx scripts/dedupe-matches.ts` | təkrar düşmüş matçları birləşdirir |
 | `npx tsx scripts/merge-duplicate-tournaments.ts` | təkrar turnirləri birləşdirir |
