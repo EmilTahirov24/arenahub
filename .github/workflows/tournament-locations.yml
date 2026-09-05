@@ -15,6 +15,7 @@ name: Tournament locations
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     paths:
       - "scripts/import-tournament-locations.ts"
       - ".github/workflows/tournament-locations.yml"
