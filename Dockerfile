@@ -29,6 +29,13 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# The generated Prisma client lives in app/generated, which is gitignored — so
+# it exists on a developer's machine and NOT in a fresh checkout. Copying only
+# node_modules from the deps stage therefore worked locally and failed in CI
+# with "Cannot find module '../app/generated/prisma/client'". Generating it here
+# makes the image independent of what happened to be lying around.
+RUN npx prisma generate
+
 # Next runs as a normal user; the app writes nothing outside /app.
 RUN chown -R node:node /app
 USER node

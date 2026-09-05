@@ -11,3 +11,5 @@ docs
 !README.md
 coverage
 .vscode
+# Generated in the image, never copied in.
+app/generated
