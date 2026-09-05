@@ -1,0 +1,33 @@
+# Weekly, not daily: this is a one-person project, and a pull request nobody has
+# time to read is worse than no pull request. Weekly is a rate the maintainer can
+# actually keep up with.
+#
+# Patch and minor updates are grouped into one pull request per ecosystem. Twenty
+# separate bumps do not get reviewed; one does.
+#
+# Major updates are deliberately NOT grouped — those are the ones that need
+# reading, and they should arrive on their own.
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: monthly
