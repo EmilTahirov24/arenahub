@@ -1,175 +1,202 @@
 # ArenaHub
 
-HLTV tərzində, çoxoyunlu esports platforması — matç cədvəli və nəticələr, canlı matç izləmə, komanda/oyunçu profilləri, turnirlər, statistika, xəbərlər və matç proqnozları. İki dildə: Azərbaycan (`/az`) və İngilis (`/en`).
+[![CI](https://github.com/EmilTahirov24/arenahub/actions/workflows/ci.yml/badge.svg)](https://github.com/EmilTahirov24/arenahub/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Live](https://img.shields.io/badge/live-arenahub--wheat.vercel.app-7c3aed)](https://arenahub-wheat.vercel.app)
 
-**Stack:** Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · Prisma 7 + PostgreSQL · next-intl · Resend · Vercel Blob
+### 🔗 Live site — **[arenahub-wheat.vercel.app](https://arenahub-wheat.vercel.app)**
 
----
+Esports results and statistics in **Azerbaijani and English**, covering CS2, Dota 2,
+VALORANT and League of Legends. Fixtures and live scores, playoff brackets drawn from
+recorded results, team and player pages, tournament prize breakdowns, and an Elo
+ranking recomputed from match history.
 
-## Lokal qurulum
+> 🇦🇿 **Azərbaycanca:** [README.az.md](README.az.md)
 
-```bash
-npm install                 # postinstall avtomatik `prisma generate` işlədir
-cp .env.example .env        # sonra .env-i doldurun (aşağıya bax)
-npx prisma migrate deploy   # baza sxemini qurur
-npx prisma db seed          # demo data + ilk admin hesabı
-npm run dev
-```
-
-`http://localhost:3000` → avtomatik `/az`-ə yönləndirir. Admin paneli: `/admin/login`.
-
-### Ətraf mühit dəyişənləri
-
-| Dəyişən | Vacib? | İzah |
-|---|---|---|
-| `DATABASE_URL` | **bəli** | PostgreSQL bağlantı sətri |
-| `AUTH_SECRET` | **bəli** | Sessiya JWT-si üçün açar — `openssl rand -base64 32` |
-| `NEXT_PUBLIC_SITE_URL` | **bəli** | Saytın tam ünvanı, sonda `/` olmadan. Email linkləri və sitemap bundan qurulur |
-| `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | seed üçün, **məcburi** | `prisma/seed.ts` ilk admini bununla yaradır. Standart qiymət YOXDUR — təyin edilməsə seed silməyə başlamadan dayanır. Köhnə dərc olunmuş cütlük (`admin@example.com` / `changeme`) qəbul edilmir; qısa parol isə yalnız xəbərdarlıq verir. |
-| `RESEND_API_KEY` | xeyr | Olmasa şifrə bərpası linkləri serverin konsoluna yazılır ([lib/email.ts](lib/email.ts)) |
-| `EMAIL_FROM` | xeyr | Domen təsdiqlənənə qədər `onboarding@resend.dev` qalmalıdır |
-| `BLOB_READ_WRITE_TOKEN` | prod-da **bəli** | Olmasa şəkillər lokal diskə yazılır; serverless-də disk read-only olduğu üçün production-da tələb olunur ([lib/storage.ts](lib/storage.ts)) |
-| `SEED_DEMO` | xeyr | `false` olanda seed uydurma komanda/matç yaratmır — yalnız oyunlar, admin və real CS2 komandaları. **Production-da `false` olmalıdır** |
+![ArenaHub home page](docs/img/home.png)
 
 ---
 
-## Deploy (Vercel + bulud Postgres)
+## Why it exists
 
-1. **Repo-nu GitHub-a göndər**, sonra Vercel-də "Import Project" et.
-2. **Baza yarat** — Neon, Supabase və ya Vercel Postgres. Bağlantı sətrini `DATABASE_URL` kimi Vercel-ə əlavə et.
-3. **Qalan dəyişənləri əlavə et** (yuxarıdakı cədvəl). `NEXT_PUBLIC_SITE_URL` real domen olmalıdır.
-4. **Blob store yarat** və layihəyə bağla → `BLOB_READ_WRITE_TOKEN` avtomatik gəlir. Kod dəyişikliyi lazım deyil, [lib/storage.ts](lib/storage.ts) tokeni görən kimi özü keçir.
-5. **Deploy et.** Vercel `vercel-build` skriptini işlədir: əvvəlcə `prisma migrate deploy` (bulud bazasında cədvəlləri qurur), sonra `next build`.
-6. **İlk admini yarat:** bir dəfə lokal olaraq `DATABASE_URL`-i bulud bazasına yönəldib `npx prisma db seed` işlət.
+There is almost no esports coverage in Azerbaijani. Beyond the language barrier there
+is a practical one: HLTV, the largest Counter-Strike source, is **not reachable from
+where I live** — the domain resolves, but the connection never completes, while
+Liquipedia answers in under a third of a second from the same machine. The data
+existed and was simply out of reach.
 
-### Emailləri real istifadəçilərə çatdırmaq
-
-Resend-in `onboarding@resend.dev` ünvanı **sandbox-dır** — məktublar yalnız sənin öz Resend hesabının poçtuna gedir. Şifrə bərpasının hamı üçün işləməsi üçün:
-
-1. resend.com → Domains → öz domenini əlavə et
-2. verilən DNS qeydlərini domen provayderində yaz
-3. təsdiqləndikdən sonra `EMAIL_FROM`-u `ArenaHub <noreply@səninDomenin.com>` et
-
----
-
-## Layihə quruluşu
-
-```
-app/[locale]/          public səhifələr (matçlar, komandalar, oyunçular, xəbərlər...)
-app/admin/             admin paneli — bütün məzmun idarəetməsi
-app/player/            oyunçu hesabı: qeydiyyat, giriş, panel, komanda və tərkib
-app/api/               search və upload endpoint-ləri
-lib/                   auth, prisma, email, rate limit, sanitizasiya, biznes qaydaları
-messages/az.json|en.json   bütün tərcümələr (admin və oyunçu paneli istisna — onlar sabit AZ)
-prisma/schema.prisma   məlumat modeli · prisma/migrations/ əl ilə yazılmış SQL
-```
-
-### Bilməli olduğun bir neçə qayda
-
-- **Hesab modeli:** yalnız bir növ hesab var — `Player`. Komandanın öz girişi yoxdur, `Team.ownerId` bir Player-ə işarə edir.
-- **Kim public siyahıdadır:** [lib/publicPlayers.ts](lib/publicPlayers.ts) qərar verir (admin/seed profilləri + komandası olan qeydiyyatlılar). Bu şərti yenidən yazma, həmin faylı istifadə et.
-- **Tərkib razılıq tələb edir:** qeydiyyatlı oyunçu yalnız qəbul etdiyi dəvətlə tərkibə düşür. Komanda sahibi başqasının hesabının profilini redaktə edə bilməz — bax [lib/teamInvites.ts](lib/teamInvites.ts).
-- **Real ada uydurma nəticə yazılmır.** Seed-dəki CS2 komandaları real təşkilatlardır — onlara heç bir uydurma matç və ya statistika yaradılmır, çünki sayt real şirkət və insanlar haqqında olmayan matçları dərc etmiş olardı. Real nəticələr admin panelindən daxil edilir. Digər üç oyunun komandaları isə uydurmadır (`TEAM_ADJ` × `TEAM_NOUN`), ona görə onlarda demo matçlar var.
-- **Matç necə daxil edilir:** admin paneldə turnir yarat → matç yarat (oyun seçiləndən sonra turnir siyahısı aktivləşir) → matç səhifəsində **Canlı** bölməsindən xəritə hesabını yaz. Qalib xəritələrdən avtomatik çıxarılır və reytinq elə həmin anda yenidən hesablanır.
-- **Komanda reytinqi əllə yazılmır:** matç nəticələrindən hesablanır. Saf riyaziyyat [lib/elo.ts](lib/elo.ts)-dədir, bazaya yazan hissə [lib/rating.ts](lib/rating.ts)-də. Nəticə dəyişəndə **bütün tarixçə yenidən oynadılır** — çünki Elo ardıcıllıqdan asılıdır və köhnə nəticə düzəldiləndə artımlı hesablama həmişəlik səhv qalardı.
-- **Profil sahiblənməsi (claim) admin təsdiqi ilədir:** sahibsiz profildə matç statistikası və sabit link var, ona görə ada görə avtomatik təsdiq olsaydı, istənilən adam məşhur nickname ilə qeydiyyatdan keçib həmin tarixçəni mənimsəyə bilərdi — bax [lib/profileClaims.ts](lib/profileClaims.ts).
-- **Migration-lar əl ilə yazılır:** `prisma migrate dev` bu mühitdə interaktivdir və işləmir. SQL faylını özün yaz, sonra `prisma migrate deploy`.
-- **`npm audit` üç xəbərdarlıq göstərir və onlar QƏSDƏN saxlanılır.** Üçü də eyni kökdəndir: `deepmerge-ts`, `prisma` CLI-nin `@prisma/config` asılılığı vasitəsilə. Ən son Prisma (7.10.0) hələ də həmin versiyanı gətirir və npm-in təklif etdiyi "düzəliş" Prisma-nı 6.12.0-a **endirmək**dir — bu, zəiflikdən pisdir. Zəncir `prisma → @prisma/config → deepmerge-ts`-dir; `@prisma/client` orada YOXDUR, yəni kod runtime-da işləmir, yalnız CLI `prisma.config.ts` faylını oxuyanda. Zəiflik rekursiv obyekt qrafını birləşdirəndə yığını doldurur, bizim halda isə oxunan fayl özümüzündür və kənardan gələn giriş yoxdur. Prisma `@prisma/config`-i yeniləyəndə öz-özünə həll olacaq.
-- **Rate limiter yaddaşdadır** ([lib/rateLimit.ts](lib/rateLimit.ts)) — çoxinstansiyalı deploy-da hər instansiyanın öz sayğacı olur. İndiki miqyas üçün kifayətdir; dəqiqlik lazım olsa Upstash/Redis.
-
-## Oyunçu statistikası — data mənbəyi
-
-`PlayerMatchStat` production-da **boşdur** və bu, qüsur deyil: matçlar
-Liquipedia-dan gəlir, orada isə hər oyunçunun öldürmə/ölüm rəqəmləri yoxdur.
-Siyahı səhifəsi bunu açıq yazır — «uydurma rəqəm yazılmır» — və boş sütun
-sınıq cədvəl kimi deyil, qeydə alınmamış məlumat kimi oxunur.
-
-Mənbə axtarışı 2026-08-27-də aparıldı. Ölçülmüş nəticələr:
-
-| mənbə | oyunlar | qiymət | bizim matçların əhatəsi |
-|---|---|---|---|
-| **GRID Open Access** | CS2 + Dota 2 | pulsuz (müstəqil developer / tələbə / pre-revenue) | **~49%** |
-| OpenDota | Dota 2 | pulsuz, açar lazım deyil, 50k sorğu/ay | ~8.7% |
-| PandaScore | 4-ü də | €1600–4000/ay | 100% |
-| Riot (LoL + Valorant) | LoL + Valorant | pulsuz açar, production təsdiqi | ~51% |
-
-Bitmiş matçların oyunlara görə bölgüsü (2225 matç): CS2 38.0%, LoL 35.2%,
-Valorant 15.6%, Dota 2 11.1%.
-
-**HLTV istifadə olunmur** — rəsmi API-si yoxdur və bütün «HLTV API» paketləri
-onların şərtlərinə zidd scraper-lərdir.
-
-OpenDota-nın əhatəsi fərz edilmədi, ölçüldü: son 184 Dota 2 matçımızdan **135-i
-(73.4%)** komanda adları + 6 saatlıq vaxt pəncərəsi ilə dəqiq uyğunlaşdı, 9-u adı uyğun
-gəldi amma vaxt kənarda qaldı, 40-ı tapılmadı. Uyğunlaşmayanların çoxu OpenDota-nın
-~2 günlük gecikməsindəndir, əhatə boşluğundan yox.
-
-**Qərar:** əvvəlcə GRID Open Access-ə müraciət
-(`grid.gg/open-access`), çünki o, CS2-ni də əhatə edir və CS2 matçların ən böyük
-hissəsidir. OpenDota yalnız Dota 2 verir və GRID təsdiqlənərsə həmin hissə onsuz da
-əvəzlənəcək.
-
-Hansı mənbə seçilirsə seçilsin, iki qayda dəyişmir: **oyunçu yalnız həm adı, həm də
-həmin matçdakı komandası uyğun gələndə** eyniləşdirilməlidir (tək ad kifayət deyil —
-yanlış insana statistika yazmaq statistika olmamasından pisdir), və admin əl ilə
-yazdığı rəqəmlər idxal tərəfindən üstündən yazılmamalıdır.
-
-## Testlər
-
-Brauzer yoxlamaları [e2e/](e2e/) qovluğundadır — `playwright` ilə yazılıb, ayrıca
-quraşdırma tələb etmir. Server əvvəlcədən qaldırılmalıdır:
-
-```bash
-npm run dev     # bir terminalda
-npm run e2e     # o birində — altı dəstin hamısı
-```
-
-Ayrı-ayrılıqda da qaçır: `npx tsx e2e/02-lifecycle.ts`.
-
-| Dəst | Nəyi yoxlayır |
-|---|---|
-| [01-smoke](e2e/01-smoke.ts) | hər public səhifə iki dildə, dinamik səhifələr, sitemap/robots/axtarış |
-| [02-lifecycle](e2e/02-lifecycle.ts) | turnir → matç → canlı xəritə hesabı → qalib → Elo → public tərəf |
-| [03-player](e2e/03-player.ts) | qeydiyyat, e-poçt təsdiqi, profil, komanda, matç proqnozu |
-| [04-admin](e2e/04-admin.ts) | CRUD, xəbər sanitizasiyası, yükləmə limitləri, EDITOR rolu, 390px |
-| [05-claim](e2e/05-claim.ts) | profil sahiblənməsi: bloklar, admin təsdiqi, birləşmə, sonrakı giriş |
-| [06-widgets](e2e/06-widgets.ts) | komanda paleti, tema, dil, sıralama/səhifələmə, filtrlər, canlı yenilənmə, mobil menyu |
-
-Bilməli olduğun iki şey: fikstürlərin adı `E2E` ilə başlayır və hər qaçışın
-əvvəlində silinir (uğursuz qaçış datanı yerində qoyur ki, ona baxa biləsən);
-qeydiyyat saatda 5 cəhdlə məhduddur, ona görə `03-player` saatda ~2 dəfə qaçır —
-sayğac yaddaşda olduğu üçün `npm run dev`-i yenidən başlatmaq onu sıfırlayır.
-
-## Skriptlər
+ArenaHub closes that gap, in both languages, from sources that are legally usable.
 
 | | |
 |---|---|
-| `npm run dev` | development server |
-| `npm run build` / `npm start` | production build və server |
-| `npm run lint` | eslint |
-| `npm run e2e` | brauzer yoxlamaları (server işləməlidir) |
-| `npx prisma db seed` | demo data + admin hesabı |
-| `npx tsx scripts/recompute-ratings.ts` | komanda reytinqlərini matç tarixçəsindən yenidən qurur (seed-dən sonra lazımdır) |
-| `npx tsx scripts/check-email.ts --to ünvan` | e-poçt qurulumunu yoxlayır, real məktub göndərir |
-| `powershell -ExecutionPolicy Bypass -File scripts/rotate-smtp-password.ps1` | Gmail app password-u döndərir: `.env` → yerli sınaq → Vercel → deploy (sınaq keçməsə geri qaytarır) |
-| `npx tsx scripts/set-admin-credentials.ts --email ... --password ...` | **yerli** admin hesabının açarını dəyişir (`DATABASE_URL` hansı bazanı göstərirsə) |
-| `node scripts/set-admin-credentials.mjs --url ... --current-email ... --current-password ... --email ... --password ...` | **canlı** admin açarını panelin öz formasından dəyişir; canlı `DATABASE_URL` oxunmadığı üçün yeganə yol budur |
-| `npx tsx scripts/import-live.ts --apply` | Liquipedia-dan qarşıdakı/canlı/təzə bitmiş matçlar |
-| `npx tsx scripts/import-maps.ts --apply --limit 6` | bitmiş matçların xəritə nəticələri |
-| `npx tsx scripts/import-tournaments.ts` | turnirlər |
-| `npx tsx scripts/import-teams.ts` | komandalar |
-| `npx tsx scripts/import-rosters.ts` | tərkiblər (bayraqlar, tam adlar, rollar) |
-| `npx tsx scripts/import-team-countries.ts --apply` | ölkəsi olmayan komandaların ölkəsini Liquipedia-dan doldurur |
-| `npx tsx scripts/import-active-rosters.ts --apply --limit 60` | son 30 gündə oynayan, tərkibi olmayan komandaların tərkibini gətirir (komanda başına ~30–60s, dəstələrlə işlədin) |
-| `npx tsx scripts/cleanup-bogus-teams.ts --apply` | adı turnir bölməsi olan saxta komandaları silir |
-| `npx tsx scripts/generate-weekly-roundup.ts --apply` | həftəlik nəticə icmalını öz matç datamızdan yazır (xəbər API-si yoxdur — səbəbi skriptin başındadır) |
-| `npx tsx scripts/import-tournament-locations.ts --apply` | yeri olmayan turnirlərin şəhər/ölkəsini doldurur (onlayn hadisələr boş qalır) |
-| `npx tsx scripts/fetch-team-logos.ts --apply` | `data/logo-teams.json`-dakı komandaların loqosunu Liquipedia-dan `public/teams/` içinə yükləyir (`--game cs2` ilə bir oyun) |
-| `npx tsx scripts/apply-team-logos.ts --apply` | həmin loqoları bazadakı komandalara bağlayır (production parolu lazımdır — GitHub Actions-da qaçır) |
-| `powershell -ExecutionPolicy Bypass -File scripts/setup-trigger.ps1` | **bir dəfəlik quraşdırma:** tokeni soruşur, sınayır, yalnız işləyəndə cədvələ qoyur |
-| `powershell -File scripts/trigger-import.ps1` | idxalı əl ilə işə salır (token `scripts/.github-token` faylından, log `scripts/.trigger-log.txt`) |
-| `npx tsx scripts/dedupe-matches.ts` | təkrar düşmüş matçları birləşdirir |
-| `npx tsx scripts/merge-duplicate-tournaments.ts` | təkrar turnirləri birləşdirir |
-| `npx tsx scripts/merge-duplicate-teams.ts --apply` | eyni oyunda tam eyni adlı komanda sətirlərini birləşdirir (ən köhnəsi qalır; reytinq yenidən hesablanır) |
+| **Matches** | 3,265 |
+| **Teams** | 960 |
+| **Players** | 1,392 |
+| **Tournaments** | 180 |
+| **Indexed URLs** | 6,100 |
+| **Games** | CS2 · Dota 2 · VALORANT · League of Legends |
+| **Languages** | Azerbaijani · English |
 
-İdxal skriptləri `--apply` olmadan yalnız nə edəcəyini yazır — əvvəlcə onsuz işlət.
+<sub>Measured from the live site, September 2026. The importer runs on a schedule, so these grow daily.</sub>
+
+---
+
+## Running it
+
+```bash
+docker compose up
+```
+
+That is the whole setup: it starts PostgreSQL, applies the migrations, seeds the
+database and serves the site on <http://localhost:3000>. This command is executed on
+every push by [CI](.github/workflows/ci.yml), so the claim is checked rather than
+asserted.
+
+<details>
+<summary>Without Docker</summary>
+
+```bash
+npm install                 # postinstall runs `prisma generate`
+cp .env.example .env        # then fill it in — see README.az.md for the full table
+npx prisma migrate deploy
+npx prisma db seed
+npm run dev
+```
+
+</details>
+
+---
+
+## Architecture
+
+```
+Liquipedia API ──▶ 8 import scripts ──▶ PostgreSQL ──▶ Next.js ──▶ Vercel
+  CC BY-SA,          matches, teams,      19 models,     server-      CDN,
+  2.6 s between      rosters, logos,      13 migrations  rendered     automatic
+  requests           tournaments                         + cached     migrations
+```
+
+Nothing is written by hand into the pipeline. Team ratings are **not stored as input**:
+they are replayed from the full match history every time a result changes, because Elo
+depends on order — correcting an old result incrementally would leave the error in
+place permanently ([lib/elo.ts](lib/elo.ts), [lib/rating.ts](lib/rating.ts)).
+
+Playoff brackets are reconstructed from results rather than from position. A line is
+drawn between two matches only when the data confirms it: the last match a team
+**won** before arriving. Where the reconstruction fails its own consistency check, no
+bracket is drawn at all ([components/events/Bracket.tsx](components/events/Bracket.tsx),
+[lib/stages.ts](lib/stages.ts)).
+
+![Playoff bracket](docs/img/bracket.png)
+
+---
+
+## Testing
+
+| | |
+|---|---|
+| **Unit tests** | 79 checks in Vitest, under a second — Elo maths, round vocabulary, prize ranges, timezone handling, WCAG contrast, URL safety |
+| **End-to-end** | 157 checks in real Chromium via Playwright, across 6 suites |
+| **Accessibility** | axe-core — 0 contrast violations in both themes |
+| **Dependencies** | `npm audit` — 0 vulnerabilities |
+
+```bash
+npm run test    # unit
+npm run e2e     # browser suites (requires `npm run dev` in another terminal)
+```
+
+The e2e suites drive a real browser: they create a tournament, add teams, enter live
+map scores, watch the match walk from `UPCOMING` to `LIVE` to `FINISHED`, and confirm
+the rating recomputes — then check the public pages in both languages. Console errors
+and 4xx/5xx responses are collected automatically, so a page that renders while
+something breaks behind it still fails the run.
+
+**Unit tests are not written to raise a number.** Each one pins either a real bug that
+shipped or a boundary that matters. The three bugs below each have tests named after
+them.
+
+Two dependencies are pinned forward through `overrides` rather than left to npm. In
+both cases npm's own `audit fix` proposes downgrading Prisma by a major version — a
+breaking change, offered to remove a vulnerability in a MySQL driver this project never
+loads, because it runs on PostgreSQL. Forcing the patched package forward is the smaller
+change, and it is written down rather than left as a silent pin.
+
+---
+
+## Engineering decisions
+
+### "No error" is not the same as "correct"
+
+The three worst bugs in this project all ran without throwing anything.
+
+**Timezone.** Date formatting ran in the server's zone. The server is on Vercel, where
+that zone is UTC — so a match starting at 13:00 in Baku was published as 09:00. Four
+hours early, for every visitor, with nothing in the logs. Fixed by routing every date
+through one formatter pinned to the site's zone ([lib/dates.ts](lib/dates.ts)), and by
+printing "Baku time" on screen so the number cannot be read as local.
+
+**A duplicate that fed itself.** Name normalisation classified two identically named
+teams as ambiguous and dropped them from the lookup. The importer, unable to find the
+team, then created a new one — every pass. One organisation had grown to **42 rows**.
+The bug was its own cause ([lib/orgNames.ts](lib/orgNames.ts)).
+
+**Colour contrast.** In light mode every game badge sat below the WCAG threshold — one
+measured **1.90:1** against a required 4.5:1. The automated checker never reported it,
+because axe skips elements on gradient backgrounds. It had to be measured by hand, then
+replaced with a computed colour that lightens or darkens until it passes
+([lib/contrast.ts](lib/contrast.ts)).
+
+### Data integrity
+
+**Nothing is invented.** Every figure either comes from the source or is computed from
+matches already recorded. Where the source holds nothing, the page says so — player
+statistics are empty in production because Liquipedia publishes match scores, not
+per-player kill counts, and the page states this rather than showing zeros. A blank
+column reads as missing data; a filled one reads as a fact.
+
+**HLTV is not used.** It has no public API, and every "HLTV API" package on npm is a
+scraper that works against their terms. Liquipedia is used instead, credited in the
+footer under CC BY-SA — a condition of the licence, not a courtesy — with 2.6 seconds
+between requests because their terms ask for it.
+
+**Player photographs are licensed.** They come from Wikimedia Commons under CC BY,
+CC BY-SA or CC0 only. The photographer is named on the player's page and every photo is
+listed on a [credits page](https://arenahub-wheat.vercel.app/az/credits). Liquipedia's
+own photographs are deliberately **not** used: no licence is published for them, and
+their notice makes clear that permission was granted to them, not onward. Team logos are
+different — trademarks used nominatively to identify the team.
+
+**A guessed round is an invented claim.** If bracket reconstruction cannot verify
+itself — each round must be smaller than the last, and at least one winner must appear
+in the next — the matches keep their result and lose their round. Empty beats wrong.
+
+---
+
+## Project layout
+
+```
+app/[locale]/     public pages (matches, teams, players, events, news…)
+app/admin/        admin panel — all content management
+app/player/       player accounts: registration, profile, team, roster
+lib/              auth, business rules, parsing, formatting, sanitisation
+components/       UI, grouped by feature
+prisma/           schema, hand-written SQL migrations, seed
+scripts/          import and maintenance scripts
+e2e/              browser suites
+tests/            unit tests
+```
+
+Some in-code comments are in Azerbaijani, since the project's audience is. The
+reasoning behind each decision is written next to the code that implements it — the
+files linked from this README are in English.
+
+---
+
+## Licence
+
+[MIT](LICENSE) © 2026 Emil Tahirov
+
+Match data from [Liquipedia](https://liquipedia.net) under
+[CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/).
+Player photographs from Wikimedia Commons under their individual free licences, credited
+in full on the site.
