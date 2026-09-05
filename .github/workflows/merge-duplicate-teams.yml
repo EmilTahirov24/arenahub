@@ -22,6 +22,7 @@ name: Merge duplicate teams
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     paths:
       - "scripts/merge-duplicate-teams.ts"
       - "data/team-aliases.json"

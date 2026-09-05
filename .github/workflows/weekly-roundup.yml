@@ -23,6 +23,7 @@ on:
   # Yenidən yazmaq təhlükəsizdir — slug eynidir, `publishedAt` isə əhatə olunan
   # həftədən gəlir, ona görə sıralama tərpənmir.
   push:
+    branches: [main]
     paths:
       - ".github/workflows/weekly-roundup.yml"
       - "scripts/generate-weekly-roundup.ts"

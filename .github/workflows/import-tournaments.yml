@@ -36,6 +36,7 @@ on:
   # A scheduled run that fails during `npm ci` is invisible until the next tick,
   # which here is a full day away. Editing this file proves itself immediately.
   push:
+    branches: [main]
     paths: [".github/workflows/import-tournaments.yml"]
 
 # Two passes writing the same matches would race on the create-or-update check.
