@@ -48,9 +48,16 @@ docker compose up
 ```
 
 That is the whole setup: it starts PostgreSQL, applies the migrations, seeds the
-database and serves the site on <http://localhost:3000>. This command is executed on
-every push by [CI](.github/workflows/ci.yml), so the claim is checked rather than
-asserted.
+database and serves the site on <http://localhost:3000>.
+
+The first start takes a few minutes, and the reason is worth stating: `next build`
+prerenders pages that read from the database, so it cannot run while the image is
+being built — there is no database then. The container therefore migrates, seeds and
+builds on start, once Postgres reports healthy.
+
+> **Status:** [CI](.github/workflows/ci.yml) runs this command on every push so the
+> claim is checked rather than asserted. The type/lint/unit job is green; the compose
+> job is not passing yet, and this line will say so until it does.
 
 <details>
 <summary>Without Docker</summary>
