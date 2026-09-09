@@ -197,10 +197,16 @@ e2e/              browser suites
 tests/            unit tests
 ```
 
-The user interface is in Azerbaijani because the product is — that is the project,
-not an oversight. Code comments are being moved to English, starting with the files
-this README links to, which are all in English now; new comments and commit messages
-are written in English from here on.
+The user interface is in Azerbaijani because the product is — that is the project, not
+an oversight. Code comments are being moved to English, and where the line currently
+sits is a decision rather than a stopping point:
+
+- **English:** every file this README links to, the modules the unit tests cite, and
+  the shared test harness — in other words, everywhere a reader is actually sent.
+- **Still Azerbaijani:** the bodies of the six browser suites, and the import and
+  maintenance scripts. In the suites the comments and the 157 check names are one
+  voice; translating only the comments would leave the output half in each language,
+  which is worse than either. New comments and commit messages are English from here.
 
 The reasoning behind each decision is written next to the code that implements it,
 rather than collected somewhere it can drift out of date. If a comment explains why
