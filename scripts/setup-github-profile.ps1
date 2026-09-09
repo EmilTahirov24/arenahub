@@ -8,7 +8,12 @@
     2. Qalan public repo-ları private edir (siyahını əvvəlcə göstərir)
     3. Profil README-si üçün <istifadəçi>/<istifadəçi> repo-sunu yaradır
     4. Hazır README mətnini ora yükləyir
-    5. Profil sahələrini doldurur: bio, yer, sayt
+    5. Profil sahələrini doldurur: ad, bio, yer, sayt
+
+  Profil README-si docs/github-profile-README.md faylındadır (repo ilə
+  birlikdə versiyalanır). Faylda REVIEW-REQUIRED şərhi qaldıqca skript
+  heç nə etmir və token da istəmir — o abzas sənin haqqında iddiadır,
+  ona görə əvvəlcə sən oxumalısan.
 
   HEÇ NƏ SİLMİR. Private etmək geri qaytarıla bilər, mövcud repo əvəz olunmur.
 
@@ -32,7 +37,7 @@
 param(
   [switch]$Yes,
   [switch]$WhatIf,
-  [string]$ProfileReadme = "$env:USERPROFILE\Downloads\github-profile-README.md"
+  [string]$ProfileReadme = (Join-Path (Split-Path $PSScriptRoot -Parent) "docs/github-profile-README.md")
 )
 
 $ErrorActionPreference = "Stop"
@@ -44,6 +49,25 @@ $homepage = "https://arenahub-wheat.vercel.app"
 $topics = @("esports", "nextjs", "typescript", "react", "prisma", "postgresql", "tailwindcss", "i18n", "azerbaijani", "playwright")
 $bio = "I build and run ArenaHub, a bilingual esports statistics platform. Looking for a CS master's in Switzerland."
 $location = "Azerbaijan"
+$fullName = "Emil Tahirov"
+
+# --- Profil README ---------------------------------------------------------
+
+# Checked before anything else. Both failures here are free to find, and
+# discovering them after a token exists means that token has to be revoked.
+if (-not (Test-Path $ProfileReadme)) { throw "Profil README tapilmadi: $ProfileReadme" }
+
+if ((Get-Content $ProfileReadme -Raw) -match "REVIEW-REQUIRED") {
+  Write-Output ""
+  Write-Output "DAYANDIRILDI - profil README-sinde oxunmamis qeyd var."
+  Write-Output "  Fayl: $ProfileReadme"
+  Write-Output ""
+  Write-Output "  'What I am looking for' abzasi sənin kodundan çıxarılıb, amma"
+  Write-Output "  yenə də SƏNİN haqqında iddiadır - onu mən yazmışam, sən yox."
+  Write-Output "  Bir dəfə oxu. Özünü tanımırsansa, öz sözlərinlə dəyiş."
+  Write-Output "  Razısansa, REVIEW-REQUIRED şərhini fayldan sil və yenidən qaçır."
+  exit 1
+}
 
 # --- Token ----------------------------------------------------------------
 
@@ -133,7 +157,7 @@ if ($profileRepo.Count -gt 0) {
   Write-Output "  3. $owner/$owner yaradilacaq (profil sehifesi)"
 }
 Write-Output "  4. profil README: $ProfileReadme"
-Write-Output "  5. profil saheleri: bio, yer, sayt"
+Write-Output "  5. profil saheleri: ad, bio, yer, sayt"
 Write-Output ""
 Write-Output "Hec ne silinmir. Private etmek geri qaytarila biler."
 
@@ -151,7 +175,6 @@ if (-not $Yes) {
   }
 }
 
-if (-not (Test-Path $ProfileReadme)) { throw "Profil README tapilmadi: $ProfileReadme" }
 
 # --- 1. Repo metadata -----------------------------------------------------
 
@@ -194,13 +217,27 @@ try {
   $body.sha = $existing.sha
 } catch {}
 
-Invoke-GH PUT "https://api.github.com/repos/$owner/$owner/contents/README.md" $body | Out-Null
+$putOk = $false
+foreach ($attempt in 1..3) {
+  try {
+    Invoke-GH PUT "https://api.github.com/repos/$owner/$owner/contents/README.md" $body | Out-Null
+    $putOk = $true
+    break
+  } catch {
+    Start-Sleep -Seconds 3
+    try {
+      $existing = Invoke-GH GET "https://api.github.com/repos/$owner/$owner/contents/README.md"
+      $body.sha = $existing.sha
+    } catch {}
+  }
+}
+if (-not $putOk) { throw "Profil README yuklenmedi." }
 Write-Output "4/5  profil README yuklendi"
 
 # --- 5. Profil saheleri ---------------------------------------------------
 
-Invoke-GH PATCH "https://api.github.com/user" @{ bio = $bio; location = $location; blog = $homepage } | Out-Null
-Write-Output "5/5  bio, yer ve sayt yazildi"
+Invoke-GH PATCH "https://api.github.com/user" @{ name = $fullName; bio = $bio; location = $location; blog = $homepage } | Out-Null
+Write-Output "5/5  ad, bio, yer ve sayt yazildi"
 
 # --- Son ------------------------------------------------------------------
 
