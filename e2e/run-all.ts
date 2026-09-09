@@ -1,11 +1,11 @@
 /**
- * Bütün brauzer dəstlərini ardıcıl qaçırır və yekun hesabat verir.
+ * Runs every browser suite in turn and prints one final report.
  *
- *   npm run dev      # ayrı terminalda
+ *   npm run dev      # in another terminal
  *   npm run e2e
  *
- * Bir dəst sınsa da qalanları qaçırılır — məqsəd ilk səhvdə dayanmaq yox, tam
- * mənzərəni görməkdir.
+ * A failing suite does not stop the others: the point is the whole picture, not
+ * halting at the first error.
  */
 import { spawnSync } from "node:child_process";
 
@@ -20,8 +20,8 @@ for (const suite of SUITES) {
 
 console.log(`\n${"═".repeat(60)}`);
 if (failed.length) {
-  console.log(`${failed.length}/${SUITES.length} dəst keçmədi:`);
+  console.log(`${failed.length}/${SUITES.length} suites failed:`);
   for (const f of failed) console.log(`  · ${f}`);
   process.exit(1);
 }
-console.log(`Bütün ${SUITES.length} dəst keçdi.`);
+console.log(`All ${SUITES.length} suites passed.`);

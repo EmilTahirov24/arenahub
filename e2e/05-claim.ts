@@ -1,17 +1,18 @@
 /**
- * Bir suala cavab verir: profil sahiblənməsi (claim) və onun birləşdirilməsi
- * düzgün işləyirmi?
+ * Answers one question: does claiming a profile, and the merge that follows,
+ * work correctly?
  *
- * Layihənin geri qaytarıla bilməyən yeganə əməliyyatıdır. Təsdiqdə hesab sətri
- * SİLİNİR və onun hər şeyi — xal, proqnoz, statistika, tərkib və komanda
- * sahibliyi — hədəf profilə keçir; hədəf isə hesabın e-poçtunu və şifrəsini
- * götürür. Səhv getsə, geri qaytarmaq üçün heç nə yoxdur, ona görə testi olmalıdır.
+ * This is the only irreversible operation in the project. On approval the
+ * claimant's row is DELETED and everything it holds — points, predictions,
+ * statistics, roster membership and team ownership — moves to the target
+ * profile, which takes on the account's email and password. If it goes wrong
+ * there is nothing to undo it with, which is why it has a test.
  *
  *   npm run dev
  *   npx tsx e2e/05-claim.ts
  *
- * Fikstürlər Prisma ilə qurulur: qeydiyyat saatda 5 ilə məhduddur və bu dəstin
- * yoxladığı şey qeydiyyat deyil, birləşmədir.
+ * Fixtures are built with Prisma: registration is limited to 5 an hour, and
+ * what this suite checks is the merge, not registration.
  */
 import {
   BASE,
@@ -53,7 +54,7 @@ async function cleanup() {
     await prisma.team.updateMany({ where: { ownerId: { in: ids } }, data: { ownerId: null } });
     await prisma.player.deleteMany({ where: { id: { in: ids } } });
   }
-  console.log(`(təmizləndi: ${ids.length} profil)\n`);
+  console.log(`(cleaned up: ${ids.length} profiles)\n`);
 }
 
 async function main() {
@@ -63,11 +64,11 @@ async function main() {
   const otherGame = await prisma.game.findFirstOrThrow({ where: { slug: { not: "cs2" } } });
   const hash = await bcrypt.hash(CLAIMANT_PASSWORD, 10);
 
-  // Hədəf: sahibsiz profil, öz xalı və matç statistikası var.
+  // The target: an unclaimed profile with its own points and match statistics.
   const shell = await prisma.player.create({
     data: { slug: "e2e-kolge-profil", nickname: SHELL_NICK, gameId: cs2.id, isClaimed: false, points: 7 },
   });
-  // Müraciətçi: qeydiyyatlı hesab, öz xalı və proqnozu var.
+  // The claimant: a registered account with its own points and a prediction.
   const claimant = await prisma.player.create({
     data: {
       slug: "e2e-telebci",
@@ -80,7 +81,8 @@ async function main() {
       points: 5,
     },
   });
-  // Blok yoxlamaları üçün: başqa oyunda sahibsiz profil və artıq sahibi olan profil.
+  // For the blocking checks: an unclaimed profile in another game, and one
+  // that already has an owner.
   await prisma.player.create({
     data: { slug: "e2e-basqa-oyun", nickname: OTHER_GAME_NICK, gameId: otherGame.id, isClaimed: false },
   });
@@ -105,57 +107,58 @@ async function main() {
   }
 
   await loginClaimant();
-  console.log("Müraciətçi girişi: ok\n");
+  console.log("Claimant signed in: ok\n");
 
-  console.log("Axtarışın sərhədləri\n");
+  console.log("Limits of the search\n");
 
-  await check("başqa oyunun profili axtarışda çıxmır", async () => {
+  await check("a profile from another game does not appear in the search", async () => {
     await gotoPage(page, `${BASE}/player/claim`);
     await page.fill('input[name="query"]', OTHER_GAME_NICK);
     await submitForm(page, 'form:has(input[name="query"])');
     const body = await visibleText(page);
-    assert(!body.includes(OTHER_GAME_NICK), "başqa oyunun profili nəticələrdə göründü");
-    assert(/tapılmadı/i.test(body), "boş nəticə mesajı yoxdur");
+    assert(!body.includes(OTHER_GAME_NICK), "a profile from another game showed up in the results");
+    assert(/tapılmadı/i.test(body), "no empty-result message");
   });
 
-  await check("artıq sahibi olan profil axtarışda çıxmır", async () => {
+  await check("an already claimed profile does not appear in the search", async () => {
     await gotoPage(page, `${BASE}/player/claim`);
     await page.fill('input[name="query"]', CLAIMED_NICK);
     await submitForm(page, 'form:has(input[name="query"])');
     const body = await visibleText(page);
-    assert(!body.includes(CLAIMED_NICK), "sahibi olan profil nəticələrdə göründü");
+    assert(!body.includes(CLAIMED_NICK), "a claimed profile showed up in the results");
   });
 
-  console.log("\nMüraciətin göndərilməsi\n");
+  console.log("\nSubmitting a claim\n");
 
-  await check("sahibsiz profil tapılır və müraciət göndərilir", async () => {
+  await check("an unclaimed profile is found and a claim is submitted", async () => {
     await gotoPage(page, `${BASE}/player/claim`);
     await page.fill('input[name="query"]', SHELL_NICK);
     await submitForm(page, 'form:has(input[name="query"])');
     let body = await visibleText(page);
-    assert(body.includes(SHELL_NICK), "sahibsiz profil axtarışda tapılmadı");
+    assert(body.includes(SHELL_NICK), "the unclaimed profile was not found by the search");
 
-    // Mətn sahəsi yalnız «Bu mənəm» seçiləndən sonra açılır.
+    // The message field only opens once "this is me" is chosen.
     await page.locator('button:has-text("Bu mənəm")').first().click();
     await page.locator('textarea[name="message"]').first().fill(
       "Bu mənim köhnə profilimdir, komandada həmin ləqəblə oynamışam.",
     );
     await submitForm(page, 'form:has(textarea[name="message"])');
-    // Mesaj client tərəfdə yazılır — mətni bir anlıq oxumaq əvəzinə elementi gözləyirik.
+    // The message is rendered on the client, so wait for the element rather
+    // than reading the text at one instant.
     await page.locator("text=/Müraciət göndərildi/").first().waitFor({ timeout: 15_000 });
 
     const claim = await prisma.profileClaim.findFirstOrThrow({
       where: { playerId: shell.id, claimantId: claimant.id },
     });
-    assert(claim.status === "PENDING", `status ${claim.status} — PENDING gözlənilirdi`);
+    assert(claim.status === "PENDING", `status ${claim.status} — expected PENDING`);
 
-    // Səhifə yenilənəndə müraciət «Müraciətlərim» siyahısında görünməlidir.
+    // On reload the claim must appear in the claimant's own list.
     await gotoPage(page, `${BASE}/player/claim`);
     body = await visibleText(page);
-    assert(/Baxılır/i.test(body), "müraciət siyahısında «Baxılır» statusu yoxdur");
+    assert(/Baxılır/i.test(body), "the claim list does not show the pending status");
   });
 
-  await check("tərkibdə olan müraciətçi bloklanır", async () => {
+  await check("a claimant who is on a roster is blocked", async () => {
     const team = await prisma.team.findFirstOrThrow({ where: { gameId: cs2.id } });
     const membership = await prisma.teamMembership.create({
       data: { teamId: team.id, playerId: claimant.id, joinedAt: new Date() },
@@ -169,9 +172,9 @@ async function main() {
         "Yenidən müraciət edirəm, bu profil mənimdir.",
       );
       await submitForm(page, 'form:has(textarea[name="message"])');
-      // Blok mesajı formanın altında görünməlidir, xəta ekranında yox.
+      // The block must be shown under the form, not on an error screen.
       const body = await visibleText(page);
-      assert(!body.includes("Əməliyyat tamamlanmadı"), "blok xəta ekranına atır, mesaj göstərilmir");
+      assert(!body.includes("Əməliyyat tamamlanmadı"), "the block throws to an error screen instead of showing a message");
       await page
         .locator("text=/komandanızdan ayrılmalısınız/")
         .first()
@@ -181,69 +184,69 @@ async function main() {
     }
   });
 
-  console.log("\nAdmin təsdiqi və birləşmə\n");
+  console.log("\nAdmin approval and the merge\n");
 
-  await check("admin müraciəti təsdiqləyir", async () => {
+  await check("an admin approves the claim", async () => {
     await loginAdmin(page);
     await gotoPage(page, `${BASE}/admin/claims`);
     const body = await visibleText(page);
-    assert(body.includes(SHELL_NICK) && body.includes(CLAIMANT_NICK), "müraciət admin siyahısında yoxdur");
+    assert(body.includes(SHELL_NICK) && body.includes(CLAIMANT_NICK), "the claim is missing from the admin list");
     await submitForm(page, 'form:has(button:has-text("Təsdiqlə və birləşdir"))', "Təsdiqlə və birləşdir");
   });
 
-  await check("müraciətçinin sətri silinir, hədəf profil sağ qalır", async () => {
+  await check("the claimant row is deleted and the target profile survives", async () => {
     const gone = await prisma.player.findUnique({ where: { id: claimant.id } });
-    assert(!gone, "müraciətçinin sətri hələ durur");
+    assert(!gone, "the claimant row is still there");
     const target = await prisma.player.findUnique({ where: { id: shell.id } });
-    assert(target, "hədəf profil itib — birləşmə tərsinə işləyib");
+    assert(target, "the target profile is gone — the merge ran backwards");
   });
 
-  await check("e-poçt, şifrə və isClaimed hədəf profilə keçir", async () => {
+  await check("email, password and isClaimed move to the target profile", async () => {
     const target = await prisma.player.findUniqueOrThrow({ where: { id: shell.id } });
-    assert(target.email === CLAIMANT_EMAIL, `e-poçt keçmədi: ${target.email}`);
-    assert(target.passwordHash === hash, "şifrə hash-i keçmədi");
-    assert(target.isClaimed, "hədəf profil hələ sahibsiz sayılır");
-    assert(target.emailVerified, "emailVerified keçmədi");
+    assert(target.email === CLAIMANT_EMAIL, `email did not move: ${target.email}`);
+    assert(target.passwordHash === hash, "the password hash did not move");
+    assert(target.isClaimed, "the target profile still counts as unclaimed");
+    assert(target.emailVerified, "emailVerified did not move");
   });
 
-  await check("xallar toplanır (7 + 5 = 12)", async () => {
+  await check("points are summed (7 + 5 = 12)", async () => {
     const target = await prisma.player.findUniqueOrThrow({ where: { id: shell.id } });
-    assert(target.points === 12, `xal ${target.points} — 12 gözlənilirdi`);
+    assert(target.points === 12, `points ${target.points} — expected 12`);
   });
 
-  await check("proqnoz hədəf profilin adına keçir", async () => {
+  await check("the prediction moves to the target profile", async () => {
     const moved = await prisma.matchPrediction.findFirst({ where: { matchId: match.id, playerId: shell.id } });
-    assert(moved, "proqnoz köçürülməyib");
+    assert(moved, "the prediction was not moved");
     const orphan = await prisma.matchPrediction.findFirst({ where: { playerId: claimant.id } });
-    assert(!orphan, "müraciətçinin adına proqnoz qalıb");
+    assert(!orphan, "a prediction is still attached to the claimant");
   });
 
-  await check("müraciət qeydi APPROVED olur və hədəfə bağlanır", async () => {
+  await check("the claim record becomes APPROVED and points at the target", async () => {
     const claim = await prisma.profileClaim.findFirstOrThrow({ where: { playerId: shell.id } });
     assert(claim.status === "APPROVED", `status ${claim.status}`);
-    assert(claim.claimantId === shell.id, "müraciət qeydi silinmiş sətrə baxır");
-    assert(claim.reviewedAt, "reviewedAt yazılmayıb");
+    assert(claim.claimantId === shell.id, "the claim record points at the deleted row");
+    assert(claim.reviewedAt, "reviewedAt was not written");
   });
 
-  console.log("\nBirləşmədən sonra giriş\n");
+  console.log("\nSigning in after the merge\n");
 
-  await check("müraciətçi eyni şifrə ilə girib birləşmiş profilə düşür", async () => {
+  await check("the claimant signs in with the same password and lands on the merged profile", async () => {
     await loginClaimant();
     const body = await visibleText(page);
-    assert(body.includes(SHELL_NICK), `panel köhnə ləqəbi göstərir, gözlənilən: ${SHELL_NICK}`);
-    assert(!body.includes(CLAIMANT_NICK), "köhnə ləqəb hələ görünür");
+    assert(body.includes(SHELL_NICK), `the panel shows the old nickname, expected: ${SHELL_NICK}`);
+    assert(!body.includes(CLAIMANT_NICK), "the old nickname is still visible");
   });
 
-  await check("birləşmiş profilin public səhifəsi açılır", async () => {
+  await check("the merged profile's public page opens", async () => {
     const target = await prisma.player.findUniqueOrThrow({ where: { id: shell.id } });
     const res = await gotoPage(page, `${BASE}/az/players/${target.slug}`);
     assert(res && res.status() === 200, `HTTP ${res?.status()}`);
     const body = await visibleText(page);
-    assert(body.includes(SHELL_NICK), "public səhifədə profil adı yoxdur");
+    assert(body.includes(SHELL_NICK), "the profile name is missing from the public page");
   });
 
   reportProblems(problems);
-  report("Profil sahiblənməsi");
+  report("Profile claims");
   await browser.close();
   await prisma.$disconnect();
 }
