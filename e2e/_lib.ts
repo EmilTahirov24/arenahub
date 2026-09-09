@@ -97,7 +97,7 @@ export async function check(name: string, fn: () => Promise<void>): Promise<bool
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
     results.push({ name, ok: false, detail });
-    console.log(`  SƏHV  ${name}\n        ${detail.split("\n")[0]}`);
+    console.log(`  FAIL  ${name}\n        ${detail.split("\n")[0]}`);
     return false;
   }
 }
@@ -110,9 +110,9 @@ export function assert(condition: unknown, message: string): asserts condition {
 export function report(title: string): void {
   const failed = results.filter((r) => !r.ok);
   console.log(`\n${"─".repeat(60)}`);
-  console.log(`${title}: ${results.length - failed.length}/${results.length} keçdi`);
+  console.log(`${title}: ${results.length - failed.length}/${results.length} passed`);
   if (failed.length) {
-    console.log(`\nKeçməyənlər:`);
+    console.log(`\nFailed:`);
     for (const f of failed) console.log(`  · ${f.name}\n    ${f.detail}`);
     process.exitCode = 1;
   }
@@ -121,10 +121,10 @@ export function report(title: string): void {
 /** Groups and prints the console and network problems collected. */
 export function reportProblems(problems: Problem[]): void {
   if (!problems.length) {
-    console.log("\nKonsol səhvi və 4xx/5xx cavab yoxdur.");
+    console.log("\nNo console errors and no 4xx/5xx responses.");
     return;
   }
-  console.log(`\nBrauzer səviyyəsində ${problems.length} problem:`);
+  console.log(`\n${problems.length} problem(s) at browser level:`);
   const seen = new Set<string>();
   for (const p of problems) {
     const key = `${p.kind}|${p.text}`;
@@ -140,7 +140,7 @@ export function reportProblems(problems: Problem[]): void {
 export async function loginAdmin(page: Page): Promise<void> {
   const email = process.env.SEED_ADMIN_EMAIL;
   const password = process.env.SEED_ADMIN_PASSWORD;
-  assert(email && password, "SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD .env-də yoxdur");
+  assert(email && password, "SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD missing from .env");
 
   await page.goto(`${BASE}/admin/login`, { waitUntil: "domcontentloaded" });
   await page.fill('input[name="email"]', email);
@@ -152,7 +152,7 @@ export async function loginAdmin(page: Page): Promise<void> {
   await page.waitForLoadState("load", { timeout: 30_000 }).catch(() => {});
   assert(
     !new URL(page.url()).pathname.startsWith("/admin/login"),
-    `admin girişi alınmadı, indi: ${page.url()}`,
+    `admin sign-in failed, now at: ${page.url()}`,
   );
 }
 
@@ -173,7 +173,7 @@ export async function loginAdmin(page: Page): Promise<void> {
  */
 export async function submitForm(page: Page, formSelector: string, buttonText?: string): Promise<void> {
   const form = page.locator(formSelector).first();
-  assert(await form.count(), `forma tapılmadı: ${formSelector}`);
+  assert(await form.count(), `form not found: ${formSelector}`);
   const button = buttonText
     ? form.locator(`button:has-text("${buttonText}")`).first()
     : form.locator('button[type="submit"]').first();
@@ -270,7 +270,7 @@ export async function gotoPage(page: Page, url: string): Promise<Response | null
 /** Asserts the page did not fall into a Next error boundary. */
 export async function assertNotErrorPage(page: Page): Promise<void> {
   const body = await visibleText(page);
-  assert(!body.includes("Xəta baş verdi"), "səhifə xəta sərhəddinə düşdü");
-  assert(!body.includes("Əməliyyat tamamlanmadı"), "səhifə panel xəta sərhəddinə düşdü");
-  assert(!/Application error: a (client|server)-side exception/i.test(body), "Next tətbiq xətası");
+  assert(!body.includes("Xəta baş verdi"), "page fell into the error boundary");
+  assert(!body.includes("Əməliyyat tamamlanmadı"), "page fell into the admin error boundary");
+  assert(!/Application error: a (client|server)-side exception/i.test(body), "Next application error");
 }
