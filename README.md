@@ -112,6 +112,10 @@ npm run test    # unit
 npm run e2e     # browser suites (requires `npm run dev` in another terminal)
 ```
 
+After a Playwright version bump, run `npx playwright install chromium` once: the
+browser build is tied to the library version, and the suites fail with a clear
+message until it matches.
+
 The e2e suites drive a real browser: they create a tournament, add teams, enter live
 map scores, watch the match walk from `UPCOMING` to `LIVE` to `FINISHED`, and confirm
 the rating recomputes — then check the public pages in both languages. Console errors

@@ -97,11 +97,21 @@ async function main() {
     .filter(([key, value]) => flatten(enMessages)[key] !== value)
     .map(([, value]) => value);
 
+  // A plain `includes` reported a leak that was not one: az "Profil" is a prefix
+  // of en "Profile", so the correctly translated account menu tripped the check
+  // on any page where somebody was signed in. A match has to end where a word
+  // ends. `\b` is ASCII-only and these strings carry ə/ı/ş, so the boundary is
+  // written as "no letter on either side" with a Unicode property escape.
+  const asWord = (needle: string) => {
+    const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, (m) => `\\${m}`);
+    return new RegExp(`(?<!\\p{L})${escaped}(?!\\p{L})`, "u");
+  };
+
   for (const path of ["", "/matches", "/teams", "/players", "/news", "/terms", "/privacy"]) {
     await check(`en${path || "/"} carries no Azerbaijani string`, async () => {
       await gotoPage(page, `${BASE}/en${path}`);
       const body = await visibleText(page);
-      const leaked = azOnly.filter((s) => s.length > 3 && body.includes(s));
+      const leaked = azOnly.filter((s) => s.length > 3 && asWord(s).test(body));
       assert(leaked.length === 0, `untranslated: ${leaked.join(" · ")}`);
     });
   }
@@ -521,7 +531,7 @@ async function main() {
   const before = problems.length;
   await check("a missing URL returns 404", async () => {
     const res = await page.goto(`${BASE}/az/belke-de-yoxdur-12345`, { timeout: 45_000 });
-    assert(res && res.status() === 404, `HTTP ${res?.status()} — 404 gözlənilirdi`);
+    assert(res && res.status() === 404, `HTTP ${res?.status()} — 404 expected`);
     await assertNotErrorPage(page);
   });
   problems.length = before;
