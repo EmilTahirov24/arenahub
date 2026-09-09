@@ -21,6 +21,24 @@ updates:
         update-types:
           - minor
           - patch
+    # Two majors are held back, and not because they were not looked at. Both
+    # were installed, run and reverted; the compiler and the tests were fine in
+    # each case and the LINT step was what failed, in a dependency of
+    # eslint-config-next rather than in this project.
+    #
+    #   typescript 7  -> "typescript-eslint does not support TS 7.0"
+    #                    tracked at typescript-eslint/typescript-eslint#10940
+    #   eslint 10     -> eslint-plugin-react calls contextOrFilename.getFilename,
+    #                    an API removed in ESLint 10
+    #
+    # Upgrading either today means either a broken lint step or turning linting
+    # off, and neither is worth a version number. Remove the matching entry once
+    # the plugin ecosystem catches up.
+    ignore:
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+      - dependency-name: eslint
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: github-actions
     directory: /
