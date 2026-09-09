@@ -1,37 +1,38 @@
 /**
- * Brauzer yoxlamaları üçün ortaq hissə.
+ * Shared harness for the browser checks.
  *
- * Repoda avtomatik test yox idi — düzəlişlərdən sonra hər dəfə eyni səhifələri
- * əl ilə gəzmək lazım gəlirdi. Bu fayl həmin gəzintini təkrarlana bilən edir.
+ * The repository had no automated tests: after every change the same pages had
+ * to be walked by hand. This file makes that walk repeatable.
  *
- * `playwright` artıq devDependency-dir və Chromium yüklüdür, ona görə əlavə
- * quraşdırma tələb olunmur. `@playwright/test` YOXDUR — ona görə burada öz
- * kiçik report mexanizmimiz var, `expect()` işlətmirik.
+ * `playwright` is already a devDependency and Chromium is installed, so no
+ * extra setup is needed. `@playwright/test` is deliberately NOT used — hence
+ * the small reporting mechanism below and no `expect()`.
  *
- *   npx tsx e2e/01-smoke.ts       # public səhifələr
- *   npx tsx e2e/02-lifecycle.ts   # admin matç həyat dövrü
+ *   npx tsx e2e/01-smoke.ts       # public pages
+ *   npx tsx e2e/02-lifecycle.ts   # the admin match lifecycle
  *
- * Server əvvəlcədən qaldırılmalıdır. İki variant var və fərqi əhəmiyyətlidir:
+ * A server has to be running first, and which one matters:
  *
- *   npm run dev                          # sürətli, amma yanıltıcı ola bilər
- *   npm run build && npm run start       # HƏQİQİ nəticə
+ *   npm run dev                          # fast, but can mislead
+ *   npm run build && npm run start       # the REAL answer
  *
- * Dev rejimində iki şey yalançı sınıq verir, hər ikisi ölçülüb:
+ * Two things produce false failures in dev, both measured:
  *
- * Next 16 `cacheComponents` ilə "blocking-prerender-dynamic" xəbərdarlığını
- * konsola yazır. /admin/* və /player/* budaqları qəsdən bloklayandır —
- * valideyn layout-larda `connection()` və `instant = false` var, səbəbi orada
- * izah olunub — amma dev bu budaqlar İÇİNDƏKİ keçidləri yenə də yoxlayır. Bu,
- * bizim qərarımıza dair xəbərdarlıqdır, qüsur deyil, və production-da yoxdur.
+ * With `cacheComponents`, Next 16 writes a "blocking-prerender-dynamic"
+ * warning to the console. The /admin/* and /player/* branches are deliberately
+ * blocking — their parent layouts call `connection()` and set
+ * `instant = false`, explained there — but dev still checks navigations INSIDE
+ * those branches. That is a warning about a decision, not a defect, and it does
+ * not exist in production.
  *
- * Marşrutlar ilk gedişdə kompilyasiya olunur; 20 saniyəlik gözləmə hədləri o
- * zaman aşır. Buna görə `.next` təmizləndikdən sonra DAHA ÇOX test sınır —
- * əks-intuitiv olduğu üçün yazılır.
+ * Routes compile on first visit, and a 20-second wait expires while they do.
+ * So MORE tests fail right after `.next` is cleared, which is counterintuitive
+ * enough to be worth writing down.
  *
- * Hər iki səbəb də `next start` altında yoxa çıxır: 6 dəstin hamısı yaşıl olur.
- * Nəticə şübhəlidirsə, qərar production quruluşundadır.
+ * Both causes disappear under `next start`: all 6 suites go green. When a
+ * result looks doubtful, the production build is what decides it.
  *
- * `E2E_BASE_URL` ilə istənilən ünvana yönəldilə bilər.
+ * `E2E_BASE_URL` points the run at any address.
  */
 import "dotenv/config";
 import { chromium, type Browser, type Locator, type Page, type Response } from "playwright";
@@ -39,8 +40,9 @@ import { chromium, type Browser, type Locator, type Page, type Response } from "
 export const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 
 /**
- * Next dev-in öz danışığı. Bunlar səhv deyil, ona görə hesabatı doldurmasınlar.
- * Siyahı qəsdən qısadır: nə qədər çox filtr olsa, əsl səhvi udmaq riski o qədər artır.
+ * Next dev talking to itself. These are not errors, so they should not fill
+ * the report. The list is deliberately short: every filter added is another
+ * chance to swallow a real error.
  */
 const CONSOLE_NOISE = [
   /Download the React DevTools/i,
@@ -50,7 +52,7 @@ const CONSOLE_NOISE = [
 
 export type Problem = { kind: "console" | "pageerror" | "response"; text: string; url: string };
 
-/** Konsol səhvləri və 4xx/5xx cavabları toplayan səhifə. */
+/** A page that collects console errors and 4xx/5xx responses. */
 export async function newPage(browser: Browser): Promise<{ page: Page; problems: Problem[] }> {
   const problems: Problem[] = [];
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -68,7 +70,7 @@ export async function newPage(browser: Browser): Promise<{ page: Page; problems:
 
   page.on("response", (res) => {
     if (res.status() < 400) return;
-    // Favicon və source-map sorğuları məzmunla bağlı deyil.
+    // Favicon and source-map requests say nothing about the content.
     if (/\.(map|ico)(\?|$)/.test(res.url())) return;
     problems.push({ kind: "response", text: `HTTP ${res.status()}`, url: res.url() });
   });
@@ -80,12 +82,12 @@ export async function launch(): Promise<Browser> {
   return chromium.launch({ headless: true });
 }
 
-// --- kiçik hesabat mexanizmi ------------------------------------------------
+// --- a small reporting mechanism -------------------------------------------
 
 type Result = { name: string; ok: boolean; detail?: string };
 const results: Result[] = [];
 
-/** Bir yoxlama. Atılan istisna "uğursuz" sayılır, prosesi dayandırmır. */
+/** One check. A thrown error counts as a failure and does not stop the run. */
 export async function check(name: string, fn: () => Promise<void>): Promise<boolean> {
   try {
     await fn();
@@ -104,7 +106,7 @@ export function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
 
-/** Hesabatı çap edir və uğursuzluq varsa exit kodunu 1 edir. */
+/** Prints the report and sets exit code 1 if anything failed. */
 export function report(title: string): void {
   const failed = results.filter((r) => !r.ok);
   console.log(`\n${"─".repeat(60)}`);
@@ -116,7 +118,7 @@ export function report(title: string): void {
   }
 }
 
-/** Toplanmış konsol/şəbəkə problemlərini qruplaşdırıb çap edir. */
+/** Groups and prints the console and network problems collected. */
 export function reportProblems(problems: Problem[]): void {
   if (!problems.length) {
     console.log("\nKonsol səhvi və 4xx/5xx cavab yoxdur.");
@@ -133,7 +135,7 @@ export function reportProblems(problems: Problem[]): void {
   }
 }
 
-// --- giriş ------------------------------------------------------------------
+// --- signing in -------------------------------------------------------------
 
 export async function loginAdmin(page: Page): Promise<void> {
   const email = process.env.SEED_ADMIN_EMAIL;
@@ -144,8 +146,8 @@ export async function loginAdmin(page: Page): Promise<void> {
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', password);
   await page.click('button[type="submit"]');
-  // Yönləndirmə server action-dan sonra client tərəfdə baş verir, ona görə
-  // URL-i deyil, panelin özünü gözləyirik.
+  // The redirect happens on the client after the server action, so wait for
+  // the panel itself rather than for the URL.
   await page.waitForURL((u) => !u.pathname.startsWith("/admin/login"), { timeout: 30_000 });
   await page.waitForLoadState("load", { timeout: 30_000 }).catch(() => {});
   assert(
@@ -155,19 +157,19 @@ export async function loginAdmin(page: Page): Promise<void> {
 }
 
 /**
- * Formanı göndərir və server action-ın bitməsini gözləyir.
+ * Submits a form and waits for the server action to finish.
  *
- * İki tələ var.
+ * There are two traps here.
  *
- * Birincisi: səhifədə həmişə birdən çox submit düyməsi olur — admin layout-un
- * «Çıxış» düyməsi DOM-da hər səhifə formasından əvvəl gəlir, ona görə seçilməmiş
- * `button[type="submit"]` istifadəçini sistemdən çıxarır. Hər göndəriş öz
- * formasına bağlanmalıdır.
+ * The first: a page always has more than one submit button. The admin layout's
+ * "sign out" button comes before every page form in the DOM, so an unscoped
+ * `button[type="submit"]` signs the user out. Every submit must be bound to
+ * its own form.
  *
- * İkincisi: server action naviqasiya yaratmır, ona görə `load` hadisəsi baş
- * vermir; `networkidle` isə Partial Prerendering-lə heç vaxt gəlmir, çünki
- * dinamik hissə açıq bağlantı üzərindən axır. Etibarlı siqnal action-ın öz POST
- * cavabıdır.
+ * The second: a server action causes no navigation, so no `load` event fires;
+ * and `networkidle` never arrives under Partial Prerendering, because the
+ * dynamic part streams over an open connection. The reliable signal is the
+ * action's own POST response.
  */
 export async function submitForm(page: Page, formSelector: string, buttonText?: string): Promise<void> {
   const form = page.locator(formSelector).first();
@@ -180,17 +182,18 @@ export async function submitForm(page: Page, formSelector: string, buttonText?: 
     page.waitForResponse((r) => r.request().method() === "POST", { timeout: 30_000 }).catch(() => null),
     button.click(),
   ]);
-  // POST qayıtdı; React-ın nəticəni çəkməsi üçün qısa fasilə.
+  // The POST came back; a short pause for React to render the result.
   await page.waitForTimeout(300);
   await waitForContent(page);
 }
 
 /**
- * Düyməyə basır və server action-ın POST cavabını gözləyir.
+ * Clicks a button and waits for the server action's POST response.
  *
- * `submitForm` bütöv formanı seçəndə işlədilir; bu isə artıq əlində olan
- * locator üçündür. Səbəb eynidir: action naviqasiya yaratmır, ona görə `load`
- * gəlmir, `networkidle` isə stream olunan cavabla heç vaxt baş vermir.
+ * `submitForm` is for when the whole form is selected; this is for a locator
+ * already in hand. The reason is the same: the action causes no navigation, so
+ * `load` never fires, and `networkidle` never happens with a streamed
+ * response.
  */
 export async function clickAndSettle(page: Page, locator: Locator): Promise<void> {
   await Promise.all([
@@ -202,45 +205,46 @@ export async function clickAndSettle(page: Page, locator: Locator): Promise<void
 }
 
 /**
- * Səhifədə GÖRÜNƏN mətn.
+ * The text a reader can actually SEE.
  *
- * `textContent` <script> teqlərinin içini də qaytarır — Next səhifəyə RSC yükünü
- * elə oradan yerləşdirir, ona görə orada axtarış aparmaq həm yalan «tapıldı»,
- * həm də yalan «tapılmadı» verir. `innerText` yalnız çəkilən mətni görür.
+ * `textContent` also returns the contents of <script> tags, and that is where
+ * Next puts the RSC payload — so searching it produces both false "found" and
+ * false "not found". `innerText` sees only rendered text.
  */
 export async function visibleText(page: Page): Promise<string> {
   return page.locator("body").innerText();
 }
 
 /**
- * Yalnız GÖRÜNƏN uyğun elementləri sayır.
+ * Counts only the matching elements that are VISIBLE.
  *
- * Stream zamanı React tamamlanmış Suspense hissəsini əvvəlcə gizli bir qutuya
- * yazır, sonra yerinə köçürür. Həmin an DOM-da eyni siyahının İKİ nüsxəsi olur
- * və adi `locator.count()` ikisini də sayır — gizli olan da DOM-dadır.
+ * While streaming, React writes a completed Suspense boundary into a hidden
+ * container first and then moves it into place. For that moment the DOM holds
+ * TWO copies of the same list, and a plain `locator.count()` counts both — the
+ * hidden one is in the DOM too.
  *
- * Bu, `/results` səhifələmə yoxlamasını uydurma şəkildə sındırdı: 50 sətir
- * limiti qüvvədə idi, lakin sayğac 90 gördü. Dəst tək qaçanda səhifə isti
- * keşdən dərhal gəlirdi və heç vaxt tutulmurdu; tam qaçışda server yüklü olur,
- * stream uzanır və ölçü düz ortasına düşür. Yəni bu, testin dəyişkən nəticəsi
- * idi, tətbiqin qüsuru deyil.
+ * This broke the `/results` pagination check for no real reason: the 50-row
+ * limit was being applied, but the counter saw 90. Run on its own the suite hit
+ * a warm cache and never caught it; in a full run the server is busy, the
+ * stream takes longer, and the measurement lands in the middle of it. A varying
+ * test result, not a defect in the application.
  *
- * Yuxarı hədd yoxlayan HƏR sayğac bundan keçməlidir. Varlıq ("ən azı bir dənə
- * var") və yoxluq ("heç biri yoxdur") yoxlamaları təhlükəsizdir: gizli nüsxə
- * onlarda nə yalan müsbət, nə yalan mənfi yaradır.
+ * EVERY counter that asserts an upper bound has to go through this. Existence
+ * ("at least one") and absence ("none at all") are safe: the hidden copy
+ * produces neither a false positive nor a false negative for those.
  */
 export function visibleCount(page: Page, selector: string): Promise<number> {
   return page.locator(`${selector}:visible`).count();
 }
 
 /**
- * Səhifənin məzmununun həqiqətən çəkilməsini gözləyir.
+ * Waits until the page's content has actually rendered.
  *
- * `domcontentloaded` yalnız qabığı verir: qalanı stream ilə gəlir.
- * `networkidle` isə ÜMUMİYYƏTLƏ yaramır — Partial Prerendering qabığı dərhal
- * göndərir və dinamik hissəni açıq bağlantı üzərindən axıdır, yəni şəbəkə heç
- * vaxt "sakit" olmur. Ölçü kimi əsas sahənin həm hündürlüyünün, həm də mətninin
- * olması götürülür; bu, stream bitəndə doğru olur.
+ * `domcontentloaded` gives only the shell; the rest arrives by stream. And
+ * `networkidle` is no use AT ALL here — Partial Prerendering sends the shell
+ * immediately and streams the dynamic part over an open connection, so the
+ * network is never "idle". The measure used instead is the main region having
+ * both a height and some text, which becomes true when the stream finishes.
  */
 export async function waitForContent(page: Page, timeout = 30_000): Promise<void> {
   await page.waitForFunction(
@@ -256,14 +260,14 @@ export async function waitForContent(page: Page, timeout = 30_000): Promise<void
   );
 }
 
-/** Səhifəyə keçir və məzmunun çəkilməsini gözləyir. */
+/** Navigates to a page and waits for its content to render. */
 export async function gotoPage(page: Page, url: string): Promise<Response | null> {
   const res = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
   await waitForContent(page);
   return res;
 }
 
-/** Səhifənin Next xəta sərhəddinə düşmədiyini yoxlayır. */
+/** Asserts the page did not fall into a Next error boundary. */
 export async function assertNotErrorPage(page: Page): Promise<void> {
   const body = await visibleText(page);
   assert(!body.includes("Xəta baş verdi"), "səhifə xəta sərhəddinə düşdü");

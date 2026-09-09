@@ -1,23 +1,24 @@
 import { bestTextOn } from "./contrast";
 
 /**
- * Loqosu olmayan komanda üçün sabit rəng.
+ * A stable colour for a team with no logo.
  *
- * `TeamAvatar` fon kimi `primaryColor ?? "#7c3aed"` işlədirdi. Nəticə canlı
- * saytda ölçüldü (2026-08-30, /az/teams?game=dota2): səhifədə 102 loqosuz
- * avatar vardı və hamısının rəngi EYNİ idi — `#7c3aed`. Bir ekranda yüz eyni
- * bənövşəyi kvadrat loqo əvəzi kimi yox, yüklənməmiş şəkil kimi oxunur.
+ * `TeamAvatar` used `primaryColor ?? "#7c3aed"` as its background. The result
+ * was measured on the live site (2026-08-30, /az/teams?game=dota2): the page
+ * held 102 logo-less avatars and every one of them was the SAME colour,
+ * `#7c3aed`. A hundred identical purple squares on one screen do not read as
+ * stand-ins for logos; they read as images that failed to load.
  *
- * Rəng addan alınır, təsadüfi deyil: eyni komanda hər səhifədə, hər
- * yeniləmədə eyni rəngi alır. Serverdə və brauzerdə eyni nəticə verir, ona görə
- * hidratasiya uyğunsuzluğu yaratmır.
+ * The colour is derived from the name rather than picked at random, so a team
+ * gets the same one on every page and every reload. Server and browser compute
+ * it identically, so it cannot cause a hydration mismatch.
  *
- * Bu, uydurma məlumat DEYİL: rəng heç nə iddia etmir, sadəcə sətirləri
- * bir-birindən ayırır. Komandanın öz rəngi bilinirsə (`primaryColor`), həmişə
- * o üstündür.
+ * This is NOT invented data: the colour claims nothing, it only tells rows
+ * apart. Where the team's own colour is known (`primaryColor`), that always
+ * wins.
  */
 
-/** FNV-1a: qısa, sürətli və dəyişməz — eyni ad həmişə eyni ədəd verir. */
+/** FNV-1a: short, fast and stable — the same name always yields the same number. */
 function hash(text: string): number {
   let h = 0x811c9dc5;
   for (let i = 0; i < text.length; i++) {
@@ -28,16 +29,17 @@ function hash(text: string): number {
 }
 
 /**
- * Çalar dairə üzrə seçilir, doyğunluq və işıqlılıq isə sabit qalır.
+ * The hue moves around the circle; saturation and lightness stay fixed.
  *
- * İşıqlılıq 28%-dir və bu rəqəm seçilməyib, HESABLANIB. Avatarın üstündə ağ
- * mətn var; ilk versiyada 42% yazmışdım və 360 çaların hamısını yoxlayanda
- * ən pis hal — sarı, h=60, #a9a92d — ağ mətnlə cəmi 2.50:1 verirdi, yəni
- * WCAG həddinin yarısı. axe bunu tutmurdu, çünki fon qradiyentdir və alət
- * qradiyentli elementləri atlayır: rəqəm yalnız əl ilə ölçəndə üzə çıxdı.
+ * The 28% lightness was not chosen, it was COMPUTED. The avatar carries white
+ * text; the first version used 42%, and checking all 360 hues showed the worst
+ * case — yellow, h=60, #a9a92d — giving white text just 2.50:1, barely half the
+ * WCAG threshold. axe did not report it, because the background is a gradient
+ * and the tool skips gradient elements: the number only appeared when measured
+ * by hand.
  *
- * Ölçülən hədlər (S=58%): 34% -> 3.71, 32% -> 4.12, 30% -> 4.60, 28% -> 5.14.
- * 30% keçir, amma sərhədə çox yaxındır; 28% ehtiyat saxlayır.
+ * Measured thresholds (S=58%): 34% -> 3.71, 32% -> 4.12, 30% -> 4.60,
+ * 28% -> 5.14. 30% passes, but sits on the line; 28% keeps a margin.
  */
 export function avatarColor(name: string, primaryColor?: string | null): string {
   if (primaryColor) return primaryColor;
@@ -46,23 +48,25 @@ export function avatarColor(name: string, primaryColor?: string | null): string 
 }
 
 /**
- * Nişanın hər iki tema üçün fonu və mətn rəngi.
+ * The badge's background and ink for both themes.
  *
- * Çalar eynidir, işıqlılıq əksinədir. Səbəb qaranlıq temanın qərarını təkrar
- * etməməkdir: 28% işıqlılıq AĞ mətn üçün seçilmişdi, ağ səhifədə isə həmin
- * rəng qara kərpic kimi oxunur — /az/players sətirlərində on iki tünd dairə.
+ * The hue is the same and the lightness is inverted. The reason is not to
+ * repeat the dark theme's decision: 28% lightness was chosen for WHITE text,
+ * and on a white page that same colour reads as a dark brick — twelve dark
+ * discs down the rows of /az/players.
  *
- * İşıqlı variant açıq çalardan bir az tündünə keçir və mətni tünddür. Ölçülən
- * ən pis hal (360 çaların hamısı, qradiyentin TÜND ucunda):
+ * The light variant runs from a pale hue to a slightly deeper one and takes
+ * dark ink. Worst case measured across all 360 hues, at the DARK end of the
+ * gradient:
  *
- *   qaranlıq  hsl(h 58% 28%) → #0a0b10, ağ mətn      5.14:1  (h=60, sarı)
- *   işıqlı    hsl(h 58% 88%) → hsl(h 58% 72%), tünd  6.18:1  (h=240, mavi)
+ *   dark    hsl(h 58% 28%) → #0a0b10, white ink   5.14:1  (h=60, yellow)
+ *   light   hsl(h 58% 88%) → hsl(h 58% 72%), dark 6.18:1  (h=240, blue)
  *
- * Yəni işıqlı variant indikindən daha təhlükəsizdir. Ağ kartdan da ayrılır:
- * fərq 1.14–1.52.
+ * So the light variant has more headroom than the dark one. It also separates
+ * from the white card behind it, by 1.14–1.52.
  *
- * Komandanın öz rəngi bilinirsə, o hər iki temada saxlanılır — mətn rəngi isə
- * ona qarşı hesablanır, `lib/contrast.ts`-dəki `bestTextOn` ilə.
+ * Where the team's own colour is known it is kept in both themes, and the ink
+ * is computed against it with `bestTextOn` from lib/contrast.ts.
  */
 export type AvatarPaint = {
   dark: string;

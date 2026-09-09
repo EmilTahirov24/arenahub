@@ -1,21 +1,23 @@
 /**
- * Canlı yayım linklərini oxuyan tək yer.
+ * The one place that understands stream links.
  *
- * Link Liquipedia-dan GƏLMİR və gələ də bilməz. Ölçüldü (2026-09-01): onların
- * matç lentində yayım düymələri var, amma ünvan `Special:Stream/twitch/ESL_
- * Counter-Strike` şəklindədir — bu, Twitch kanalının adı deyil, onların öz
- * daxili açarıdır (Twitch adında defis ola bilmir). Açarı yalnız onların
- * bazası açır, həmin səhifə isə bizə 403 qaytarır — nə skriptə, nə brauzerə.
- * Yəni linki uydurmaq olar, düzəltmək olmaz. Ona görə linki admin yazır.
+ * The link does NOT come from Liquipedia, and cannot. Measured on 2026-09-01:
+ * their match ticker does carry stream buttons, but the address is of the form
+ * `Special:Stream/twitch/ESL_Counter-Strike` — which is not a Twitch channel
+ * name (a Twitch name cannot contain a hyphen) but their own internal key.
+ * Only their database resolves it, and that page returns 403 to us, to a script
+ * and to a real browser alike. The link could be invented; it could not be
+ * derived. So an admin enters it.
  *
- * Buradakı iki qayda mühümdür:
+ * Two rules here carry the weight:
  *
- *  1. Yalnız http/https qəbul olunur. Sahə birbaşa `<a href>`-ə düşür və
- *     panelə EDITOR rolu da girə bilir.
- *  2. Kanal linki ilə video linki fərqləndirilir. Kanal linki yalnız yayım
- *     gedərkən doğrudur: matç bitəndən sonra `twitch.tv/blast` həmin an nə
- *     yayımlanırsa ona aparır — yəni bitmiş matçın səhifəsindəki «İzlə»
- *     düyməsi başqa bir matça aparır. YouTube video linki isə qalıcıdır.
+ *  1. Only http and https are accepted. The field goes straight into an
+ *     `<a href>`, and the panel is reachable by the EDITOR role too.
+ *  2. A channel link is distinguished from a video link. A channel link is only
+ *     true while the stream is running: once the match is over,
+ *     `twitch.tv/blast` points at whatever is live at that moment — so a
+ *     "watch" button on yesterday's match sends the reader to a different one.
+ *     A YouTube video link stays true.
  */
 
 export type StreamPlatform = "youtube" | "twitch" | "kick" | "other";
@@ -23,12 +25,12 @@ export type StreamPlatform = "youtube" | "twitch" | "kick" | "other";
 export type StreamInfo = {
   url: string;
   platform: StreamPlatform;
-  /** Ekranda göstərilən ad — «YouTube», «Twitch»… */
+  /** The name shown on screen — "YouTube", "Twitch"… */
   label: string;
   /**
-   * Link matç bitəndən sonra da doğru qalırmı?
+   * Does the link stay true after the match ends?
    *
-   * Konkret videoya işarə edən link qalıcıdır; kanala işarə edən link yox.
+   * A link to a specific video does; a link to a channel does not.
    */
   permanent: boolean;
 };
@@ -37,19 +39,19 @@ const LABELS: Record<StreamPlatform, string> = {
   youtube: "YouTube",
   twitch: "Twitch",
   kick: "Kick",
-  other: "Yayım",
+  other: "Stream",
 };
 
-/** Host-un həmin domenə (və ya alt-domeninə) aid olması. */
+/** Whether the host is that domain, or a subdomain of it. */
 function hostIs(host: string, domain: string): boolean {
   return host === domain || host.endsWith(`.${domain}`);
 }
 
 /**
- * Ünvanı təhlükəsiz URL-ə çevirir, ya da null.
+ * Turns the input into a safe URL, or null.
  *
- * `javascript:` və `data:` kimi sxemlər açıq şəkildə kənarlaşdırılır — sahə
- * `<a href>`-ə düşür və linki yazan super-admin olmaya bilər.
+ * Schemes such as `javascript:` and `data:` are rejected outright: the value
+ * ends up in an `<a href>`, and whoever typed it need not be a super admin.
  */
 export function normaliseStreamUrl(raw: string | null | undefined): string | null {
   const text = (raw ?? "").trim();
@@ -77,12 +79,12 @@ export function parseStream(raw: string | null | undefined): StreamInfo | null {
 
   if (hostIs(host, "youtube.com") || host === "youtu.be") {
     platform = "youtube";
-    // Konkret video: youtu.be/ID və ya youtube.com/watch?v=ID.
-    // Kanal və ya /live isə həmin an nə yayımlanırsa onu göstərir.
+    // A specific video: youtu.be/ID or youtube.com/watch?v=ID.
+    // A channel, or /live, shows whatever happens to be on at the time.
     permanent = host === "youtu.be" ? parsed.pathname.length > 1 : parsed.searchParams.has("v");
   } else if (hostIs(host, "twitch.tv")) {
     platform = "twitch";
-    // twitch.tv/videos/123 arxivdir; twitch.tv/kanal yalnız canlıdır.
+    // twitch.tv/videos/123 is an archive; twitch.tv/channel is live only.
     permanent = parsed.pathname.startsWith("/videos/");
   } else if (hostIs(host, "kick.com")) {
     platform = "kick";
@@ -93,10 +95,11 @@ export function parseStream(raw: string | null | undefined): StreamInfo | null {
 }
 
 /**
- * Bu link həmin statusda göstərilməlidirmi?
+ * Should this link be shown at this status?
  *
- * Bitmiş matçda kanal linki səhv hekayə danışır — ona görə yalnız qalıcı link
- * qalır. Ləğv olunmuş və təxirə salınmış matçda yayım linki mənasızdır.
+ * On a finished match a channel link tells the wrong story, so only a permanent
+ * link survives. On a cancelled or postponed match a stream link means nothing
+ * at all.
  */
 export function showStream(stream: StreamInfo | null, status: string): boolean {
   if (!stream) return false;
