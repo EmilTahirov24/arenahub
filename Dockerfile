@@ -1,6 +1,6 @@
 # Debian slim rather than Alpine: the Prisma CLI ships prebuilt engine binaries
 # and musl is the variant that goes wrong quietly.
-FROM node:24-slim AS deps
+FROM node:26-slim AS deps
 WORKDIR /app
 
 # Prisma's engines link against OpenSSL, which the slim images do not carry.
@@ -15,7 +15,7 @@ COPY prisma ./prisma
 # layer is reused as long as the lockfile and schema are unchanged.
 RUN npm ci
 
-FROM node:24-slim AS runner
+FROM node:26-slim AS runner
 WORKDIR /app
 
 # Same reason as above: without OpenSSL, `prisma migrate deploy` fails at
