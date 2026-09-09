@@ -92,7 +92,12 @@ async function main() {
     await page.fill('input[name="endDate"]', "2026-08-30");
     await page.selectOption('select[name="status"]', "ONGOING");
     await submitForm(page, FORM.tournament);
-    assert(page.url().includes("/admin/tournaments"), `did not return to the list: ${page.url()}`);
+    // The same trap as the match form further down: /admin/tournaments/new also
+    // "includes" /admin/tournaments, so a redirect that has not landed yet reads
+    // as success and the confusion surfaces several checks later.
+    const offTheForm = (u: URL) => u.pathname.startsWith("/admin/tournaments") && !u.pathname.endsWith("/new");
+    await page.waitForURL(offTheForm, { timeout: 30_000 }).catch(() => {});
+    assert(offTheForm(new URL(page.url())), `did not return to the list: ${page.url()}`);
 
     const row = page.locator(`a:has-text("${FIXTURE}")`).first();
     assert(await row.count(), "the new tournament is not in the list");
@@ -249,9 +254,18 @@ async function main() {
     await page.selectOption('select[name="bestOf"]', "3");
     await page.selectOption('select[name="status"]', "UPCOMING");
     await submitForm(page, FORM.match);
-    assert(/\/admin\/matches\/[^/]+$/.test(new URL(page.url()).pathname), `did not land on the edit page: ${page.url()}`);
+    // `[^/]+$` also matches the page this check starts on — /admin/matches/new.
+    // On a cold server the redirect had not landed when the address was read,
+    // so the literal word "new" became the match id, and every later step drove
+    // /admin/matches/new/live: a 404 page, which surfaced only as "form not
+    // found". Wait for the address to actually change, then prove the id names
+    // a real row rather than trusting its shape.
+    const landed = (u: URL) => /^\/admin\/matches\/[^/]+$/.test(u.pathname) && !u.pathname.endsWith("/new");
+    await page.waitForURL(landed, { timeout: 30_000 }).catch(() => {});
+    assert(landed(new URL(page.url())), `did not land on the edit page: ${page.url()}`);
     matchId = new URL(page.url()).pathname.split("/").pop() ?? "";
-    assert(matchId, "could not read the match id");
+    const createdMatch = await prisma.match.findUnique({ where: { id: matchId }, select: { id: true } });
+    assert(createdMatch, `the address holds no real match id: ${matchId}`);
 
     const team = await prisma.team.findFirst({ where: { name: teamAName }, select: { rating: true } });
     ratingBefore = team?.rating ?? 0;

@@ -173,7 +173,21 @@ export async function loginAdmin(page: Page): Promise<void> {
  */
 export async function submitForm(page: Page, formSelector: string, buttonText?: string): Promise<void> {
   const form = page.locator(formSelector).first();
-  assert(await form.count(), `form not found: ${formSelector}`);
+  // Every other step here goes through a Playwright locator, which waits on its
+  // own. `count()` does not: it asks once. A form inside a Suspense boundary is
+  // not in the DOM the instant the page settles, so on a cold route this
+  // reported "form not found" for a form that arrived a moment later — and
+  // because the whole match lifecycle hangs off the first form, one early miss
+  // failed eight further checks that were never run.
+  await form.waitFor({ state: "attached", timeout: 15_000 }).catch(() => {});
+  if (!(await form.count())) {
+    // "form not found" on its own sent me looking for a slow render three times.
+    // Twice the page was not the page at all — a redirect to the sign-in screen,
+    // and a notFound() for a row that had been rolled back. The address and the
+    // first line of what is actually on screen say which of those it is.
+    const seen = (await visibleText(page).catch(() => "")).trim().split("\n").slice(0, 3).join(" / ");
+    assert(false, `form not found: ${formSelector}\n        at ${page.url()}\n        page shows: ${seen || "(nothing)"}`);
+  }
   const button = buttonText
     ? form.locator(`button:has-text("${buttonText}")`).first()
     : form.locator('button[type="submit"]').first();

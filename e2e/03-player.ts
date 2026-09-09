@@ -111,7 +111,7 @@ async function main() {
   });
 
 
-  console.log("Qeydiyyat\n");
+  console.log("\nRegistration\n");
 
   await check("a password shorter than 6 characters is rejected", async () => {
     await gotoPage(page, `${BASE}/player/register`);
@@ -154,8 +154,20 @@ async function main() {
       !/Çox sayda qeydiyyat/i.test(afterSubmit),
       "registration limit reached (5 an hour). Restart the dev server — the counter is in memory.",
     );
-    await page.waitForURL((u) => u.pathname.startsWith("/player"), { timeout: 30_000 });
-    assert(!page.url().includes("/register"), `did not land on the panel: ${page.url()}`);
+    // The action redirects to /player, so that exact path is the destination.
+    // `startsWith("/player")` also matched /player/register, so this waited for
+    // nothing at all and the assertion below fired the instant the redirect was
+    // a little slow. Timing out here is not itself the failure — the next line
+    // says what is on screen, which is the part worth reading.
+    await page.waitForURL((u) => u.pathname === "/player", { timeout: 30_000 }).catch(() => {});
+    // Reporting only the URL cost an hour once: the page had been saying why the
+    // whole time. `.text-live` is the site's error colour, used by every form
+    // that reports one.
+    const shown = await page.locator("p.text-live").first().textContent().catch(() => null);
+    assert(
+      new URL(page.url()).pathname === "/player",
+      `did not land on the panel: ${page.url()}${shown ? ` — the page says: ${shown.trim()}` : ""}`,
+    );
     const created = await prisma.player.findUnique({ where: { email: EMAIL } });
     assert(created, "the account was not created in the database");
     assert(created.isClaimed, "the account should be isClaimed");
