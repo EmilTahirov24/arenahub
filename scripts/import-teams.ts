@@ -158,7 +158,7 @@ async function main() {
         country: true,
         _count: { select: { memberships: { where: { leftAt: null } } } },
       },
-      // Ən köhnə əvvəl — səbəbi lib/orgNames.ts-də izah olunub.
+      // Oldest first - the reason is written out in lib/orgNames.ts.
       orderBy: { createdAt: "asc" },
     });
     const { index: byOrg, ambiguous } = indexByOrg(existingTeams);

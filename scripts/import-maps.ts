@@ -276,12 +276,11 @@ async function main() {
   if (skipped.length) console.log("Buraxıldı: " + skipped.join(", ") + ".");
   if (!apply) console.log("\nTətbiq etmək üçün: --apply");
 
-  // Yazılan xəritə sayı. Burada ehtiyatlı davranılır: xəritə hesabı seriyanın
-  // qalibini dəyişə bilir, ona görə hər xəritə yazılışı reytinqi şübhəli edir.
-  // Praktikada bu sayğac çox vaxt sıfır olur — idxal qeydlərində «0 xəritə»
-  // yazıları buna görədir — yəni qənaət yenə də real qalır.
-  // İş axını reytinqi yalnız bu sıfırdan böyük olanda
-  // yenidən hesablayır.
+  // The number of maps written. This errs on the cautious side: a map score can
+  // change the winner of the series, so any map write makes the ratings
+  // suspect. In practice this counter is usually zero - hence the "0 maps"
+  // lines in the import records - so the saving is real all the same. The
+  // workflow replays the ratings only when this is above zero.
   return mapRows;
 }
 

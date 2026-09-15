@@ -61,8 +61,8 @@ async function main() {
   const apply = process.argv.includes("--apply");
   const weeksBack = arg("weeks", 1);
 
-  // Bazar ertəsindən bazar gününə: həftə sərhədi sabit olmalıdır ki, təkrar
-  // qaçış eyni məqaləni yeniləsin, yenisini yaratmasın.
+  // Monday to Sunday: the week boundary has to be fixed so that a repeat run
+  // updates the same article rather than creating another one.
   const now = new Date();
   const day = (now.getUTCDay() + 6) % 7; // bazar ertəsi = 0
   const thisMonday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - day));
@@ -83,17 +83,18 @@ async function main() {
   const last = new Date(end.getTime() - 1);
   const range = `${start.toISOString().slice(0, 10)} — ${last.toISOString().slice(0, 10)}`;
 
-  // Etiketdə göstərilən son gün: həftənin sonuncu TAM günü, UTC yarımgecəsində.
+  // The last day shown in the label: the week's last FULL day, at UTC midnight.
   //
-  // `last` 23:59:59.999-dur və onu Bakı zonasında formatlamaq günü bir irəli
-  // sürüşdürürdü — «27 iyul – 3 avqust», halbuki həftə 2 avqustda bitir.
-  // Həftə sərhədləri UTC ilə hesablandığı üçün etiket də UTC ilə yazılır;
-  // ay adı dilə görə dəyişir, gün nömrəsi yox.
+  // `last` is 23:59:59.999, and formatting that in the Baku zone pushed the day
+  // forward by one - "27 July - 3 August" for a week that ends on 2 August.
+  // The week boundaries are computed in UTC, so the label is written in UTC
+  // too; the month name changes with the language, the day number does not.
   const labelEnd = new Date(start.getTime() + 6 * 86_400_000);
 
   /**
-   * «17–23 avqust» şəklində insan oxunuşlu aralıq. Ay sərhədini keçəndə hər
-   * iki ay yazılır («29 avqust – 4 sentyabr»), yoxsa aralıq yanlış oxunur.
+   * A human-readable range in the form "17-23 August". Across a month
+   * boundary both months are written ("29 August - 4 September"), or the range
+   * reads wrongly.
    */
   function weekLabel(locale: "az" | "en") {
     const tag = locale === "az" ? "az-AZ" : "en-GB";
@@ -107,14 +108,14 @@ async function main() {
   console.log(`həftə: ${range}`);
   console.log(`bitmiş matç: ${matches.length}\n`);
 
-  // Boş həftə üçün məqalə yazılmır. Boş məqalə heç nədən pisdir.
+  // No article is written for an empty week. An empty article is worse than none.
   if (matches.length === 0) {
     console.log("Bu həftədə bitmiş matç yoxdur — məqalə yazılmır.");
     return;
   }
 
-  // Turnirə görə qruplaşdırıb, səviyyəyə və matç sayına görə sıralayırıq:
-  // oxucuya əvvəlcə ən böyük hadisə lazımdır.
+  // Grouped by tournament and ordered by tier and match count: the reader wants
+  // the biggest event first.
   const byTournament = new Map<string, typeof matches>();
   for (const m of matches) {
     const key = m.tournament?.slug ?? "—";
@@ -129,11 +130,11 @@ async function main() {
 
   const byGame = new Map<string, number>();
   for (const m of matches) byGame.set(m.game.shortName, (byGame.get(m.game.shortName) ?? 0) + 1);
-  // Əhatə olunan oyunların slug-ları etiketə yazılır. Kartda rəngli pil kimi
-  // görünür: siyahı əvvəl doqquz eyni boz mətn qutusundan ibarət idi və hansı
-  // həftədə nəyin oynandığı yalnız xülasəni oxuyanda bilinirdi. Etiket
-  // uydurma deyil — həmin həftədə həqiqətən matçı olan oyunlardır, matç
-  // sayına görə sıralanır.
+  // The slugs of the games covered are written into the tags. They appear on
+  // the card as coloured chips: the list used to be nine identical grey boxes
+  // of text, and what had been played in which week was only apparent from
+  // reading the summary. Nothing is invented - the tags are the games that
+  // genuinely had matches that week, ordered by match count.
   const perSlug = new Map<string, number>();
   for (const m of matches) perSlug.set(m.game.slug, (perSlug.get(m.game.slug) ?? 0) + 1);
   const gameSlugs = [...perSlug.entries()].sort((a, b) => b[1] - a[1]).map(([slug]) => slug);
@@ -184,26 +185,28 @@ async function main() {
     return parts.join("\n");
   }
 
-  // Başlıq adam üçün yazılır, maşın üçün yox. Əvvəl `2026-08-17 — 2026-08-23`
-  // idi: siyahıda yan-yana duran iki belə başlıq bir-birindən seçilmirdi və
-  // heç nə vəd etmirdi. İndi ay adı ilə, ISO tarixi isə slug-da qalır.
+  // The headline is written for a person, not a machine. It used to read
+  // `2026-08-17 - 2026-08-23`: two such headlines side by side in a list were
+  // indistinguishable and promised nothing. The month name is used now, and
+  // the ISO date stays in the slug.
   const titleAz = `${weekLabel("az")}: həftənin nəticələri`;
   const titleEn = `${weekLabel("en")}: results of the week`;
   const slug = `hefte-neticeleri-${start.toISOString().slice(0, 10)}`;
 
-  // Xülasə kartda görünən yeganə mətndir — onsuz kart bir sətir başlıqdan
-  // ibarət qalır. Burada da heç nə uydurulmur: matç sayı, oyun bölgüsü və ən
-  // yüksək səviyyəli turnir öz sətirlərimizdən yığılır.
+  // The summary is the only text visible on the card - without it the card is
+  // one line of headline. Nothing is invented here either: the match count, the
+  // split by game and the highest-tier tournament are assembled from our own
+  // rows.
   const lead = groups[0]?.[0]?.tournament;
 
-  // Sıralama əvvəlcə səviyyəyə, sonra matç sayına baxır. Yəni səviyyəsi
-  // yüksək turnir olmayan həftədə birinci qrup sadəcə ƏN ÇOX MATÇI olandır —
-  // adətən aşağı səviyyəli seçmə mərhələsi. Canlı saytda bu, belə görünürdü:
-  // «Ən böyük hadisə: LGC/2026/Rising/Stage 4/Swiss Stage». Cümlə yalan
-  // deyildi, amma vəd etdiyi şey deyildi.
+  // The ordering looks at tier first and match count second. So in a week with
+  // no high-tier tournament, the first group is simply the one with the MOST
+  // MATCHES - usually a low-tier qualifier. On the live site that read:
+  // "Biggest event: LGC/2026/Rising/Stage 4/Swiss Stage". The sentence was not
+  // false, but it was not what it promised either.
   //
-  // Ona görə söz hesablanana uyğunlaşır: S və ya A səviyyəsi varsa «ən böyük
-  // hadisə», əks halda «ən çox matç».
+  // So the wording follows what was computed: "biggest event" where there is an
+  // S or A tier, and "most matches" otherwise.
   const leadIsMajor = lead?.tier === "S" || lead?.tier === "A";
 
   function excerpt(locale: "az" | "en") {
@@ -239,15 +242,17 @@ async function main() {
     return;
   }
 
-  // Dərc tarixi ƏHATƏ OLUNAN həftənin sonudur, yazılma anı yox.
+  // The publication date is the end of the week COVERED, not the moment of
+  // writing.
   //
-  // Əvvəl burada `new Date()` vardı və nəticəsi canlı saytda göründü: 10–16
-  // avqustun icmalı «28 avqust» tarixi ilə dayanırdı, çünki skript həmin gün
-  // yenidən qaçmışdı. Yəni köhnə həftəni yenidən yazmaq onu bugünkü xəbər kimi
-  // göstərirdi və sıralama yalan olurdu. Keçmiş həftələri doldurmaq üçün bu,
-  // xüsusilə vacibdir.
+  // This used to be `new Date()`, and the consequence was visible on the live
+  // site: the round-up for 10-16 August sat there dated "28 August", because
+  // the script had run again that day. Rewriting an old week presented it as
+  // today's news and made the ordering a lie. For backfilling past weeks that
+  // matters especially.
   //
-  // Gələcəyə keçmir: cari həftə üçün qaçırılsa, indiki an götürülür.
+  // It does not move into the future: run for the current week, the present
+  // moment is used.
   const now2 = new Date();
   const publishedAt = last < now2 ? last : now2;
 
@@ -255,7 +260,7 @@ async function main() {
   const article = existing
     ? await prisma.newsArticle.update({
         where: { id: existing.id },
-        // Etiketlər də yenilənir: köhnə məqalələr yalnız ["nəticələr"] daşıyırdı.
+        // The tags are refreshed too: older articles carried only ["nəticələr"].
         data: { publishedAt, tags: articleTags },
         select: { id: true },
       })

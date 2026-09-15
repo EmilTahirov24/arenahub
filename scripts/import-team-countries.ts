@@ -56,8 +56,8 @@ async function main() {
   const teams = await prisma.team.findMany({
     where: { country: null },
     select: { id: true, name: true, game: { select: { slug: true } } },
-    // Reytinqə görə: ən çox baxılan komandalar əvvəl düzəlsin, çünki --limit ilə
-    // yarımçıq qaçış da faydalı olmalıdır.
+    // By rating: the most-viewed teams should be corrected first, because a
+    // partial run under --limit has to be useful too.
     orderBy: { rating: "desc" },
   });
 
@@ -71,8 +71,8 @@ async function main() {
   let skippedWiki = 0;
   let seen = 0;
 
-  // Tanınmayan ölkə adları toplanır: bir neçəsi təkrarlanırsa, onları
-  // lib/countries.ts-ə əlavə etmək bir dəfəyə onlarla komandanı düzəldir.
+  // Unrecognised country names are collected: where a few of them recur,
+  // adding them to lib/countries.ts fixes dozens of teams at once.
   const unknownNames = new Map<string, number>();
 
   for (const team of teams) {
@@ -87,9 +87,9 @@ async function main() {
 
     const opts: LiquipediaOptions = { wiki, userAgent: USER_AGENT };
 
-    // Yalnız DƏQİQ başlıq. Axtarışla təxmin etmək yanlış təşkilatın məlumatını
-    // gətirmək riskidir — import-rosters.ts-də eyni qərar eyni səbəblə verilib.
-    // Tapılmayan komanda sadəcə ötürülür.
+    // The EXACT title only. Guessing through a search risks pulling in another
+    // organisation's data - the same decision was taken in import-rosters.ts for
+    // the same reason. A team that is not found is simply skipped.
     let wikitext: string | null = null;
     try {
       wikitext = await fetchWikitext(opts, team.name);
@@ -120,8 +120,9 @@ async function main() {
     filled++;
     console.log(`+  ${team.name.padEnd(30)} ${code}  (${location})`);
     if (apply) {
-      // `country: null` şərti sorğuda da təkrarlanır: uzun qaçış zamanı admin
-      // eyni komandaya ölkə yazsa, onun dəyəri üstündən yazılmamalıdır.
+      // The `country: null` condition is repeated in the update as well: if an
+      // admin sets a country on the same team during a long run, their value
+      // must not be overwritten.
       await prisma.team.updateMany({ where: { id: team.id, country: null }, data: { country: code } });
     }
   }

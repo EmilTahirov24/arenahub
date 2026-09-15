@@ -30,16 +30,18 @@ async function main() {
 
   const { rating, previous } = replayRatings(matches);
 
-  // Cari dəyərlər də oxunur ki, fərq YADDAŞDA hesablansın.
+  // The current values are read as well, so the difference is computed IN
+  // MEMORY.
   //
-  // Əvvəl burada hər komanda üçün ayrıca `updateMany` gedirdi — 863 komanda,
-  // biri digərini gözləyərək. Riyaziyyat yaddaşdadır və millisaniyələr çəkir;
-  // vaxtın hamısı uzaq bazaya gedən növbəti-növbəti sorğulara gedirdi. CI-də
-  // ölçüldü: 108 və 278 saniyə, yəni bütün idxal işinin dörddə biri ilə yarısı,
-  // və komanda sayı artdıqca uzanırdı.
+  // This used to issue a separate `updateMany` per team - 863 teams, each
+  // waiting on the last. The arithmetic is in memory and takes milliseconds;
+  // all of the time went on queries to a remote database, one after another.
+  // Measured in CI: 108 and 278 seconds, a quarter to a half of the entire
+  // import job, and it grew with the team count.
   //
-  // İndi yalnız HƏQİQƏTƏN dəyişən sətirlər yazılır. Adi qaçışda bir matç nəticəsi
-  // dəyişir, yəni bir neçə komanda tərpənir — 863 sorğu əvəzinə bir neçəsi.
+  // Only rows that ACTUALLY changed are written now. On an ordinary run one
+  // match result moves, so a handful of teams move - a few queries instead of
+  // 863.
   const teams = await prisma.team.findMany({ select: { id: true, rating: true, previousRating: true } });
 
   const updates = [];
@@ -52,8 +54,8 @@ async function main() {
     );
   }
 
-  // Hissə-hissə: seed və ya kütləvi idxaldan sonra bütün cədvəl tərpənə bilər və
-  // min ifadəlik tək tranzaksiya göndərmək lazımsız risqdir.
+  // In chunks: after a seed or a bulk import the whole table can move, and
+  // sending a single transaction of a thousand statements is a needless risk.
   const CHUNK = 200;
   for (let i = 0; i < updates.length; i += CHUNK) {
     await prisma.$transaction(updates.slice(i, i + CHUNK));

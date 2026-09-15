@@ -90,29 +90,31 @@ function logoFileFrom(wikitext: string): { dark: string; light: string } | null 
     const eq = trimmed.indexOf("=");
     if (eq < 0) continue;
     const key = trimmed.slice(1, eq).trim().toLowerCase();
-    // İlk dəyər qalır: infoboksdan sonra səhifədə eyni adlı sahələr təkrarlana bilir.
+    // The first value wins: fields of the same name can recur further down the page.
     if (!values.has(key)) values.set(key, trimmed.slice(eq + 1).trim());
   }
 
-  // MediaWiki başlıqlarında alt xətt boşluqla eynidir və cavabda həmişə
-  // boşluq kimi qayıdır. Burada normallaşdırılmasa, `PARIVISION_allmode.png`
-  // sorğuda tapılır, amma nəticə açarı ilə uyğunlaşmır və loqo itir.
+  // In MediaWiki titles an underscore is the same as a space, and the response
+  // always comes back with a space. Without normalising here,
+  // `PARIVISION_allmode.png` is found by the query but never matches the result
+  // key, and the logo is lost.
   const usable = (value: string | undefined) =>
     value && IMAGE_EXT.some((ext) => value.toLowerCase().endsWith(ext))
       ? value.split("_").join(" ")
       : null;
 
-  // İKİ variant qaytarılır, biri yox.
+  // TWO variants come back, not one.
   //
-  // Əvvəl yalnız `imagedark` götürülürdü — «sayt qaranlıqdır» deyə. Nəticə
-  // işıqlı temada ölçüldü (2026-08-31): 127 loqonun 58-i TAM AĞDIR, yəni ağ
-  // kartda tamamilə görünmür, daha 31-i sərhəddədir. Yəni işıqlı temada
-  // komandaların təxminən yarısının loqosu sadəcə yox idi.
+  // Only `imagedark` was taken at first - "the site is dark". The result was
+  // measured in the light theme (2026-08-31): 58 of 127 logos are ENTIRELY
+  // WHITE, invisible on a white card, and another 31 are borderline. So in the
+  // light theme roughly half the teams simply had no logo.
   //
-  // Liquipedia infoboksu hər ikisini saxlayır: `image` açıq fon, `imagedark`
-  // tünd fon üçün. Yoxlanıldı — Spirit, Paper Rex, Tundra, Dplus, BRUTE:
-  // beşinin də fərqli işıqlı variantı var. Yalnız bir fayl olanda (`allmode`)
-  // ikisi eyni gəlir və bu, düzgündür: həmin loqo onsuz da hər fonda işləyir.
+  // The Liquipedia infobox holds both: `image` for a light background,
+  // `imagedark` for a dark one. Checked against Spirit, Paper Rex, Tundra,
+  // Dplus and BRUTE: all five have a distinct light variant. Where there is
+  // only one file (`allmode`) the two come back identical, which is correct -
+  // that logo works on any background anyway.
   const dark = usable(values.get("imagedark")) ?? usable(values.get("image"));
   const light = usable(values.get("image")) ?? usable(values.get("imagedark"));
   return dark && light ? { dark, light } : null;
@@ -135,10 +137,11 @@ const MODES = ["allmode", "darkmode", "lightmode"];
  * the crossed swords. Same for `G2 Esports allmode.png`. A stale logo is worse
  * than a wide one, so the year stays.
  *
- * `alternates` mode ailəsini saxlayır. Tünd variant axtarılanda işıqlı fayl
- * namizəd olmamalıdır və əksinə — yoxsa «kvadrata ən yaxın» seçimi tünd loqonu
- * işıqlı yuvaya qoyar və düzəltdiyimiz problem geri qayıdar. `allmode` hər iki
- * siyahıdadır, çünki o, tərifinə görə hər fonda işləyir.
+ * `alternates` keeps to the mode family. When the dark variant is being looked
+ * for, a light file must not be a candidate, and the other way round -
+ * otherwise the "closest to square" choice drops a dark logo into a light slot
+ * and the problem we fixed comes back. `allmode` is in both lists, because by
+ * definition it works on any background.
  */
 function variantsOf(file: string, alternates: string[] = ["allmode", "darkmode"]): string[] {
   const dot = file.lastIndexOf(".");
@@ -174,15 +177,15 @@ async function main() {
   const all: Team[] = JSON.parse(readFileSync(INPUT, "utf8"));
   const byGame = only ? all.filter((t) => t.game === only) : all;
 
-  // `--missing`: faylı onsuz da olan komandanı atlayır.
+  // `--missing`: skips a team whose file is already there.
   //
-  // Siyahı böyüdükcə tam qaçış Liquipedia-nın 2.6 saniyəlik fasiləsinə görə
-  // dəqiqələrlə çəkir, halbuki hər dəfə axtarılan bir neçə yeni addır. Bu bayraq
-  // olmadan siyahıya bir komanda əlavə etmək bütün siyahını yenidən çəkmək
-  // demək idi — praktikada bu, siyahını böyütməkdən çəkindirirdi.
+  // As the list grows a full run takes minutes, thanks to Liquipedia's 2.6
+  // second throttle, while what is actually being looked for each time is a few
+  // new names. Without this flag, adding one team to the list meant fetching
+  // the whole list again - which in practice discouraged growing it.
   //
-  // Standart davranış dəyişmir: bayraqsız hamısı yenilənir, çünki loqo dəyişən
-  // komanda üçün yeganə yol budur.
+  // The default does not change: without the flag everything is refreshed,
+  // because that is the only way to catch a team whose logo has changed.
   const missingOnly = process.argv.includes("--missing");
   const teams = missingOnly
     ? byGame.filter((t) => !existsSync(path.join(OUT_DIR, `${t.slug}.png`)))
@@ -190,7 +193,7 @@ async function main() {
 
   console.log(`komanda: ${teams.length}${only ? ` (${only})` : ""}${apply ? "" : "  (QURU İŞLƏTMƏ)"}\n`);
 
-  // 1. Hər komandanın infoboksundan fayl adı.
+  // 1. The file name out of each team's infobox.
   const found: {
     slug: string;
     name: string;
@@ -278,11 +281,11 @@ async function main() {
     console.log(`   Ya eyni təşkilatın iki heyəti, ya da bazada təkrar komanda. Yoxlanmalıdır.`);
   }
 
-  // 2. Fayl adlarından real URL.
+  // 2. The real URL from the file names.
   //
-  // Sorğu wiki-yə görə qruplaşdırılır: hər wiki-nin öz api.php-si var və
-  // faylı yalnız ona istinad edən wiki tanıyır. Fayllar isə ortaq commons-da
-  // saxlanılır, ona görə nəticə açarı kimi başlıq kifayətdir.
+  // The request is grouped by wiki: each wiki has its own api.php and only the
+  // wiki referring to a file knows it. The files themselves live on the shared
+  // commons, so the title is enough as a result key.
   const perWiki = new Map<string, Set<string>>();
   for (const f of found) {
     if (!perWiki.has(f.wiki)) perWiki.set(f.wiki, new Set());
@@ -295,7 +298,7 @@ async function main() {
   const byTitle = new Map<string, { url: string; size: number; width: number; height: number }>();
   for (const [wiki, titles] of perWiki) {
     const list = [...titles];
-    // 50 başlıq bir sorğunun həddidir.
+    // 50 titles is the limit for one request.
     for (let i = 0; i < list.length; i += 50) {
       const info = await api(wiki, {
         action: "query",
@@ -311,9 +314,9 @@ async function main() {
   }
 
   /**
-   * Kvadrata ən yaxın variant seçilir, adına görə deyil ölçüsünə görə.
-   * Avatar 32px kvadratdır: 4259x1659 geniş yazı-loqo orada oxunmur, çünki
-   * hündürlüyə sığdırılanda hərflər bir neçə piksel qalır.
+   * The variant closest to square is chosen by its dimensions, not its name.
+   * The avatar is a 32px square: a 4259x1659 wordmark is unreadable there,
+   * because fitting it to the height leaves the letters a few pixels tall.
    */
   const urlByTitle = new Map<string, { url: string; size: number }>();
   const resolve = (file: string, alternates?: string[]) => {
@@ -347,7 +350,7 @@ async function main() {
     return;
   }
 
-  // 3. Yüklə, kiçilt, yaz.
+  // 3. Download, resize, write.
   let sharp: (typeof import("sharp"))["default"];
   try {
     sharp = (await import("sharp")).default;
@@ -356,8 +359,8 @@ async function main() {
   }
 
   await mkdir(OUT_DIR, { recursive: true });
-  // Mövcud manifest üzərinə yazılır, əvəz edilmir: `--game dota2` ilə qaçış
-  // CS2 sətirlərini silməməlidir.
+  // The existing manifest is merged into, not replaced: a run with
+  // `--game dota2` must not delete the CS2 rows.
   const manifest: Record<string, string> = existsSync(MANIFEST)
     ? JSON.parse(readFileSync(MANIFEST, "utf8"))
     : {};
@@ -365,16 +368,16 @@ async function main() {
   let bytes = 0;
 
   /**
-   * Kvadrata DOLDURULMUR. Əvvəl hər loqo 256x256 şəffaf kətana yerləşdirilirdi;
-   * geniş söznişan (Vitality 3.46, LOUD 5.4 nisbətində) beləliklə kətanın üçdə
-   * birini tuturdu və 28 piksellik xanada 8 piksellik zolağa çevrilirdi. İndi öz
-   * nisbəti saxlanılır və uzun kənar SIZE olur; xananın enini
-   * components/common/TeamAvatar.tsx verir.
+   * NOT padded to a square. Every logo used to be placed on a 256x256
+   * transparent canvas; a wide wordmark (Vitality at a ratio of 3.46, LOUD at
+   * 5.4) then filled a third of that canvas and became an 8-pixel strip in a
+   * 28-pixel box. The aspect ratio is kept now and the long edge becomes SIZE;
+   * the width of the box comes from components/common/TeamAvatar.tsx.
    */
   const shrink = (raw: Buffer) =>
     sharp(raw).trim({ threshold: 1 }).resize(SIZE, SIZE, { fit: "inside" }).png({ compressionLevel: 9 }).toBuffer();
 
-  /** Bir faylı endirib normallaşdırır. */
+  /** Downloads one file and normalises it. */
   const grab = async (title: string) => {
     const hit = urlByTitle.get(`File:${title}`);
     if (!hit) return null;
@@ -395,10 +398,11 @@ async function main() {
     manifest[f.slug] = `/teams/${f.slug}.png`;
     bytes += dark.png.length;
 
-    // İşıqlı variant HƏMİŞƏ yazılır — ayrı fayl olmasa belə eyni şəkil. Səbəb
-    // sadəlikdir: komponent `<slug>-light.png`-in mövcudluğunu yoxlamır, sadəcə
-    // ünvanı çıxarır. Fərqli fayl gəlməyəndə iki nüsxə eyni olur və bu, düzgün
-    // nəticədir — `allmode` loqo hər fonda işləyir.
+    // The light variant is ALWAYS written - the same image where there is no
+    // separate file. The reason is simplicity: the component does not check
+    // whether `<slug>-light.png` exists, it just derives the address. Where no
+    // distinct file came back the two copies are identical, and that is the
+    // right outcome - an `allmode` logo works on any background.
     const light = f.fileLight === f.file ? dark : ((await grab(f.fileLight)) ?? dark);
     await writeFile(path.join(OUT_DIR, `${f.slug}-light.png`), light.png);
     bytes += light.png.length;

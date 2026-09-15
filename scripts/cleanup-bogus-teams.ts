@@ -55,7 +55,7 @@ async function main() {
 
   const ids = teams.map((t) => t.id);
 
-  // Nə silinəcəyi ƏVVƏLCƏ yazılır: nəticə oxunmadan heç nə itməməlidir.
+  // What will be deleted is printed FIRST: nothing should vanish unread.
   let withRoster = 0;
   for (const t of teams) {
     const n = t._count.homeMatches + t._count.awayMatches;
@@ -74,8 +74,9 @@ async function main() {
   console.log(`  bitmiş:        ${finished}`);
   console.log(`tərkibi olan komanda: ${withRoster}`);
 
-  // Gözlənilməz hal: bitmiş matç varsa, o, Elo-ya düşüb. Skript onu özbaşına
-  // silməməlidir — reytinq yenidən hesablanmalıdır və bu, ayrıca qərardır.
+  // An unexpected case: a finished match has already gone into the Elo. The
+  // script must not delete that on its own - the ratings would need replaying,
+  // and that is a separate decision.
   if (finished > 0) {
     console.log("");
     console.log("DAYANDIRILDI: bitmiş matç var, yəni reytinqə düşüb.");
@@ -92,7 +93,7 @@ async function main() {
 
   const matchIds = matches.map((m) => m.id);
   if (matchIds.length) {
-    // Matça bağlı sətirlər əvvəlcə: xarici açar onları saxlayır.
+    // The rows tied to the match go first: a foreign key is holding them.
     await prisma.matchPrediction.deleteMany({ where: { matchId: { in: matchIds } } });
     await prisma.matchVetoStep.deleteMany({ where: { matchId: { in: matchIds } } });
     await prisma.matchMap.deleteMany({ where: { matchId: { in: matchIds } } });

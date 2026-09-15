@@ -83,9 +83,9 @@ async function main(): Promise<{ written: number; note: string; ratingsStale: nu
 
   const now = new Date();
   let written = 0;
-  // Reytinqə təsir edən dəyişikliklərin sayı. `written` bunun üçün yaramır:
-  // o, toxunulan hər matçı sayır və bilet hər qaçışda təxminən eyni 260 matçı
-  // qaytarır, yəni həmişə sıfırdan böyük olur.
+  // The number of changes that affect a rating. `written` will not serve: it
+  // counts every match touched, and the ticket returns roughly the same 260
+  // matches on every run, so it is always above zero.
   let ratingsStale = 0;
   let mapRows = 0;
   let swept = 0;
@@ -138,9 +138,9 @@ async function main(): Promise<{ written: number; note: string; ratingsStale: nu
       continue;
     }
 
-    // Ən köhnə əvvəl: `indexByOrg` eyni adlı sətirlərdən birincisini seçir, yəni
-    // sıra nəticəni müəyyən edir. Orijinal sətir qalib gəlməlidir ki, matçlar
-    // onun üzərində toplansın, hər idxalda başqa nüsxəyə köçməsin.
+    // Oldest first: `indexByOrg` takes the first of the rows sharing a name, so
+    // the order decides the outcome. The original row has to win, or the
+    // matches collect on a different copy with every import.
     const teams = await prisma.team.findMany({
       where: { gameId: game.id },
       select: { id: true, name: true },
@@ -219,8 +219,8 @@ async function main(): Promise<{ written: number; note: string; ratingsStale: nu
 
       const existing = await prisma.match.findFirst({
         where: { gameId: game.id, teamAId: a.id, teamBId: b.id, scheduledAt },
-        // Status və qalib də çəkilir: Elo yalnız bunlar dəyişəndə köhnəlir,
-        // müqayisə üçün isə əvvəlki dəyər lazımdır.
+        // The status and winner are fetched too: the Elo goes stale only when
+        // those change, and comparing needs the previous value.
         select: { id: true, status: true, winnerId: true },
       });
 
@@ -230,7 +230,7 @@ async function main(): Promise<{ written: number; note: string; ratingsStale: nu
         await prisma.match.update({ where: { id: existing.id }, data });
         matchId = existing.id;
       } else {
-        // Yeni matç yalnız bitmiş və qalibi olan halda reytinqə düşür.
+        // A new match reaches the ratings only once it is finished and has a winner.
         if (status === "FINISHED" && winnerId) ratingsStale++;
         const created = await prisma.match.create({
           data: { slug: await freeSlug("match", `${def.slug}-${a.name}-vs-${b.name}-${m.date!.slice(0, 10)}`), ...data },
@@ -309,15 +309,15 @@ async function main(): Promise<{ written: number; note: string; ratingsStale: nu
     ratingsStale,
     note:
       `${written} matç, ${mapRows} xəritə, ${swept} təmizləmə` +
-      // Nəticəsi dəyişən matçların sayı qeydə də düşür: reytinqin nə vaxt və
-      // niyə yenidən hesablandığı sonradan bu sətirdən oxunur.
+      // The count of matches whose result changed goes into the record too:
+      // when and why the ratings were replayed is read back from this row.
       `, ${ratingsStale} nəticə dəyişdi` +
       (problems.length ? `; ${problems.length} problem` : ""),
   };
 }
 
-// Qeyd yalnız --apply ilə yazılır: quru işlətmə lokal yoxlamadır və sağlamlıq
-// tarixçəsini korlamamalıdır.
+// The record is written only with --apply: a dry run is a local check and must
+// not spoil the health history.
 (process.argv.includes("--apply") ? recordImportRun(prisma, "import-live", main) : main())
   .then((result) => {
     signalRatingsStale(result.ratingsStale);

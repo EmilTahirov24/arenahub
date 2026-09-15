@@ -34,7 +34,7 @@ async function main() {
 
   const ready = Object.entries(confirmed).filter(([slug, p]) => {
     if (!p.checked) return false;
-    // Fayl yoxdursa yazmırıq: baza sınıq ünvana işarə etməməlidir.
+    // Nothing is written without the file: the database must not point at a broken URL.
     return existsSync(path.join(FILES, `${slug}.jpg`));
   });
 
@@ -63,7 +63,7 @@ async function main() {
       continue;
     }
     if (player.photoUrl && !player.photoUrl.startsWith("/players/")) {
-      // Oyunçu öz şəklini yükləyib — o, bizim seçdiyimizdən üstündür.
+      // The player uploaded their own photograph - that beats anything we picked.
       ownPhoto++;
       continue;
     }

@@ -532,21 +532,22 @@ model AdminUser {
   reviewedClaims ProfileClaim[]
 }
 
-/// İdxalın hər qaçışının qeydi.
+/// A record of every run of the importer.
 ///
-/// Matçların `updatedAt`-i ürək döyüntüsü kimi işləmir: idxal yalnız nəyisə
-/// dəyişəndə sətirə toxunur, sakit gecə saatlarında isə heç nə dəyişmir — yəni
-/// "son dəyişiklik 3 saat əvvəldir" normal haldır və həyəcan siqnalı ola bilməz.
-/// Bu cədvəl isə hər qaçışda yazılır, ona görə susmaq həqiqətən problem deməkdir.
+/// The `updatedAt` on a match does not work as a heartbeat: the import touches
+/// a row only when something changed, and through the quiet night hours
+/// nothing does - so "last change was 3 hours ago" is normal and cannot raise
+/// an alarm. This table is written on every run, so silence here really does
+/// mean a problem.
 model ImportRun {
   id         String    @id @default(cuid())
   script     String
   startedAt  DateTime  @default(now())
   finishedAt DateTime?
   ok         Boolean   @default(false)
-  /// Yazılan sətir sayı — "yaşıl qaçdı, amma heç nə gətirmədi" halını tutur.
+  /// Rows written - this is what catches the "ran green but brought nothing" case.
   written    Int       @default(0)
-  /// Xəta mətni, yaxud qısa xülasə.
+  /// The error text, or a short summary.
   note       String?
 
   @@index([script, startedAt])

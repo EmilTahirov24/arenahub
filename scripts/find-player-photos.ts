@@ -1,7 +1,7 @@
 /**
  * Finds freely licensed player photos on Wikimedia Commons, via Wikidata.
  *
- *   npx tsx scripts/find-player-photos.ts               # hamısı
+ *   npx tsx scripts/find-player-photos.ts               # everyone
  *   npx tsx scripts/find-player-photos.ts --limit 50
  *   npx tsx scripts/find-player-photos.ts --game cs2
  *
@@ -84,12 +84,12 @@ const EVENT =
 /**
  * Minimum handle length for the "the file title names the player" test.
  *
- * Ölçüldü: «33» ləqəbi `20190407 103310-COLLAGE.jpg` faylına uydu, çünki rəqəm
- * sətrin içindədir. Qısa ləqəb sübut deyil.
+ * Measured: the handle "33" matched the file `20190407 103310-COLLAGE.jpg`,
+ * because the number sits inside the string. A short handle is not proof.
  */
 const MIN_HANDLE = 3;
 
-/** Ləqəb fayl adında AYRICA SÖZ kimi keçirmi. */
+/** Whether the handle appears in the file name as a WORD OF ITS OWN. */
 function titleNamesPlayer(title: string, nickname: string): boolean {
   if (nickname.length < MIN_HANDLE) return false;
   const safe = nickname.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -112,7 +112,7 @@ type Candidate = {
   width: number;
   height: number;
   imageUrl: string;
-  /** Hansı yolla tapılıb — nəzərdən keçirmə zamanı vacibdir. */
+  /** How it was found - which matters when somebody reviews it. */
   via: "wikidata" | "commons-realname";
 };
 
@@ -156,7 +156,7 @@ async function commonsPass(
     } catch {
       continue;
     }
-    // Ad özü sübut deyil: fayl adı ya ləqəbi, ya turniri adlandırmalıdır.
+    // The name alone is not proof: the file name has to name the handle or the event.
     const usable = hits.filter(
       (h) => titleNamesPlayer(h.title, p.nickname) || EVENT.test(h.title),
     );
@@ -203,11 +203,11 @@ async function main() {
   const limit = Number(arg("--limit")) || 0;
   const game = arg("--game");
 
-  // Sıra komandanın reytinqinə görədir, əlifbaya görə yox. Səbəb praktikdir:
-  // Wikidata yalnız tanınmış oyunçuları saxlayır, əlifba sırası isə siyahının
-  // başına ən az tanınanları qoyur — ilk sınaqda 40 nəfərdən 2-si tapıldı.
-  // Üzvlükdən başlamaq eyni zamanda ORDER BY-a komandanın reytinqini verir,
-  // `player.findMany` isə iç-içə əlaqəyə görə sıralaya bilmir.
+  // Ordered by the team's rating rather than alphabetically. The reason is
+  // practical: Wikidata holds only well-known players, and alphabetical order
+  // puts the least known at the head of the list - in the first trial 2 of 40
+  // were found. Starting from the membership also gives ORDER BY the team's
+  // rating, which `player.findMany` cannot sort by across a nested relation.
   const memberships = await prisma.teamMembership.findMany({
     where: {
       leftAt: null,
@@ -229,7 +229,7 @@ async function main() {
     ...(limit ? { take: limit } : {}),
   });
 
-  // Bir oyunçu iki komandada görünə bilər; birincisi (ən yüksək reytinq) qalır.
+  // A player can appear on two teams; the first (highest rated) is the one kept.
   const seen = new Set<string>();
   const players = memberships
     .map((m) => m.player)
@@ -237,15 +237,15 @@ async function main() {
 
   console.log(`${players.length} oyunçu yoxlanılır (fotosuz, aktiv rosterdə)\n`);
 
-  // 1. Hər ləqəb üçün namizəd qeydlər.
+  // 1. Candidate entities for each handle.
   const searches = new Map<string, string[]>();
   let n = 0;
   for (const p of players) {
     n++;
     if (n % 50 === 0) console.log(`   ...${n}/${players.length}`);
     const ids = new Set<string>();
-    // Həm ləqəb, həm də bilinirsə əsl ad: bəzi oyunçular Wikidata-da yalnız
-    // pasport adı ilə qeyd olunub.
+    // Both the handle and, where known, the real name: some players are
+    // recorded in Wikidata under their passport name only.
     const queries = [p.nickname];
     if (p.firstName && p.lastName) queries.push(`${p.firstName} ${p.lastName}`);
     for (const q of queries) {
@@ -260,13 +260,13 @@ async function main() {
         });
         for (const hit of s?.search ?? []) ids.add(hit.id);
       } catch {
-        /* bir sorğunun uğursuzluğu bütün qaçışı dayandırmır */
+        /* one failed request does not stop the whole run */
       }
     }
     if (ids.size) searches.set(p.slug, [...ids]);
   }
 
-  // 2. Qeydlərin özləri, 50-lik dəstələrlə.
+  // 2. The entities themselves, in batches of 50.
   const allIds = [...new Set([...searches.values()].flat())];
   console.log(`\n${allIds.length} namizəd qeyd oxunur...`);
   const entities = new Map<string, Record<string, unknown>>();
@@ -282,7 +282,7 @@ async function main() {
     }
   }
 
-  // 3. Ölkə kodları (P27 -> P297) bir dəstədə.
+  // 3. Country codes (P27 -> P297) in one batch.
   const countryIds = new Set<string>();
   for (const ent of entities.values()) {
     const c = claim(ent, "P27");
@@ -302,7 +302,7 @@ async function main() {
     }
   }
 
-  // 4. Uyğun gələn qeydi seç.
+  // 4. Pick the entity that matches.
   const picks: { player: (typeof players)[number]; id: string; ent: Record<string, unknown> }[] = [];
   for (const p of players) {
     for (const id of searches.get(p.slug) ?? []) {
@@ -311,8 +311,8 @@ async function main() {
       const desc = describe(ent);
       if (!ESPORTS.test(desc)) continue;
 
-      // Ləqəb qeydin adı və ya təxəllüsləri arasında olmalıdır — təsvir uyğun
-      // gəlsə də, başqa oyunçunun qeydi seçilməməlidir.
+      // The handle has to appear among the entity's name or aliases - even
+      // where the description fits, another player's entity must not be picked.
       const names = nameSet(ent);
       if (!names.has(p.nickname.toLowerCase())) {
         const real = `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim().toLowerCase();
@@ -324,7 +324,7 @@ async function main() {
   }
   console.log(`${picks.length} oyunçu üçün esports qeydi tapıldı`);
 
-  // 5. P18 və Commons lisenziyası.
+  // 5. P18 and the Commons licence.
   const withImage = picks.filter((x) => typeof claim(x.ent, "P18") === "string");
   console.log(`${withImage.length}-də şəkil (P18) var\n`);
 
@@ -386,7 +386,7 @@ async function main() {
     });
   }
 
-  // İkinci mənbə: yalnız Wikidata heç nə verməyən oyunçular üçün.
+  // A second source, only for the players Wikidata returned nothing for.
   if (process.argv.includes("--commons")) {
     const covered = new Set(out.map((c) => c.slug));
     const rest = players.filter((p) => !covered.has(p.slug));
@@ -413,11 +413,12 @@ Commons (əsl ad) yoxlanılır: ${rest.length} oyunçu...`);
 }
 
 /**
- * Bayraqdan sonrakı dəyər, bayraq yoxdursa undefined.
+ * The value after a flag, or undefined when the flag is absent.
  *
- * `argv[indexOf(flag) + 1]` yazmaq olmaz: bayraq yoxdursa `indexOf` -1 verir və
- * `argv[0]` node-un öz yolunu qaytarır. İlk qaçışda oyun filtri məhz buna görə
- * `--game "C:\Program Files\nodejs\node.exe"` oldu və sıfır nəticə verdi.
+ * `argv[indexOf(flag) + 1]` will not do: with the flag absent `indexOf` gives
+ * -1 and `argv[0]` returns node's own path. On the first run that turned the
+ * game filter into `--game "C:\Program Files\nodejs\node.exe"` and returned
+ * nothing.
  */
 function arg(flag: string): string | undefined {
   const i = process.argv.indexOf(flag);
@@ -434,7 +435,7 @@ function describe(ent: Record<string, unknown>): string {
   return d?.en?.value ?? "";
 }
 
-/** Qeydin adı və bütün ingilis təxəllüsləri, kiçik hərflə. */
+/** The entity's label and all its English aliases, lower-cased. */
 function nameSet(ent: Record<string, unknown>): Set<string> {
   const out = new Set<string>();
   const labels = ent?.labels as { en?: { value?: string } } | undefined;

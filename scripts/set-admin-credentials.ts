@@ -1,14 +1,14 @@
 /**
- * SUPER_ADMIN hesabının e-poçt və şifrəsini dəyişir.
+ * Changes the SUPER_ADMIN account's email and password.
  *
- *   npx tsx scripts/set-admin-credentials.ts --email <ünvan> --password <şifrə>
+ *   npx tsx scripts/set-admin-credentials.ts --email <address> --password <password>
  *
- * Hansı bazaya yazdığı `DATABASE_URL`-dən asılıdır: .env yerli bazanı göstərir,
- * ona görə bu, standart halda YERLİ hesabı dəyişir. Canlı baza üçün açar bu
- * maşından oxunmur (Vercel-də `Secret`-dir) — orada panelin öz forması
- * işlədilir: /admin/users.
+ * Which database it writes to depends on `DATABASE_URL`: .env points at the
+ * local one, so by default this changes the LOCAL account. The key for the
+ * live database is not readable from this machine (it is a `Secret` on
+ * Vercel) - the panel's own form is used there instead: /admin/users.
  *
- * `lib/*` `server-only` olduğu üçün klient burada ayrıca qurulur.
+ * Since `lib/*` is `server-only`, the client is built separately here.
  */
 import "dotenv/config";
 import { PrismaClient } from "../app/generated/prisma/client";
@@ -55,8 +55,8 @@ async function main() {
     }
     const target = admins[0];
 
-    // Başqa hesab bu e-poçtu tutubsa, `@unique` pozulur və Prisma anlaşılmaz
-    // xəta verir. Əvvəlcədən deyilsə daha aydındır.
+    // If another account holds this email, `@unique` is violated and Prisma
+    // throws something opaque. Saying so up front is clearer.
     const clash = await prisma.adminUser.findFirst({ where: { email, NOT: { id: target.id } } });
     if (clash) {
       console.error(`Bu e-poçt başqa admin hesabındadır: ${email}`);

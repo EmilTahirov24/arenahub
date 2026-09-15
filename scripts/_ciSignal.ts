@@ -1,22 +1,23 @@
 import fs from "node:fs";
 
 /**
- * CI-yə "reytinq köhnəldi" siqnalı.
+ * The "the ratings are stale" signal to CI.
  *
- * İş axını reytinq yenidən hesablanmasını yalnız bu siqnal gələndə işlədir.
- * Səbəb ölçüldü: `recompute-ratings.ts` bütün bitmiş matçların Elo tarixçəsini
- * yenidən oynadır və qaçışın 28–58%-ni tutur — iki ardıcıl qaçışda 108 və 278
- * saniyə. Matç sayı artdıqca yalnız uzanır. İdxal heç nə yazmayıbsa reytinq də
- * dəyişə bilməz, yəni həmin vaxt tam israfdır.
+ * The workflow runs the rating recomputation only when this signal arrives.
+ * The reason was measured: `recompute-ratings.ts` replays the Elo history of
+ * every finished match and takes 28-58% of the run - 108 and 278 seconds on
+ * two consecutive runs. It only grows as the match count does. If the import
+ * wrote nothing, the ratings cannot have changed, so that time is pure waste.
  *
- * DİQQƏT: sayğac yazılan sətir sayı DEYİL. İlk variantda elə idi və səhv idi:
- * bilet hər qaçışda ~260 matç qaytarır və hamısı yenidən yazılır, yəni siqnal
- * həmişə gedirdi və qənaət heç vaxt baş vermirdi. İndi yalnız reytinqə təsir
- * edən dəyişiklik sayılır — matçın statusu və ya qalibi.
+ * NOTE: the counter is NOT the number of rows written. It was in the first
+ * version, and that was wrong: the ticket returns about 260 matches on every
+ * run and all of them are rewritten, so the signal always fired and the saving
+ * never happened. Only changes that affect a rating are counted now - a match's
+ * status or its winner.
  *
- * `GITHUB_OUTPUT` yoxdursa funksiya heç nə etmir — lokal qaçışa təsiri sıfırdır.
- * Skriptlərə məxsusdur və qəsdən `lib/`-ə qoyulmayıb: ora Next tətbiqi idxal
- * edir, CI detalının orada yeri yoxdur.
+ * Without `GITHUB_OUTPUT` the function does nothing, so a local run is
+ * unaffected. It belongs to the scripts and is deliberately not in `lib/`: the
+ * Next application imports from there, and a CI detail has no place in it.
  */
 export function signalRatingsStale(changed: number): void {
   const out = process.env.GITHUB_OUTPUT;

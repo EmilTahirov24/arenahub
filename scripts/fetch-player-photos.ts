@@ -1,8 +1,8 @@
 /**
  * Downloads the CONFIRMED player photos and crops them to square avatars.
  *
- *   npx tsx scripts/fetch-player-photos.ts            # quru işlətmə
- *   npx tsx scripts/fetch-player-photos.ts --apply    # public/players/*.jpg yazır
+ *   npx tsx scripts/fetch-player-photos.ts            # dry run
+ *   npx tsx scripts/fetch-player-photos.ts --apply    # writes public/players/*.jpg
  *
  * Reads `data/player-photos.json` — the hand-checked list. It does NOT read the
  * candidates file: a candidate is a guess until someone has looked at the
@@ -71,8 +71,8 @@ async function main() {
   let written = 0;
   let bytes = 0;
   for (const [slug, photo] of ready) {
-    // Kiçildilmiş variant istənilir, orijinal yox: Commons-dakı fayllar çox vaxt
-    // bir neçə meqabaytdır və bizə 256 piksel lazımdır.
+    // The thumbnail is requested rather than the original: files on Commons are
+    // often several megabytes and 256 pixels is all we need.
     await sleep(GAP_MS);
     const api = `https://commons.wikimedia.org/w/api.php?${new URLSearchParams({
       format: "json",
@@ -98,13 +98,14 @@ async function main() {
     }
     const raw = Buffer.from(await res.arrayBuffer());
 
-    // Yuxarıdan kəsilir. Əvvəl `sharp.strategy.attention` işlədilmişdi — o,
-    // şəklin ən «diqqət çəkən» hissəsini axtarır, səhnə fotolarında isə bu, üz
-    // yox, arxadakı işıqlar və loqolar olur. Nəticə gözlə görüldü: mezii-nin
-    // avatarı sinəsini, Hans Sama-nınkı isə arxadakı komanda nişanını verirdi və
-    // ikisi də yanlış adam təəssüratı yaradırdı.
+    // Cropped from the top. `sharp.strategy.attention` was used first - it looks
+    // for the most "attention grabbing" part of the image, which in a stage
+    // photograph is not the face but the lights and logos behind it. The result
+    // was plain to see: mezii's avatar showed his chest and Hans Sama's showed
+    // the team crest behind him, and both gave the impression of the wrong
+    // person.
     //
-    // Portret şəkillərdə baş yuxarıdadır, ona görə sadə qayda daha yaxşı işləyir.
+    // In a portrait the head is at the top, so the simple rule works better.
     const jpg = await sharp(raw)
       .resize(SIZE, SIZE, { fit: "cover", position: "top" })
       .jpeg({ quality: 82, mozjpeg: true })

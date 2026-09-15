@@ -66,7 +66,7 @@ async function main() {
   const tournaments = await prisma.tournament.findMany({
     where: { location: null },
     select: { id: true, name: true, game: { select: { slug: true } } },
-    // Ən yaxın hadisələr əvvəl: --limit ilə yarımçıq qaçış da faydalı olmalıdır.
+    // The nearest events first: a partial run under --limit has to be useful too.
     orderBy: { startDate: "desc" },
   });
 
@@ -90,8 +90,8 @@ async function main() {
     }
     const opts: LiquipediaOptions = { wiki, userAgent: USER_AGENT };
 
-    // Yalnız dəqiq başlıq — axtarışla təxmin etmək başqa turnirin yerini
-    // gətirmək riskidir.
+    // The exact title only - guessing through a search risks pulling in another
+    // tournament's location.
     let wikitext: string | null = null;
     try {
       wikitext = await fetchWikitext(opts, t.name);

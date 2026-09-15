@@ -121,7 +121,7 @@ async function main() {
     if (!wiki || !shape) continue;
 
     const opts: LiquipediaOptions = { wiki, userAgent: USER_AGENT };
-    // Komanda başına bir dəfə: əvvəl hər oyunçu üçün ayrıca sorğu gedirdi.
+    // Once per team: this used to make a separate request for every player.
     const gameId = (
       await prisma.game.findFirstOrThrow({ where: { slug: team.game.slug }, select: { id: true } })
     ).id;
@@ -160,8 +160,8 @@ async function main() {
     if (!apply) continue;
 
     for (const member of squad) {
-      // Ad üzrə uyğunlaşma yalnız EYNİ oyun daxilində aparılır: fərqli
-      // oyunlarda eyni ləqəb fərqli insanlardır.
+      // Matching by name happens only WITHIN one game: the same handle in two
+      // different games belongs to two different people.
       const existing = await prisma.player.findFirst({
         where: { gameId, nickname: { equals: member.nickname, mode: "insensitive" } },
         select: { id: true },
@@ -186,7 +186,7 @@ async function main() {
         }));
       if (!existing) playersCreated++;
 
-      // Bir oyunçunun bir aktiv tərkibi olur: başqasında varsa bağlanır.
+      // A player has one active roster place: any other is closed off.
       await prisma.teamMembership.updateMany({
         where: { playerId: player.id, leftAt: null, teamId: { not: team.id } },
         data: { leftAt: new Date() },
