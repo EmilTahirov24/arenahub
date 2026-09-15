@@ -5,11 +5,13 @@ import PlayerAvatar from "@/components/common/PlayerAvatar";
 import { useAccount } from "./AccountContext";
 
 /**
- * Hesab menyusunun sabit hissəsi — etiketlər, ünvanlar və çıxış əməliyyatı.
+ * The fixed half of the account menu - labels, addresses and the sign-out
+ * action.
  *
- * Kim girib, o, artıq burada deyil: onu `useAccount()` client tərəfdə gətirir,
- * çünki Header-in sessiya oxuması bütün saytın keşlənməsinə mane olurdu.
- * Ləqəb və avatar da ona görə serverdən ötürülmür.
+ * Who is signed in is no longer decided here: `useAccount()` fetches that on
+ * the client, because the Header reading the session kept the whole site from
+ * being cached. The nickname and avatar are not passed from the server for the
+ * same reason.
  */
 export type AccountMenu = {
   profileHref: string;
@@ -67,8 +69,9 @@ export default function AuthMenu({
 
   const itemClass = "block w-full px-3 py-2 text-left text-sm text-foreground hover:bg-surface-raised";
 
-  // Cavab gələnə qədər nə «Giriş», nə də ləqəb göstərilir. Əks halda girmiş adam
-  // hər səhifə açılışında bir anlıq «çıxarılmışam» görürdü.
+  // Until the answer arrives, neither "Sign in" nor the nickname is shown.
+  // Otherwise a signed-in person saw a flash of being signed out on every page
+  // load.
   if (loading) {
     return (
       <div

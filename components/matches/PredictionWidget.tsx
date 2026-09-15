@@ -130,12 +130,12 @@ export default function PredictionWidget({
 }
 
 /**
- * Lider cədvəlinin yeganə giriş nöqtəsi.
+ * The only way into the leaderboard.
  *
- * `/[locale]/predictions` səhifəsi tərcüməsi və sitemap qeydi ilə birlikdə hazır
- * idi, amma nə menyuda, nə də başqa yerdə linki vardı — yalnız ünvanı əl ilə
- * yazmaqla açılırdı. Menyu xl-də onsuz da doludur, ona görə link proqnozun özünə,
- * yəni adamın onunla maraqlandığı yerə qoyulub.
+ * The `/[locale]/predictions` page was finished, translated and in the
+ * sitemap, but nothing linked to it - from the menu or anywhere else. It
+ * opened only by typing the address. The menu is already full at xl, so the
+ * link sits on the prediction itself, where somebody is interested in it.
  */
 function LeaderboardLink({ locale, isAz }: { locale: string; isAz: boolean }) {
   return (

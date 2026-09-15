@@ -28,7 +28,7 @@ export default function MatchGroup({
       </div>
       <div className="space-y-2 bg-background p-2">
         {matches.map((match) => (
-          // Ad qrupun başlığındadır; kartda təkrarı yalnız səs-küydür.
+          // The name is in the group heading; repeating it on the card is noise.
           <MatchCard key={match.id} match={match} showTournament={false} />
         ))}
       </div>

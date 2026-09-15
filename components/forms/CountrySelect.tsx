@@ -13,7 +13,7 @@ export default function CountrySelect({
   defaultValue?: string | null;
   className?: string;
   required?: boolean;
-  /** Xarici <label htmlFor> ilə bağlamaq üçün. Verilməsə sahə adsız qalır. */
+  /** For tying an outside <label htmlFor> to it. Without one the field stays unnamed. */
   id?: string;
 }) {
   const [value, setValue] = useState(defaultValue ?? "");

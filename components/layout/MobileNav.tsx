@@ -26,7 +26,7 @@ export default function MobileNav({
   navItems: { href: string; label: string }[];
   localItem: { href: string; label: string };
   playerAuth: AuthConfig;
-  /** Sabit etiketlər və ünvanlar; kim girib — onu useAccount() gətirir. */
+  /** Fixed labels and addresses; who is signed in comes from useAccount(). */
   links: AccountMenu;
 }) {
   const { account, loading } = useAccount();
@@ -164,8 +164,8 @@ export default function MobileNav({
                   is. */}
               <div className="mb-3 rounded-lg border border-border-subtle p-3">
                 {loading ? (
-                  // Cavab gələnə qədər «Giriş» göstərmirik — girmiş adam üçün bu,
-                  // bir anlıq çıxarılmış kimi görünürdü.
+                  // "Sign in" is not shown until the answer arrives - to somebody
+                  // signed in it read as a flash of being signed out.
                   <div aria-hidden className="h-20 animate-pulse rounded-md bg-surface" />
                 ) : account ? (
                   <>

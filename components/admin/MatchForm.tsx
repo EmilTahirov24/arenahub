@@ -8,13 +8,14 @@ import type { Match, Team, Game, Tournament } from "@/app/generated/prisma/clien
 import { STAGE_SUGGESTIONS, isBracketStage, stageName } from "@/lib/stages";
 
 /**
- * Mərhələ siyahısı BAĞLIDIR — lib/stages.ts onu belə saxlayır.
+ * The stage list is CLOSED - lib/stages.ts is what keeps it that way.
  *
- * Əvvəl bu sahə sərbəst mətn idi (datalist ilə). Nəticə səssiz uğursuzluq
- * olurdu: «Çeyrək final» yazan adam düzgün yazdığını düşünürdü, amma
- * normaliseStage azərbaycanca adı tanımır — matç kartında ad görünür,
- * cədvələ isə HEÇ VAXT düşmür. İndi seçim siyahıdandır: ekranda azərbaycanca
- * görünür, bazaya kanonik ingiliscə ad yazılır.
+ * This field used to be free text, with a datalist. The result was a silent
+ * failure: somebody typing "Çeyrək final" believed they had typed it
+ * correctly, but normaliseStage does not recognise the Azerbaijani name - the
+ * name showed on the match card and NEVER reached the bracket. Now the choice
+ * comes from a list: Azerbaijani on screen, the canonical English name into
+ * the database.
  */
 const BRACKET_STAGES = STAGE_SUGGESTIONS.filter((s) => isBracketStage(s));
 const OTHER_STAGES = STAGE_SUGGESTIONS.filter((s) => !isBracketStage(s));
@@ -38,7 +39,7 @@ export default function MatchForm({
   games: Game[];
   teams: Team[];
   tournaments: Tournament[];
-  /** Turnir səhifəsindən gələndə oyun və turnir öncədən doldurulur. */
+  /** Arriving from a tournament page prefills the game and the tournament. */
   defaultTournament?: Tournament;
   action: (state: AdminSaveState, formData: FormData) => Promise<AdminSaveState>;
 }) {

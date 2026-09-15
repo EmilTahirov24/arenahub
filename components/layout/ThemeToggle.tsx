@@ -14,9 +14,9 @@ export default function ThemeToggle() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(current === "light" ? "light" : "dark");
 
-    // Seçim edilməyibsə tema cihazın rejimindən gəlir və pəncərə açıq ikən
-    // dəyişə bilir. Atributu layout-dakı skript yeniləyir; buradakı abunə
-    // yalnız düymənin nişanını həqiqətlə eyni saxlayır.
+    // With no choice made, the theme follows the device and can change while
+    // the window is open. The attribute is updated by the script in the layout;
+    // this subscription only keeps the button's icon honest.
     const media = window.matchMedia("(prefers-color-scheme: light)");
     const sync = (e: MediaQueryListEvent) => {
       if (localStorage.getItem("theme")) return;

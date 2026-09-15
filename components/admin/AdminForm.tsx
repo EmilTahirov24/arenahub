@@ -4,18 +4,19 @@ import { useActionState } from "react";
 import type { AdminSaveState } from "@/lib/adminFormState";
 
 /**
- * Admin panelindəki BÜTÖV formaları bükür ki, səhv ekranda görünsün.
+ * Wraps a WHOLE form in the admin panel so its error reaches the screen.
  *
- * [components/admin/AdminRowForm.tsx](AdminRowForm) sətir formaları üçündür və
- * uğuru göstərir; bu isə yönləndirən formalar üçündür, yəni əsas işi SƏHVİ
- * göstərməkdir. Uğur olanda action onsuz da başqa səhifəyə aparır.
+ * [components/admin/AdminRowForm.tsx](AdminRowForm) is for row forms and shows
+ * success; this one is for forms that redirect, so its job is showing the
+ * ERROR. On success the action takes you to another page anyway.
  *
- * Niyə lazım oldu: server action-da atılan xəta ümumi səhv sərhəddinə düşür və
- * orada «Bu əməliyyat yerinə yetirilmədi… çox güman sessiyanız bitib» yazılır.
- * Ölçüldü — eyni adla ikinci turnir yaradanda admin məhz bunu görürdü, halbuki
- * səbəb tamam başqa idi: slug təkrarlanır. İndi action səbəbi qaytarır.
+ * Why it was needed: an error thrown inside a server action lands on the
+ * generic error boundary, which says "this did not go through... your session
+ * has probably expired". Measured - creating a second tournament under the
+ * same name showed exactly that, while the real cause was something else
+ * entirely: a duplicate slug. Now the action returns the reason.
  *
- * Sahələr `children` kimi ötürülür — serverdə render olunmuş qalır.
+ * The fields come through as `children`, so they stay server-rendered.
  */
 export default function AdminForm({
   action,

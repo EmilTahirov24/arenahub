@@ -6,27 +6,27 @@ export type Account = {
   nickname: string;
   photoUrl: string | null;
   slug: string;
-  /** Sahibi olduğu komandanın slug-ı, yoxdursa null. */
+  /** The slug of the team they own, or null if there is none. */
   ownedTeamSlug: string | null;
 };
 
 type State = {
   account: Account | null;
-  /** İlk cavab gələnə qədər true. Bu müddətdə «Giriş» GÖSTƏRİLMƏMƏLİDİR. */
+  /** True until the first answer arrives. "Sign in" MUST NOT be shown meanwhile. */
   loading: boolean;
 };
 
 const AccountCtx = createContext<State>({ account: null, loading: true });
 
 /**
- * Hesab məlumatını bir dəfə çəkib həm masaüstü, həm mobil menyuya verir.
+ * Fetches the account once and hands it to both the desktop and mobile menus.
  *
- * Əvvəl bunu Header serverdə oxuyurdu. Sadə idi, amma `cookies()` oxumaq
- * marşrutu dinamik edir və Header hər səhifədədir — nəticədə saytın heç bir
- * səhifəsi keşlənmirdi. İndi sessiya `/api/me`-dən client tərəfdə gəlir və
- * səhifələrin özü keşlənə bilir.
+ * The Header used to read this on the server. That was simpler, but reading
+ * `cookies()` makes a route dynamic, and the Header is on every page - so no
+ * page on the site could be cached. Now the session arrives from `/api/me` on
+ * the client and the pages themselves can be cached.
  *
- * Provider bir dəfə sorğu göndərir; iki menyu eyni nəticəni bölüşür.
+ * The provider sends one request; the two menus share the result.
  */
 export function AccountProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<State>({ account: null, loading: true });
@@ -39,7 +39,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         if (alive) setState({ account: d?.player ?? null, loading: false });
       })
       .catch(() => {
-        // Şəbəkə xətası menyunu sındırmamalıdır — çıxmış kimi göstəririk.
+        // A network error must not break the menu - it renders as signed out.
         if (alive) setState({ account: null, loading: false });
       });
     return () => {

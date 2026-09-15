@@ -4,15 +4,15 @@ import { useActionState } from "react";
 import type { AdminSaveState } from "@/lib/adminFormState";
 
 /**
- * Admin panelindəki sətir formalarını bükür ki, saxlamağın nəticəsi görünsün.
+ * Wraps the row forms in the admin panel so a save becomes visible.
  *
- * Bu formalar redaktə səhifəsinə yönləndirmir və çox vaxt ekranda gözlə seçilən
- * heç nəyi dəyişmir — istifadəçi eyni rəqəmləri eyni qutularda görür, ona görə
- * düymə işləmirmiş kimi qəbul olunur. Üç dəfə səhv kimi bildirilib.
+ * These forms do not redirect to an edit page, and most of the time they
+ * change nothing the eye can catch - the same numbers sit in the same boxes,
+ * so the button reads as broken. It has been reported as a bug three times.
  *
- * Sahələr `children` kimi ötürülür — yəni serverdə render olunmuş qalır və
- * brauzerə göndərilmir. Bu komponent yalnız action bağlantısını və təsdiq
- * sətrini əlavə edir.
+ * The fields come through as `children`, which keeps them server-rendered and
+ * out of the browser bundle. This component adds only the action binding and
+ * the confirmation line.
  */
 export default function AdminRowForm({
   action,
@@ -27,7 +27,7 @@ export default function AdminRowForm({
   submitLabel: string;
   submitClassName: string;
   className?: string;
-  /** Eyni sətirdə göstərilən əlavə düymələr — məsələn «Sil». */
+  /** Extra buttons shown on the same row - "Delete", for instance. */
   trailing?: React.ReactNode;
 }) {
   const [state, formAction, pending] = useActionState<AdminSaveState, FormData>(action, undefined);

@@ -12,10 +12,10 @@ import {
 } from "@/app/player/(dashboard)/claim/actions";
 
 /**
- * Bir profil üçün müraciət forması.
+ * The claim form for one profile.
  *
- * Ayrıca komponentdir, çünki `useActionState` nəticələr döngüsünün içində
- * çağırıla bilməz — hər sətrin öz vəziyyəti olmalıdır.
+ * A component of its own, because `useActionState` cannot be called inside the
+ * results loop - each row needs its own state.
  */
 function ClaimForm({ playerId }: { playerId: string }) {
   const [state, action, pending] = useActionState<ClaimSubmitState, FormData>(

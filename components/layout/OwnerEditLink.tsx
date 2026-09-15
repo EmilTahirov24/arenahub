@@ -3,16 +3,16 @@
 import { useAccount } from "./AccountContext";
 
 /**
- * «Redaktə et» linki — yalnız sahibinə.
+ * The "Edit" link - for the owner only.
  *
- * Əvvəl bu qərar serverdə verilirdi: səhifə `getPlayerSession()` çağırıb
- * baxanın həmin profilin/komandanın sahibi olub-olmadığını yoxlayırdı. Bir link
- * üçün ödənilən qiymət isə bütün oyunçu və komanda səhifələrinin (1400-dən çox)
- * keşlənə bilməməsi idi — `cookies()` oxumaq marşrutu dinamik edir.
+ * This used to be decided on the server: the page called `getPlayerSession()`
+ * and checked whether the viewer owned that profile or team. The price paid
+ * for one link was that no player or team page (over 1,400 of them) could be
+ * cached - reading `cookies()` makes a route dynamic.
  *
- * İndi müqayisə client tərəfdə aparılır, səhifənin özü isə keşlənir. Link
- * hidrasiyadan sonra görünür; bu, yalnız sahibin gördüyü ikinci dərəcəli
- * affordance olduğu üçün qəbul ediləndir.
+ * Now the comparison happens on the client and the page itself is cached. The
+ * link appears after hydration; since it is a secondary affordance only the
+ * owner ever sees, that is acceptable.
  */
 export default function OwnerEditLink({
   href,
@@ -22,7 +22,7 @@ export default function OwnerEditLink({
 }: {
   href: string;
   label: string;
-  /** Baxanın bu səhifənin sahibi olub-olmadığını müəyyən edən uyğunluq. */
+  /** The match that decides whether the viewer owns this page. */
   match: { kind: "player"; slug: string } | { kind: "team"; slug: string };
   className?: string;
 }) {
@@ -33,8 +33,8 @@ export default function OwnerEditLink({
     match.kind === "player" ? account.slug === match.slug : account.ownedTeamSlug === match.slug;
   if (!mine) return null;
 
-  // /player [locale] seqmentindən kənardadır, ona görə adi <a> — i18n Link
-  // ünvana dil prefiksi əlavə edərdi.
+  // /player sits outside the [locale] segment, so this is a plain <a> - the
+  // i18n Link would add a locale prefix to the address.
   return (
     <a href={href} className={className}>
       {label}

@@ -7,17 +7,18 @@ import { playerLogin } from "@/app/player/login/actions";
 import type { AuthLang, AuthText } from "@/lib/authStrings";
 
 /**
- * Giriş forması.
+ * The sign-in form.
  *
- * Səhifədən ayrıldı ki, dil serverdə seçilə bilsin: `/player` [locale]-dən
- * kənardadır, ona görə dil ünvandan yox, `?lang=` sorğu parametrindən gəlir və
- * onu server komponenti oxuyur.
+ * Split out of the page so the language can be chosen on the server: `/player`
+ * sits outside `[locale]`, so the language comes from the `?lang=` query
+ * parameter rather than the address, and a server component reads it.
  */
 export default function PlayerLoginForm({ lang, text }: { lang: AuthLang; text: AuthText }) {
   const [state, formAction, pending] = useActionState(playerLogin, undefined);
-  // Etiketi sahəyə bağlayır. Bunsuz ekran oxuyucusu sahəni adsız oxuyur,
-  // parol meneceri onu tanımır, etiketə klik isə sahəni fokuslamır.
-  // useId seçildi ki, səhifədə ikinci form olsa id-lər toqquşmasın.
+  // Ties the label to the field. Without it a screen reader announces the field
+  // unnamed, a password manager does not recognise it, and clicking the label
+  // does not focus it. useId keeps the ids from colliding if a second form ever
+  // appears on the page.
   const fieldId = useId();
   const q = lang === "az" ? "" : `?lang=${lang}`;
 

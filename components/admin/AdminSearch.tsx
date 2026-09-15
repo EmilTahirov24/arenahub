@@ -2,29 +2,31 @@ import Link from "next/link";
 import { inputClass, filterSelectClass, secondaryButtonClass } from "@/components/admin/formStyles";
 
 export type AdminFilter = {
-  /** URL parametrinin adı, məsələn `status` */
+  /** Name of the URL parameter, `status` for instance. */
   name: string;
-  /** Cari dəyər; boş olsa «hamısı» seçilir */
+  /** The current value; empty selects "all". */
   value?: string;
-  /** Boş dəyərin etiketi, məsələn «Bütün oyunlar» */
+  /** Label for the empty value, "All games" for instance. */
   allLabel: string;
   options: { value: string; label: string }[];
 };
 
 /**
- * Admin siyahıları üçün axtarış və filtrlər.
+ * Search and filters for the admin lists.
  *
- * Adi GET forması, JavaScript yoxdur. Səbəb: admin səhifələri server
- * komponentidir və axtarış üçün onları client-ə çevirmək bahalı dəyişiklikdir;
- * `<form method="get">` isə brauzerin öz işidir və heç nə tələb etmir.
+ * A plain GET form, no JavaScript. The reason: the admin pages are server
+ * components, and turning them into client components for the sake of a search
+ * box is an expensive change, while `<form method="get">` is the browser's own
+ * job and asks for nothing.
  *
- * Filtrlər QƏSDƏN eyni formanın içindədir. Ayrı formada olsalar, filtri
- * dəyişmək axtarış sözünü silərdi (və əksinə) — brauzer yalnız göndərilən
- * formanın sahələrini ünvana yazır. Bir forma = hamısı birlikdə qalır.
+ * The filters sit inside the same form DELIBERATELY. In a separate form,
+ * changing a filter would wipe the search term (and the other way round) - the
+ * browser writes only the submitted form's fields into the address. One form
+ * means they all survive together.
  *
- * Digər parametrlər gizli sahələrlə saxlanılır. `page` QƏSDƏN saxlanılmır:
- * yeni axtarış və ya filtr həmişə birinci səhifədən başlamalıdır, yoxsa adam
- * 7-ci səhifədə boş nəticə görür.
+ * Other parameters are carried in hidden fields. `page` is deliberately NOT:
+ * a new search or filter has to start from page one, or somebody lands on an
+ * empty page 7.
  */
 export default function AdminSearch({
   action,

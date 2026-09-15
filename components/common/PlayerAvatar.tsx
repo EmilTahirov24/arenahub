@@ -37,8 +37,8 @@ export default function PlayerAvatar({
           width: size,
           height: size,
           fontSize: size * 0.36,
-          // Komanda avatarı ilə eyni səbəb: /az/players siyahısında da
-          // fotosuz oyunçular tam eyni rəngdə idi.
+          // The same reason as the team avatar: in the /az/players list every
+          // player without a photograph came out in exactly the same colour.
           "--avatar-dark": paint.dark,
           "--avatar-light": paint.light,
           "--avatar-ink-dark": paint.inkDark,

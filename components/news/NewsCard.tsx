@@ -9,14 +9,15 @@ type NewsCardArticle = NewsArticle & { game: Game | null; translations: NewsArti
 
 export default async function NewsCard({
   article,
-  // Həftəlik icmalın `gameId`-si yoxdur, çünki bütün oyunları əhatə edir.
-  // Kartda isə rəng lazımdır: siyahı doqquz eyni boz mətn qutusundan ibarət idi.
-  // Ona görə icmal əhatə etdiyi oyunları `tags`-a yazır və burada həmin
-  // etiketlərə uyğun oyunlar pil kimi göstərilir — matç sayına görə sıralı,
-  // ən çoxu birinci.
+  // A weekly round-up has no `gameId`, because it covers every game. The card
+  // still needs colour: the list was nine identical grey boxes of text. So the
+  // round-up writes the games it covers into `tags`, and the games matching
+  // those tags are shown here as chips - ordered by match count, the largest
+  // first.
   games = [],
-  // Siyahının ən təzə yazısı üçün: eyni kart, bir ölçü böyük başlıq və üç sətir
-  // xülasə. Ayrı komponent yazmaq iki yerdə eyni məntiqi saxlamaq demək olardı.
+  // For the newest entry in the list: the same card, one size up on the
+  // heading and three lines of summary. A separate component would have meant
+  // keeping the same logic in two places.
   lead = false,
 }: {
   article: NewsCardArticle;
@@ -57,7 +58,7 @@ export default async function NewsCard({
         {article.game ? (
           <GameChip name={article.game.shortName} color={article.game.accentColor} />
         ) : (
-          // Ən çox dörd pil: beşincisi sətri qırır və heç nə əlavə etmir.
+          // Four chips at most: a fifth breaks the line and adds nothing.
           games
             .filter((g) => article.tags.includes(g.slug))
             .sort((a, b) => article.tags.indexOf(a.slug) - article.tags.indexOf(b.slug))

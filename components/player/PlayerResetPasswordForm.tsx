@@ -7,9 +7,10 @@ import type { AuthText } from "@/lib/authStrings";
 
 export default function PlayerResetPasswordForm({ token, text }: { token: string; text: AuthText }) {
   const [state, formAction, pending] = useActionState(resetPlayerPassword, undefined);
-  // Etiketi sahəyə bağlayır. Bunsuz ekran oxuyucusu sahəni adsız oxuyur,
-  // parol meneceri onu tanımır, etiketə klik isə sahəni fokuslamır.
-  // useId seçildi ki, səhifədə ikinci form olsa id-lər toqquşmasın.
+  // Ties the label to the field. Without it a screen reader announces the field
+  // unnamed, a password manager does not recognise it, and clicking the label
+  // does not focus it. useId keeps the ids from colliding if a second form ever
+  // appears on the page.
   const fieldId = useId();
 
   return (

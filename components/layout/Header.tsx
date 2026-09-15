@@ -35,10 +35,11 @@ export default async function Header() {
   const t = await getTranslations();
   const locale = await getLocale();
 
-  // /player [locale] seqmentindən kənardadır, yəni dil ünvandan gəlmir. Onu
-  // linkdə ötürürük ki, ingilis saytdan gələn adam ingilis forma görsün —
-  // xüsusilə şərtlər qutusunun linkləri onun oxuya bildiyi dilə getsin.
-  // Azərbaycanca default olduğu üçün ona parametr əlavə edilmir.
+  // /player sits outside the [locale] segment, so the language does not come
+  // from the address. It is carried in the link instead, so somebody arriving
+  // from the English site gets the English form - and above all so the links
+  // beside the terms checkbox go to a language they can read. Azerbaijani is
+  // the default, so it needs no parameter.
   const langQuery = locale === "az" ? "" : `?lang=${locale}`;
 
   const playerAuth = {
@@ -49,10 +50,11 @@ export default async function Header() {
     registerLabel: t("auth.register"),
   };
 
-  // Kimin girdiyi burada oxunmur — bax components/layout/AccountContext.tsx.
-  // Sessiyanı serverdə oxumaq `cookies()` demək idi, o isə marşrutu dinamik edir;
-  // Header hər səhifədə olduğu üçün bütün public sayt keşlənə bilməz qalırdı.
-  // Burada yalnız dəyişməyən hissə qurulur: etiketlər, ünvanlar və çıxış əməliyyatı.
+  // Who is signed in is not read here - see components/layout/AccountContext.tsx.
+  // Reading the session on the server meant `cookies()`, which makes a route
+  // dynamic; and since the Header is on every page, the entire public site
+  // stayed uncacheable. Only the unchanging half is assembled here: labels,
+  // addresses and the sign-out action.
   const accountLinks: AccountMenu = {
     profileHref: "/player",
     profileLabel: t("auth.profile"),

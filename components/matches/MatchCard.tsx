@@ -14,12 +14,12 @@ type MatchCardProps = {
     tournament: Tournament | null;
   };
   /**
-   * Turnir adının kartda göstərilib-göstərilməməsi.
+   * Whether the card shows the tournament name.
    *
-   * MatchGroup adı onsuz da qrupun başlığında yazır, kart isə həmin adı hər
-   * sətirdə təkrar edirdi — bir qrupda dörd matç varsa, eyni uzun ad beş dəfə
-   * görünürdü. Ana səhifə kimi qruplaşdırma olmayan yerlərdə isə ad lazımdır,
-   * ona görə defolt true qalır.
+   * MatchGroup already writes the name in the group heading, while the card
+   * repeated it on every row - with four matches in a group, the same long
+   * name appeared five times. Where there is no grouping, as on the home page,
+   * the name is needed, so the default stays true.
    */
   showTournament?: boolean;
 };

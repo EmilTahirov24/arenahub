@@ -1,17 +1,18 @@
 /**
- * ArenaHub nişanı — «A» üçbucağı.
+ * The ArenaHub mark - an "A" triangle.
  *
- * Səhifə içi variantdır: plitə YOXDUR və içəridəki üçbucaq `evenodd` ilə
- * kəsilir, yəni deşikdən arxadakı fon görünür. Buna görə nişan həm qaranlıq,
- * həm işıqlı temada işləyir və ayrıca versiya saxlamağa ehtiyac qalmır.
+ * This is the in-page variant: there is NO tile, and the inner triangle is cut
+ * with `evenodd`, so whatever sits behind shows through the hole. That is what
+ * lets the mark work in both the dark and the light theme without keeping a
+ * separate version of each.
  *
- * Favicon (`app/icon.svg`) və paylaşım şəkilləri (`lib/ogTheme.tsx`) PLİTƏLİ
- * variantdan istifadə edir: onlar brauzer tabı və sosial şəbəkə kimi ixtiyari
- * fonların üstünə düşür, orada öz fonunu daşımaq məcburidir.
+ * The favicon (`app/icon.svg`) and the share images (`lib/ogTheme.tsx`) use the
+ * TILED variant instead: those land on arbitrary backgrounds - a browser tab,
+ * a social network - where carrying your own background is compulsory.
  *
- * Qradiyent rəngləri `globals.css`-dəki dəyişənlərdən oxunur — brend rəngi
- * dəyişsə, nişan da dəyişir. `id` sabitdir: eyni səhifədə iki dəfə render
- * olunsa, tərif eyni olduğu üçün toqquşma yaratmır.
+ * The gradient colours are read from the variables in `globals.css`, so the
+ * mark follows the brand colour. The `id` is fixed: rendered twice on one
+ * page, the definitions are identical, so nothing collides.
  */
 export default function BrandMark({ className = "h-7 w-7" }: { className?: string }) {
   return (

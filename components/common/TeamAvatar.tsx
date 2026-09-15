@@ -2,33 +2,37 @@ import { initials } from "@/lib/initials";
 import { avatarPaint } from "@/lib/avatarColor";
 
 /**
- * Loqo xanası hündürlüyündən genişdir.
+ * The logo box is wider than it is tall.
  *
- * Səbəb ölçüldü (2026-08-31): Liquipedia komandaların böyük hissəsi üçün yalnız
- * GENİŞ söznişan verir — Vitality 3.46, LOUD 5.4 nisbətində. Kvadrat xanada
- * belə loqo 28 piksel enində cəmi 8 piksel hündürlükdə çıxırdı, yanındakı
- * Spirit isə 24×28 — eyni sətirdə üç dəfə fərq. Liquipedia-da ikon variantı
- * axtarıldı və əksər komandada YOXDUR, yəni düzəliş bizim tərəfdə olmalıdır.
+ * The reason was measured (2026-08-31): for most teams Liquipedia offers only
+ * a WIDE wordmark - Vitality at a ratio of 3.46, LOUD at 5.4. In a square box
+ * such a logo came out 28 pixels wide and just 8 tall, while Spirit beside it
+ * was 24x28 - a threefold difference on one line. An icon variant was looked
+ * for on Liquipedia and most teams do NOT have one, so the fix has to be on
+ * our side.
  *
- * Xana bütün avatarlarda eyni endədir, ona görə yanındakı adlar cərgə boyu
- * düz sıralanır. Loqosu olmayan komanda əvvəlki kimi kvadrat nişan alır və
- * həmin enin ortasında durur.
+ * The box is the same width for every avatar, so the names beside them line up
+ * down the column. A team without a logo still gets the square badge, centred
+ * in that width.
  */
 const SLOT = 1.45;
 
 /**
- * Ağ fonda işləyən variantın ünvanı.
+ * The address of the variant that works on a white background.
  *
- * Liquipedia hər loqonu iki cür saxlayır və idxal ikisini də endirir
- * (`scripts/fetch-team-logos.ts`): `<slug>.png` tünd fon üçün, `<slug>-light.png`
- * açıq fon üçün. Bu vacibdir, ölçüldü — 127 loqonun 58-i TAM AĞDIR və işıqlı
- * temada ağ kartda tamamilə görünmürdü.
+ * Liquipedia keeps every logo in two forms and the importer downloads both
+ * (`scripts/fetch-team-logos.ts`): `<slug>.png` for a dark background,
+ * `<slug>-light.png` for a light one. This matters, and was measured - 58 of
+ * 127 logos are ENTIRELY WHITE and were completely invisible on a white card
+ * in the light theme.
  *
- * Fayl həmişə mövcuddur: ayrıca işıqlı variant olmayanda idxal eyni şəkli
- * ikinci ad altında yazır, ona görə burada yoxlama lazım deyil.
+ * The file always exists: where there is no separate light variant, the
+ * importer writes the same image under the second name, so nothing needs
+ * checking here.
  *
- * Admin panelindən yüklənən loqolar (blob storage) bu adlandırmaya girmir və
- * olduğu kimi qalır — onları yükləyən adam fonu özü seçir.
+ * Logos uploaded through the admin panel (blob storage) stay out of this
+ * naming scheme and are left as they are - whoever uploads one picks the
+ * background themselves.
  */
 function lightVariant(url: string): string {
   return url.startsWith("/teams/") ? url.replace(/\.png$/, "-light.png") : url;

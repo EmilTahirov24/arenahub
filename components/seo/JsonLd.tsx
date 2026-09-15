@@ -1,19 +1,19 @@
 /**
- * Səhifənin strukturlaşdırılmış təsviri (schema.org / JSON-LD).
+ * The page's structured description (schema.org / JSON-LD).
  *
- * Saytda 2000-dən çox matç, 800-dən çox komanda və 600 oyunçu var, amma bunların
- * heç biri maşın üçün oxunaqlı deyildi: axtarış sistemi səhifədə yalnız mətn
- * görürdü, "bu, filan tarixdə keçən idman qarşılaşmasıdır" məlumatını yox.
+ * The site holds over 2,000 matches, over 800 teams and 600 players, and none
+ * of it was machine-readable: a search engine saw only text on the page, not
+ * the fact that "this is a sports fixture played on such a date".
  *
- * TƏHLÜKƏSİZLİK. Adlar bizim yazdığımız mətn deyil — Liquipedia-dan idxal
- * olunur. `JSON.stringify` HTML-i qaçırmır, yəni ad içindəki `</script>` bu
- * etiketi vaxtından əvvəl bağlayıb səhifəyə kod yeridə bilər. `<` simvolunun
- * unicode qarşılığı ilə əvəzlənməsi bunun qarşısını alır; Next-in öz sənədi də
- * məhz bunu tövsiyə edir.
+ * SECURITY. The names are not text we wrote - they are imported from
+ * Liquipedia. `JSON.stringify` does not escape HTML, so a `</script>` inside a
+ * name could close this tag early and inject code into the page. Replacing `<`
+ * with its unicode escape prevents that; Next's own documentation recommends
+ * exactly this.
  *
- * QAYDA: yalnız HƏQİQƏTƏN bildiyimiz sahələr yazılır. Boş və ya naməlum dəyər
- * ötürülmür — schema.org-a uydurma məlumat vermək saytda uydurma rəqəm
- * göstərməkdən fərqli deyil.
+ * THE RULE: only fields we ACTUALLY know are written. An empty or unknown
+ * value is not passed - feeding schema.org invented data is no different from
+ * printing an invented number on the site.
  */
 export default function JsonLd({ data }: { data: Record<string, unknown> }) {
   return (
@@ -26,7 +26,7 @@ export default function JsonLd({ data }: { data: Record<string, unknown> }) {
   );
 }
 
-/** Boş, null və undefined sahələri atır — schema-ya yarımçıq dəyər getməsin. */
+/** Drops empty, null and undefined fields, so no half value reaches the schema. */
 export function compact<T extends Record<string, unknown>>(obj: T): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(obj)) {

@@ -3,16 +3,16 @@ import { cacheLife } from "next/cache";
 import { Link } from "@/i18n/navigation";
 
 /**
- * Müəllif hüququ ili.
+ * The copyright year.
  *
- * Footer hər səhifədədir, ona görə onun içindəki hər şey bütün saytın prerender
- * oluna bilməsinə təsir edir. `new Date()` render-dən render-ə dəyişə bilən
- * dəyərdir və statik qabığa qoyula bilməz — qabıq nə vaxt yaradıldığından asılı
- * olardı.
+ * The Footer is on every page, so anything inside it affects whether the whole
+ * site can be prerendered. `new Date()` is a value that can change from render
+ * to render and cannot go into a static shell - the shell would depend on when
+ * it was built.
  *
- * Yalnız il keşlənir, bütöv Footer yox: Footer `getTranslations()` çağırır, o isə
- * daxilən `headers()` oxuyur və keş sahəsində dinamik mənbəyə icazə verilmir.
- * İl ildə bir dəfə dəyişir.
+ * Only the year is cached, not the whole Footer: the Footer calls
+ * `getTranslations()`, which reads `headers()` internally, and a dynamic source
+ * is not allowed inside a cached region. The year changes once a year.
  */
 async function copyrightYear() {
   "use cache";

@@ -1,17 +1,18 @@
 /**
- * Matçın vaciblik reytinqi.
+ * How important a match is.
  *
- * Defolt qiymət (1) HEÇ NƏ göstərmir. Səbəb ölçüldü: production-dakı 2359
- * matçın 100%-i 1 ulduz idi, çünki dəyəri yalnız admin əl ilə qoya bilir və
- * idxal ona toxunmur. Yəni hər kartda eyni beş işarə görünürdü — sıfır məlumat,
- * amma kartın sağ yuxarı küncü tutulurdu.
+ * The default value (1) renders NOTHING. The reason was measured: 100% of the
+ * 2,359 matches in production were at 1 star, because only an admin can set
+ * the value by hand and the importer never touches it. So every card carried
+ * the same five marks - zero information, occupying the card's top right
+ * corner.
  *
- * Belə olanda ulduz həqiqi siqnala çevrilir: göründüsə, deməli kimsə bu matçı
- * qəsdən önə çıxarıb. Qayda komponentin özündədir ki, bütün istifadə yerlərində
- * eyni işləsin.
+ * Rendering nothing turns a star into a real signal: if it shows, somebody
+ * deliberately pushed this match forward. The rule lives in the component so
+ * it holds everywhere the component is used.
  *
- * Admin paneli reytinqi ayrıca <select> ilə təyin edir, bu komponentlə yox —
- * yəni idarəedici gizlənmir.
+ * The admin panel sets the rating through its own <select>, not through this
+ * component - so the control is not hidden.
  */
 export default function StarRating({ value, max = 5 }: { value: number; max?: number }) {
   if (value <= 1) return null;

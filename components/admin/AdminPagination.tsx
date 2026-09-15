@@ -1,13 +1,14 @@
 import Link from "next/link";
 
 /**
- * Admin siyahıları üçün səhifələmə.
+ * Pagination for the admin lists.
  *
- * Public tərəfdəki `components/common/Pagination.tsx` burada işlədilə bilmir:
- * o, `@/i18n/navigation`-ın Link-ini işlədir və hər ünvana dil prefiksi qoşur,
- * admin isə `[locale]`-dən kənardadır. Ona görə eyni davranış, adi next/link ilə.
+ * The public `components/common/Pagination.tsx` cannot be used here: it uses
+ * the Link from `@/i18n/navigation`, which prefixes every address with a
+ * locale, and the admin panel lives outside `[locale]`. So the same behaviour,
+ * built on a plain next/link.
  *
- * Uzun siyahılar qısaldılır: birinci, sonuncu və cari səhifənin ətrafı.
+ * Long lists are shortened: first, last, and a window around the current page.
  */
 export default function AdminPagination({
   page,

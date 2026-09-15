@@ -1,11 +1,12 @@
 export const inputClass =
   "w-full rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via";
 /**
- * Filtr zolağındakı `<select>` üçün. `inputClass`-dan yeganə fərqi `w-full`-un
- * olmamasıdır: formalarda sahələr sütun-sütun düzülür və tam en düzgündür,
- * axtarış zolağında isə eyni sətirdə dayanmalıdırlar. `inputClass`-a `w-auto`
- * əlavə etmək işləmir — Tailwind-də hər ikisi eyni xüsusiyyətdədir və hansının
- * qalib gəldiyini stil faylındakı sıra həll edir, sinif sətrindəki sıra yox.
+ * For the `<select>` in the filter bar. The only difference from `inputClass`
+ * is the missing `w-full`: in a form the fields stack in a column and full
+ * width is right, while in the search bar they have to sit on one line.
+ * Adding `w-auto` to `inputClass` does not work - in Tailwind both set the
+ * same property, and which one wins is decided by their order in the
+ * stylesheet, not their order in the class string.
  */
 export const filterSelectClass =
   "rounded-md border border-border-subtle bg-background px-3 py-2 text-sm outline-none focus:border-brand-via";

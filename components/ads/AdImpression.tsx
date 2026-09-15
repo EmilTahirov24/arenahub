@@ -3,17 +3,17 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Banner ekranda görünəndə bir dəfə "göründü" siqnalı göndərir.
+ * Sends one "seen" signal when a banner actually appears on screen.
  *
- * Ölçü reklam sənayesinin adi tərifidir: sahənin ən azı yarısı, ən azı bir
- * saniyə fasiləsiz görünməlidir. Sadəcə səhifəyə düşməsi kifayət deyil —
- * ziyarətçi aşağı sürüşdürməyibsə, o banner göstərilməyib və sayılmamalıdır.
- * Reklamçıya təqdim ediləcək rəqəm məhz bu olmalıdır.
+ * The measure is the advertising industry's ordinary definition: at least half
+ * the area, visible for at least one unbroken second. Merely being on the page
+ * is not enough - if the visitor never scrolled down, the banner was not shown
+ * and must not be counted. That is the number an advertiser should be given.
  *
- * `sendBeacon` seçildi, çünki adam saniyə dolan kimi başqa səhifəyə keçə bilər:
- * adi `fetch` belə halda yarımçıq kəsilir, beacon isə brauzer tərəfindən
- * arxa planda çatdırılır. Cavabı gözləmirik — sayğac istifadəçini
- * ləngitməməlidir.
+ * `sendBeacon` was chosen because somebody can leave the moment the second is
+ * up: a plain `fetch` gets cut off half way, while a beacon is delivered by
+ * the browser in the background. The response is not awaited - a counter must
+ * not slow the visitor down.
  */
 export default function AdImpression({ adId }: { adId: string }) {
   const anchor = useRef<HTMLSpanElement>(null);
@@ -30,8 +30,8 @@ export default function AdImpression({ adId }: { adId: string }) {
       sent = true;
       observer.disconnect();
       const url = `/api/ads/${adId}/impression`;
-      // Beacon bəzi brauzerlərdə (və ya sayğac genişlənmələri altında) false
-      // qaytara bilər; belə halda adi sorğuya düşürük, yenə də gözləmədən.
+      // Beacon can return false in some browsers (or under counter-blocking
+      // extensions); then it falls back to a plain request, still unawaited.
       const ok = navigator.sendBeacon?.(url);
       if (!ok) void fetch(url, { method: "POST", keepalive: true }).catch(() => {});
     };

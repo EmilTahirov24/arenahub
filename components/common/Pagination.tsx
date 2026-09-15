@@ -25,8 +25,9 @@ export default function Pagination({
   const href = (p: number) => ({ pathname, query: p === 1 ? query : { ...query, page: String(p) } });
   const box = "rounded-md border px-3 py-1.5 text-sm transition-colors";
   const idle = "border-border-subtle text-foreground-muted hover:text-foreground";
-  // `/40` bu mətni 1.79:1-ə salırdı — WCAG həddinin dörddə biri. Deaktiv
-// görünüş haşiyə və kursor ilə verilir; mətnin özü oxunaqlı qalır.
+  // `/40` dropped this text to 1.79:1, a quarter of the WCAG threshold. The
+  // disabled look comes from the border and the cursor instead; the text itself
+  // stays legible.
 const dead = "border-border-subtle/50 text-foreground-muted cursor-default";
 
   // First, last, and a window around the current page.
