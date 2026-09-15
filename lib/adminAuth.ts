@@ -12,8 +12,8 @@ import { getAdminSession } from "@/lib/auth";
  */
 export async function requireAdmin() {
   const session = await getAdminSession();
-  // Sessiyanın bitməsi adi haldır, proqramçı səhvi deyil — adamı xəta ekranına
-  // atmaq əvəzinə girişə göndəririk (AGENTS.md).
+  // A session running out is an ordinary thing, not a programmer error - so the
+  // person goes to the sign-in page rather than an error screen (AGENTS.md).
   if (!session) redirect("/admin/login");
   return session;
 }

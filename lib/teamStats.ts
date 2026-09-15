@@ -26,8 +26,9 @@ export type TeamStatRow = {
  * sits on the default rating and would otherwise outrank teams with a real record.
  */
 export async function teamStatRows(gameId: string): Promise<TeamStatRow[]> {
-  // Bütün ziyarətçilər üçün eynidir və oyun sayı dörddür, yəni açar sayı azdır —
-  // bütün bitmiş matçlar və xəritələr oxunur. Keşin niyə `remote` olduğu barədə: lib/cachedQueries.ts.
+  // The same for every visitor and there are four games, so the key count is
+  // small - every finished match and map is read. On why the cache is `remote`:
+  // lib/cachedQueries.ts.
   "use cache: remote";
   cacheLife("minutes");
   cacheTag("teams", "matches");

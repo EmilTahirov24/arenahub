@@ -143,15 +143,16 @@ export function countryName(code?: string | null): string | null {
 }
 
 /**
- * Mənbələrin eyni ölkəyə verdiyi başqa adlar.
+ * Other names the sources give the same country.
  *
- * COUNTRIES siyahısına YAZILMIR, çünki o siyahı formalardakı ölkə seçimini
- * qidalandırır — eyni ölkənin iki adı orada dublikat seçim yaradardı. Ləqəb
- * yalnız axtarışda tanınır.
+ * These are deliberately NOT added to COUNTRIES, because that list feeds the
+ * country picker in the forms - two names for one country would show up there
+ * as a duplicate option. An alias is recognised on lookup only.
  *
- * Siyahı təxminlə deyil, ölçmə ilə qurulur: idxal skripti tanımadığı adları
- * təkrarına görə sıralayıb yazır. «Czech Republic» real qaçışda 8 komandaya
- * mane oldu — Liquipedia bu adı işlədir, bizim siyahıda isə «Czechia» var.
+ * The list is built from measurement, not guesswork: the importer records the
+ * names it does not recognise, ordered by how often they recur. "Czech
+ * Republic" blocked 8 teams in a real run - Liquipedia uses that name, while
+ * our list carries "Czechia".
  */
 const ALIASES: Record<string, string> = {
   "czech republic": "CZ",
@@ -161,15 +162,15 @@ const CODE_BY_NAME = new Map(COUNTRIES.map((c) => [c.name.toLowerCase(), c.code]
 const VALID_CODE = new Set(COUNTRIES.map((c) => c.code));
 
 /**
- * Liquipedia-nın yazdığı ölkə adını ISO koduna çevirir: "France" → "FR".
+ * Turns the country name Liquipedia writes into an ISO code: "France" to "FR".
  *
- * Naməlum ad TƏXMİN EDİLMİR, null qaytarılır. Bunlar real təşkilatlardır —
- * səhv ölkə yazmaq ölkə yazmamaqdan pisdir. Eyni səbəbdən nəticə COUNTRIES
- * siyahısına qarşı da yoxlanılır, yəni saxlanan kod həmişə bayraq ikonu olan
- * koddur.
+ * An unknown name is NOT guessed at; null comes back instead. These are real
+ * organisations, and the wrong country is worse than no country. For the same
+ * reason the result is checked against COUNTRIES, so a stored code always has
+ * a flag icon behind it.
  *
- * Əvvəl bu funksiya scripts/import-teams.ts-in içində gizli idi; ikinci idxal
- * skripti eyni çevirməyə ehtiyac duyanda təkrar yazmaq əvəzinə bura çıxarıldı.
+ * This used to be buried inside scripts/import-teams.ts; when a second import
+ * script needed the same conversion it was lifted here rather than copied.
  */
 export function countryCode(location: string | null | undefined): string | null {
   if (!location) return null;

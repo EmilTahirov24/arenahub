@@ -1,14 +1,15 @@
 import { cacheLife } from "next/cache";
 
 /**
- * Bu günün tarixi, `<input type="date">` üçün.
+ * Today's date, for `<input type="date">`.
  *
- * Formalarda "bu gün" defaultu `new Date()` ilə hesablanırdı. Cache Components
- * bunu prerender maneəsi kimi tutur: render-dən render-ə dəyişən dəyər statik
- * qabığa qoyula bilməz, çünki qabıq nə vaxt yaradıldığından asılı olardı.
+ * The "today" default in the forms was computed with `new Date()`. Cache
+ * Components catches that as a prerender blocker: a value that changes from
+ * render to render cannot go into a static shell, because the shell would
+ * depend on when it was built.
  *
- * Tarix gündə bir dəfə dəyişir, ona görə gün müddətinə keşlənir — nəticə həm
- * sabitdir, həm də praktikada həmişə doğru.
+ * The date changes once a day, so it is cached for a day - which is both
+ * stable and, in practice, always right.
  */
 export async function todayInputValue(): Promise<string> {
   "use cache";

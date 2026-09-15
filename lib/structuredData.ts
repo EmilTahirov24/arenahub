@@ -2,16 +2,16 @@ import { siteUrl } from "@/lib/siteUrl";
 import { compact } from "@/components/seo/JsonLd";
 
 /**
- * schema.org təsvirlərini quran funksiyalar.
+ * The functions that build the schema.org descriptions.
  *
- * Prinsip birdir və saytın qalanı ilə eynidir: yalnız bildiyimizi yazırıq.
- * Naməlum sahə ötürülmür — `compact()` boş dəyərləri atır. schema.org-a uydurma
- * məlumat vermək səhifədə uydurma rəqəm göstərməkdən fərqlənmir, üstəlik
- * axtarış sistemi onu yoxlaya bilir.
+ * One rule, the same as everywhere else on the site: write only what is
+ * known. An unknown field is not passed at all - `compact()` drops empty
+ * values. Feeding schema.org invented data is no different from printing an
+ * invented number on the page, and a search engine can check it.
  *
- * Yerin (`location`) qəsdən buraxıldığı hallar var: bir çox esports matçı
- * onlayn keçir və turnirin şəhəri qeyd olunmayıb. Yanlış yer yazmaqdansa
- * ümumiyyətlə yazmamaq düzgündür.
+ * `location` is deliberately left out in places: many esports matches are
+ * played online and the tournament has no city recorded. Saying nothing beats
+ * saying the wrong place.
  */
 
 function url(locale: string, path: string) {
@@ -41,10 +41,9 @@ export function matchJsonLd(
     tournament?: { name: string; slug: string; location?: string | null } | null;
   },
 ) {
-  // schema.org-da "bitmiş" statusu yoxdur: EventStatusType yalnız planlaşdırılmış,
-  // ləğv olunmuş, təxirə salınmış və vaxtı dəyişdirilmiş halları tanıyır. Ona görə
-  // keçmiş matçlarda status ümumiyyətlə yazılmır — bitmiş qarşılaşmanı
-  // "EventScheduled" adlandırmaq səhv olardı.
+  // schema.org has no "finished" status: EventStatusType knows only scheduled,
+  // cancelled, postponed and rescheduled. So a past match carries no status at
+  // all - calling a finished fixture "EventScheduled" would simply be wrong.
   const scheduled = match.status === "UPCOMING" || match.status === "LIVE";
 
   return compact({
@@ -104,8 +103,8 @@ export function playerJsonLd(
   },
   team?: TeamLike | null,
 ) {
-  // Əsl ad yalnız hər iki hissəsi bilinəndə yazılır: "Emil" tək başına
-  // alternateName kimi faydasızdır və yarımçıq məlumatdır.
+  // The real name is written only when both halves are known: "Emil" on its
+  // own is useless as an alternateName, and it is half a fact.
   const realName =
     player.firstName && player.lastName ? `${player.firstName} ${player.lastName}` : undefined;
 
@@ -150,10 +149,10 @@ export function tournamentJsonLd(
     game: { name: string };
   },
 ) {
-  // Matç səhifəsindəki qayda burada da tətbiq olunur: schema.org-un
-  // `EventStatusType`-ında «bitmiş» yoxdur, ona görə keçmiş turnirdə status
-  // ümumiyyətlə yazılmır. Bitmiş turniri «EventScheduled» adlandırmaq səhv
-  // olardı.
+  // The rule from the match page applies here too: schema.org's
+  // `EventStatusType` has no "finished", so a past tournament carries no
+  // status at all. Calling a finished tournament "EventScheduled" would be
+  // wrong.
   const scheduled = tournament.status === "UPCOMING" || tournament.status === "ONGOING";
 
   return compact({
@@ -166,8 +165,8 @@ export function tournamentJsonLd(
     sport: tournament.game.name,
     image: tournament.logoUrl ?? undefined,
     eventStatus: scheduled ? "https://schema.org/EventScheduled" : undefined,
-    // Yer bilinməyəndə yazılmır — bir çox turnir onlayn keçir və yanlış şəhər
-    // yazmaqdansa sahəni buraxmaq düzgündür.
+    // Left out when the place is unknown - many tournaments are played online,
+    // and dropping the field beats naming the wrong city.
     location: tournament.location
       ? { "@type": "Place", name: tournament.location }
       : undefined,
@@ -196,8 +195,8 @@ export function articleJsonLd(
     dateModified: article.updatedAt ? article.updatedAt.toISOString() : undefined,
     image: article.coverImageUrl ?? undefined,
     inLanguage: locale,
-    // Müəllif adı bilinəndə yazılır. Həftəlik icmalların müəllifi admin
-    // hesabıdır və bu, doğru məlumatdır — uydurma imza qoyulmur.
+    // Written when the author is known. The weekly round-ups are authored by
+    // the admin account, which is the truth - no invented byline goes here.
     author: article.authorName ? { "@type": "Person", name: article.authorName } : undefined,
     publisher: { "@type": "Organization", name: "ArenaHub", url: siteUrl() },
   });

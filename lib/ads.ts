@@ -3,16 +3,16 @@ import { prisma } from "@/lib/prisma";
 import type { AdPlacement } from "@/app/generated/prisma/client";
 
 /**
- * Bir yer üçün göstəriləcək banner.
+ * The banner to show in one slot.
  *
- * Keşlənir, çünki AdSlot hər public səhifədədir: keşdən kənarda qalsa, tam statik
- * səhifə belə hər sorğuda bazaya bağlanır.
+ * Cached, because AdSlot sits on every public page: left outside the cache,
+ * even a fully static page is tied to the database on every request.
  *
- * Bunun bir nəticəsi var və qəsdən qəbul edilib: çəkiyə görə rotasiya artıq hər
- * SORĞUDA deyil, hər keş pəncərəsində bir dəfə baş verir. `new Date()` və
- * `Math.random()` prerender üçün qeyri-sabit dəyərlərdir — onları hər sorğuda
- * saxlamaq bütün səhifənin keşlənməsindən imtina etmək demək olardı. Bir neçə
- * bannerlik inventar üçün dəqiqədə bir dəfə fırlanmaq kifayətdir.
+ * That has one consequence, accepted deliberately: the weighted rotation now
+ * happens once per cache window rather than once per REQUEST. `new Date()`
+ * and `Math.random()` are unstable values as far as prerendering is concerned
+ * - keeping them per-request would mean giving up caching the whole page. For
+ * an inventory of a few banners, rotating once a minute is enough.
  */
 export async function getAd(placement: AdPlacement) {
   "use cache: remote";

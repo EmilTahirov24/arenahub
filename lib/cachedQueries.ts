@@ -5,21 +5,22 @@ import { publiclyListedPlayer } from "@/lib/publicPlayers";
 import type { Prisma } from "@/app/generated/prisma/client";
 
 /**
- * Siyahı səhifələrinin bazaya getməyən variantı.
+ * The list pages, without the trip to the database.
  *
- * Cache Components qabığı prerender edir, amma dinamik hissə hələ də hər
- * sorğuda bazaya gedirdi — ölçmə göstərdi ki, TTFB 0.23 saniyəyə düşsə də tam
- * yüklənmə ~1.2 saniyədə qalır və həmin saniyə uzaqdakı Neon bazasındadır.
- * Bu funksiyalar sorğunun ÖZÜNÜ keşləyir.
+ * Cache Components prerenders the shell, but the dynamic part still went to
+ * the database on every request. Measured: TTFB fell to 0.23s while a full
+ * load stayed near 1.2s, and that second was spent in the remote Neon
+ * database. These functions cache the QUERY itself.
  *
- * Ləğvetmə teqlərlədir: `revalidatePath` marşrut keşi üçündür və `use cache`
- * sahələrinə toxunmur, ona görə admin əməliyyatları `revalidateTag` çağırmalıdır
- * — bax lib/cacheTags.ts. İdxal isə ayrı prosesdə (GitHub Actions) işlədiyi üçün
- * heç nəyi ləğv edə bilmir; onun təzəliyi `cacheLife` müddətinə bağlıdır və
- * idxal saatda bir dəfə qaçdığı üçün bir dəqiqəlik pəncərə kifayətdir.
+ * Invalidation is by tag: `revalidatePath` belongs to the route cache and
+ * does not touch `use cache` regions, so admin actions have to call
+ * `revalidateTag` - see lib/cacheTags.ts. The importer runs in a separate
+ * process (GitHub Actions) and can invalidate nothing at all; its freshness
+ * rides on `cacheLife`, and since the import runs hourly a one-minute window
+ * is enough.
  */
 
-/** Bütün siyahı səhifələri eyni sorğu ilə başlayırdı — dörd sətir, hər dəfə. */
+/** Every list page opened with this same query - four lines, every time. */
 export async function activeGames() {
   "use cache: remote";
   cacheLife("hours");
@@ -28,11 +29,11 @@ export async function activeGames() {
 }
 
 /**
- * Komanda cədvəli.
+ * The team table.
  *
- * Ən bahalı siyahı sorğusudur: hər komanda üçün tərkib və üç ayrıca sayğac
- * çıxarılır. Qalibiyyət sayları matç nəticələrindən asılıdır, ona görə həm
- * "teams", həm də "matches" teqi ilə işarələnir.
+ * The most expensive list query there is: for every team it pulls the roster
+ * and three separate counts. Win totals depend on match results, so this
+ * carries both the "teams" and the "matches" tag.
  */
 export async function teamsForGame(gameSlug: string) {
   "use cache: remote";
@@ -58,7 +59,7 @@ export async function teamsForGame(gameSlug: string) {
   });
 }
 
-/** Qarşıdakı və canlı matçlar. Filtrlər arqumentdir, yəni hər kombinasiyanın öz qeydi olur. */
+/** Upcoming and live matches. The filters are arguments, so every combination gets its own entry. */
 export async function upcomingMatches(gameSlug?: string, date?: string) {
   "use cache: remote";
   cacheLife("minutes");
@@ -66,7 +67,7 @@ export async function upcomingMatches(gameSlug?: string, date?: string) {
 
   const where: Prisma.MatchWhereInput = { status: { in: ["UPCOMING", "LIVE"] } };
   if (gameSlug) where.game = { slug: gameSlug };
-  // Yoxlama olmadan uydurma tarix Prisma-da RangeError verirdi — bax lib/dates.ts.
+  // Without the check, a junk date threw a RangeError inside Prisma - see lib/dates.ts.
   if (isDateKey(date)) {
     const { start, end } = dayRange(date);
     where.scheduledAt = { gte: start, lte: end };
@@ -79,7 +80,7 @@ export async function upcomingMatches(gameSlug?: string, date?: string) {
   });
 }
 
-/** Bitmiş matçlar, səhifələnmiş. */
+/** Finished matches, paginated. */
 export async function finishedMatches(gameSlug: string | undefined, date: string | undefined, skip: number, take: number) {
   "use cache: remote";
   cacheLife("minutes");
@@ -107,12 +108,13 @@ export async function finishedMatches(gameSlug: string | undefined, date: string
 }
 
 /**
- * Səhifə qabığının sayğacları.
+ * The counts behind the page shell.
  *
- * PageShell hər public səhifədədir və yalnız yan panelləri göstərib-göstərməmək
- * üçün üç sayğac çəkirdi. Ölçmə göstərdi ki, siyahı sorğularını keşləmək tək
- * başına kifayət etmir: bu sayğaclar keşdən kənarda qaldığı üçün səhifə yenə də
- * bazaya bağlanırdı və hər dinamik səhifədə ~0.8 saniyəlik döşəmə yaranırdı.
+ * PageShell sits on every public page and was pulling three counts for nothing
+ * more than deciding whether to show the side rails. Measuring showed that
+ * caching the list queries alone was not enough: these counts stayed outside
+ * the cache, so the page was still tied to the database and every dynamic page
+ * carried a floor of about 0.8 seconds.
  */
 export async function railCounts(showDefaultWidgets: boolean) {
   "use cache: remote";
@@ -127,7 +129,7 @@ export async function railCounts(showDefaultWidgets: boolean) {
   return { ads, transfers, articles };
 }
 
-/** Yan paneldəki son xəbərlər. */
+/** The latest news in the side rail. */
 export async function recentNews(locale: string) {
   "use cache: remote";
   cacheLife("minutes");
@@ -140,7 +142,7 @@ export async function recentNews(locale: string) {
   });
 }
 
-/** Yan paneldəki son transferlər. */
+/** The latest transfers in the side rail. */
 export async function recentTransfers() {
   "use cache: remote";
   cacheLife("minutes");

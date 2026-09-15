@@ -1,22 +1,24 @@
 import { revalidatePath, updateTag } from "next/cache";
 
-/** Keşlənmiş sorğuların teqləri — bax lib/cachedQueries.ts. */
+/** The tags on the cached queries - see lib/cachedQueries.ts. */
 export const CONTENT_TAGS = ["games", "teams", "players", "matches", "tournaments", "news", "ads"] as const;
 
 /**
- * Public məzmun dəyişdi: həm marşrut keşini, həm də keşlənmiş sorğuları ləğv edir.
+ * Public content changed: clears the route cache and the cached queries both.
  *
- * İki ayrı mexanizm var və bunu bilməmək səssiz səhvə aparır: `revalidatePath`
- * MARŞRUT keşi üçündür və `use cache` ilə keşlənmiş SORĞULARA toxunmur. Yalnız
- * birini çağırsaq, dəyişiklik bazada olur, amma saytda görünmür.
+ * There are two separate mechanisms, and not knowing that leads to a silent
+ * bug: `revalidatePath` is for the ROUTE cache and does not touch QUERIES
+ * cached with `use cache`. Call only one and the change lands in the database
+ * but never shows on the site.
  *
- * `updateTag` (revalidateTag deyil) qəsdən seçilib: o, keşi dərhal bitmiş sayır,
- * yəni növbəti sorğu təzə datanı gözləyir. Admin öz dəyişikliyini dərhal
- * görməlidir — AGENTS.md-dəki qayda ilə eyni məntiq.
+ * `updateTag` (not revalidateTag) is deliberate: it treats the cache as
+ * expired immediately, so the next request waits for fresh data. An admin has
+ * to see their own change at once - the same reasoning as the rule in
+ * AGENTS.md.
  *
- * Teqlər geniş götürülür. Dəqiq seçim mümkündür, amma 14 ayrı əməliyyat faylında
- * onu yarımçıq etmək riski faydasından böyükdür; admin əməliyyatları nadirdir,
- * artıq ləğvetmənin qiyməti isə bir neçə təkrar sorğudur.
+ * The tags are taken broadly. Picking precisely is possible, but across 14
+ * separate action files the risk of getting it half right outweighs the gain;
+ * admin actions are rare, and over-invalidating costs a few repeat queries.
  */
 export function revalidatePublicContent() {
   revalidatePath("/[locale]", "layout");

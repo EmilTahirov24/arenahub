@@ -1,17 +1,19 @@
 /**
- * Giriş və qeydiyyat səhifələrinin mətni, iki dildə.
+ * The text on the sign-in and registration pages, in both languages.
  *
- * Oyunçu paneli bütövlükdə azərbaycancadır və bu, README-də qəsdən belə yazılıb.
- * Amma bir yer istisna olmalıdır: ilk təmas. `/en`-dən gələn adam ingilis saytda
- * «Register» basırdı və azərbaycanca forma alırdı — üstəlik şərtlər qutusunun
- * yanındakı linklər `/az/terms` və `/az/privacy`-yə gedirdi, yəni ondan
- * OXUYA BİLMƏDİYİ dildə hüquqi mətni qəbul etməsi istənilirdi.
+ * The player panel is entirely in Azerbaijani, and the README says so on
+ * purpose. One place has to be the exception, though: first contact. Somebody
+ * arriving from `/en` pressed "Register" on the English site and got an
+ * Azerbaijani form - and the links beside the terms checkbox went to
+ * `/az/terms` and `/az/privacy`, which asked them to accept a legal text in a
+ * language they CANNOT READ.
  *
- * `[locale]` seqmentindən kənarda olduğumuz üçün dil ünvandan gəlmir; header
- * linkləri `?lang=` ilə ötürür. Naməlum və ya olmayan dəyər azərbaycancaya
- * düşür — sayt üçün doğru default budur.
+ * Being outside the `[locale]` segment, the language does not come from the
+ * address; the header links carry it as `?lang=`. An unknown or missing value
+ * falls back to Azerbaijani - the right default for this site.
  *
- * Panelin özü hələ də yalnız azərbaycancadır. Bu, ayrıca və daha böyük işdir.
+ * The panel itself is still Azerbaijani only. That is a separate and larger
+ * job.
  */
 export type AuthLang = "az" | "en";
 
@@ -40,8 +42,9 @@ export const AUTH_TEXT = {
     registerSubmit: "Qeydiyyatdan keç",
     haveAccount: "Hesabınız var?",
     goLogin: "Daxil olun",
-    // Söz sırası dillərdə fərqlidir: azərbaycancada "oxudum və qəbul edirəm"
-    // sonda gəlir, ingiliscədə isə əvvəldə. Ona görə cümlə hissələrə bölünüb.
+    // Word order differs between the languages: in Azerbaijani "I have read and
+    // accept" comes at the end, in English at the front. Hence the sentence is
+    // split into pieces.
     termsPrefix: "",
     termsLink: "İstifadə Şərtlərini",
     termsAnd: " və ",

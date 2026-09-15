@@ -1,13 +1,13 @@
 /**
- * Saytdakı oyunun Liquipedia-dakı wiki adı.
+ * Which Liquipedia wiki a game on this site lives in.
  *
- * Bu uyğunluq əvvəl scripts/import-live.ts-in içində idi. İkinci idxal skripti
- * eyni siyahıya ehtiyac duyanda bura çıxarıldı: iki nüsxə saxlamaq o deməkdir
- * ki, gələcəkdə beşinci oyun əlavə olunanda biri yenilənəcək, digəri səssizcə
- * köhnə qalacaq.
+ * This mapping used to sit inside scripts/import-live.ts. When a second import
+ * script needed the same list it was lifted here: keeping two copies means
+ * that when a fifth game is added one of them gets updated and the other goes
+ * quietly stale.
  *
- * Baza və framework idxalı yoxdur, ona görə həm Next, həm də skriptlər
- * birbaşa işlədə bilir.
+ * It imports neither the database nor the framework, so Next and the scripts
+ * can both use it directly.
  */
 export const WIKIS: { slug: string; wiki: string }[] = [
   { slug: "cs2", wiki: "counterstrike" },
@@ -16,7 +16,7 @@ export const WIKIS: { slug: string; wiki: string }[] = [
   { slug: "lol", wiki: "leagueoflegends" },
 ];
 
-/** Oyunun slug-ından wiki adı; tanınmayan oyun üçün null. */
+/** The wiki name for a game slug; null for a game we do not know. */
 export function wikiForGame(slug: string): string | null {
   return WIKIS.find((w) => w.slug === slug)?.wiki ?? null;
 }

@@ -38,8 +38,8 @@ export function allPhotoCredits(): PhotoCredit[] {
 /**
  * True when the licence obliges the crop to carry the same licence.
  *
- * Kəsmə törəmə əsərdir. CC BY-SA-da törəmə əsər eyni lisenziya altında
- * yayılmalıdır, ona görə həmin şəkillər ayrıca işarələnir.
+ * A crop is a derivative work. Under CC BY-SA a derivative has to be released
+ * under the same licence, so those images are flagged separately.
  */
 export function isShareAlike(license: string): boolean {
   return /-sa\b/i.test(license.replace(/\s+/g, "-"));

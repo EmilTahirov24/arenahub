@@ -29,8 +29,9 @@ export type PlayerStatRow = {
  * "—" rather than as zeros they did not earn.
  */
 export async function playerStatRows(gameId: string, opts: { take?: number } = {}): Promise<PlayerStatRow[]> {
-  // Bütün ziyarətçilər üçün eynidir və oyun sayı dörddür, yəni açar sayı azdır —
-  // hər oyunçunun matç statistikası yenidən yığılır. Keşin niyə `remote` olduğu barədə: lib/cachedQueries.ts.
+  // The same for every visitor and there are four games, so the key count is
+  // small - every player's match statistics are reassembled. On why the cache
+  // is `remote`: lib/cachedQueries.ts.
   "use cache: remote";
   cacheLife("minutes");
   cacheTag("players", "matches");

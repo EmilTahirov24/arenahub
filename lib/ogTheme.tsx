@@ -1,14 +1,14 @@
 /**
- * Paylaşım şəkillərinin ortaq çərçivəsi.
+ * The shared frame behind the share images.
  *
- * Şəkillər `next/og` (satori) ilə çəkilir və o, CSS-in yalnız bir hissəsini
- * başa düşür: dəyişənlər (`var(--brand-via)`), Tailwind sinifləri və qlobal
- * stil faylı buraya çatmır. Ona görə rənglər burada təkrar yazılıb — bu,
- * təkrarçılıq deyil, fərqli bir render mühitidir. globals.css dəyişəndə bura da
- * əl ilə yenilənməlidir.
+ * The images are drawn by `next/og` (satori), which understands only part of
+ * CSS: variables (`var(--brand-via)`), Tailwind classes and the global
+ * stylesheet never reach it. That is why the colours are written out again
+ * here - not duplication, a different rendering environment. When globals.css
+ * changes, this has to be updated by hand as well.
  *
- * Satori-nin ikinci qaydası: birdən çox uşağı olan hər div-də `display: flex`
- * açıq yazılmalıdır, yoxsa render sınır.
+ * Satori's second rule: every div with more than one child needs an explicit
+ * `display: flex`, or the render breaks.
  */
 export const OG_SIZE = { width: 1200, height: 630 };
 export const OG_CONTENT_TYPE = "image/png";
@@ -34,7 +34,7 @@ export function Frame({ children, accent }: { children: React.ReactNode; accent?
         display: "flex",
         flexDirection: "column",
         background: C.background,
-        // Yumşaq işıq: brend hissini verir, mətni oxunaqsız etmir.
+        // A soft wash: carries the brand without making the text hard to read.
         backgroundImage: `radial-gradient(900px 420px at 15% -10%, ${accent ?? C.from}33, transparent), radial-gradient(700px 380px at 100% 110%, ${C.to}22, transparent)`,
         padding: 64,
         position: "relative",

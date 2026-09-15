@@ -1,32 +1,32 @@
 import type { PrismaClient } from "../app/generated/prisma/client";
 
 /**
- * İdxal susanda bunu problem saymaq üçün hədd.
+ * How long the importer may stay quiet before that counts as a problem.
  *
- * Əvvəl 3 saat idi və yalan həyəcan verirdi. Səbəb tətbiqdə deyil: GitHub-ın
- * cədvəlli işləri pulsuz planda növbəyə düşür: hər 20 dəqiqə istənilsə də,
- * faktiki fasilələr ölçüldü — 45 dəqiqədən 5 saat 11 dəqiqəyə qədər. Yəni dörd saatlıq
- * sükut normal haldır, problem deyil.
+ * It was 3 hours and raised false alarms. The cause is not in the
+ * application: GitHub's scheduled jobs queue on the free plan. Asked for
+ * every 20 minutes, the actual gaps were measured at anywhere from 45 minutes
+ * to 5 hours 11 minutes. Four hours of silence is normal, not a fault.
  *
- * 6 saat seçildi: müşahidə olunan ən pis normal fasilədən yuxarı, amma həqiqi
- * nasazlığı (iş sınıb, söndürülüb, sirr itib) hələ də bir iş günü içində
- * tutacaq qədər aşağı. Panel onsuz da dəqiq rəqəmi göstərir — bu hədd yalnız
- * qırmızı rəngin nə vaxt yanacağını təyin edir.
+ * 6 hours was chosen: above the worst normal gap observed, yet still low
+ * enough to catch a real failure (job broken, switched off, secret expired)
+ * within a working day. The panel shows the exact figure anyway - this
+ * threshold only decides when the red appears.
  */
 export const IMPORT_STALE_AFTER_MINUTES = 360;
 
-/** Prisma client-i parametr kimi alırıq: skriptlərin öz bağlantısı var. */
+/** The Prisma client arrives as a parameter: the scripts hold their own connection. */
 type Db = Pick<PrismaClient, "importRun">;
 
 /**
- * İdxal skriptini qeyd altında işlədir.
+ * Runs an import script and records what happened.
  *
- * Uğurlu qaçış heç bir iz qoymurdu, ona görə "idxal işləyirmi?" sualının cavabı
- * yalnız GitHub Actions səhifəsində idi — orada isə heç kim baxmır. Uğursuzluq
- * da, "yaşıl qaçdı, amma heç nə yazmadı" halı da eyni dərəcədə görünməz qalırdı.
+ * A successful run left no trace, so the answer to "is the import working?"
+ * lived only on the GitHub Actions page, where nobody looks. A failure and a
+ * "ran green but wrote nothing" run were equally invisible.
  *
- * Qeyd hər iki halda yazılır: xəta atılsa `ok` false olur və mətn saxlanılır,
- * sonra xəta yenidən atılır ki, iş axını da qırmızı olsun.
+ * The record is written either way: on a throw, `ok` becomes false and the
+ * message is kept, then the error is rethrown so the workflow goes red too.
  */
 export async function recordImportRun<T extends { written: number; note?: string }>(
   db: Db,
@@ -49,7 +49,7 @@ export async function recordImportRun<T extends { written: number; note?: string
     return result;
   } catch (e) {
     const note = e instanceof Error ? e.message.slice(0, 500) : String(e).slice(0, 500);
-    // Qeydin özü sınsa, əsl xətanı gizlətməsin.
+    // If writing the record fails, it must not hide the error it was recording.
     await db.importRun
       .create({ data: { script, startedAt: started, finishedAt: new Date(), ok: false, note } })
       .catch(() => {});
@@ -66,7 +66,7 @@ export type ImportHealth = {
   lastNote: string | null;
 };
 
-/** Admin panelinin göstərdiyi vəziyyət. */
+/** The state the admin panel displays. */
 export async function importHealth(db: Db, script = "import-live"): Promise<ImportHealth> {
   const [last, lastOk] = await Promise.all([
     db.importRun.findFirst({ where: { script }, orderBy: { startedAt: "desc" } }),
@@ -80,7 +80,7 @@ export async function importHealth(db: Db, script = "import-live"): Promise<Impo
   return {
     lastOkAt: lastOk?.startedAt ?? null,
     minutesSinceOk,
-    // Heç vaxt qaçmayıbsa da problemdir — cədvəl boş qalmamalıdır.
+    // Never having run is a problem too - the table should not be empty.
     stale: minutesSinceOk === null || minutesSinceOk > IMPORT_STALE_AFTER_MINUTES,
     lastOk: last?.ok ?? null,
     lastWritten: last?.written ?? null,
