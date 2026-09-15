@@ -3,11 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { C, Frame, Wordmark, OG_SIZE, OG_CONTENT_TYPE } from "@/lib/ogTheme";
 
 /**
- * Xəbər üçün paylaşım şəkli: başlıq özü şəklin içindədir.
+ * The share image for an article: the headline is the image.
  *
- * Xəbər linki paylaşılanda oxunacaq yeganə şey başlıqdır, ona görə o, mümkün
- * qədər böyük verilir və uzunluğa görə kiçilir — kəsib "..." qoymaqdansa
- * bütövünü göstərmək daha yaxşıdır.
+ * When a news link is shared, the headline is the only thing that will be
+ * read, so it is set as large as it can be and shrinks with length -
+ * showing all of it beats cutting it off with "...".
  */
 export const alt = "ArenaHub — xəbər";
 export const size = OG_SIZE;
@@ -24,10 +24,10 @@ export default async function Image({
   const article = await prisma.newsArticle.findUnique({
     where: { slug: articleSlug },
     select: {
-      // Başlıq ayrı cədvəldədir (NewsArticleTranslation), çünki məqalənin dili
-      // interfeysin dilindən asılı deyil. İkisini də çəkirik: istənilən dil
-      // yoxdursa, mövcud olan istifadə edilir — başlıqsız şəkil çıxarmaqdansa
-      // başqa dildə başlıq göstərmək daha faydalıdır.
+      // The headline is in its own table (NewsArticleTranslation), because an
+      // article's language does not follow the interface language. Both are
+      // fetched: if the requested one is missing, whatever exists is used -
+      // a headline in the other language beats an image with no headline.
       translations: { select: { locale: true, title: true } },
       game: { select: { name: true, accentColor: true } },
     },

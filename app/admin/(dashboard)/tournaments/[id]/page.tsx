@@ -12,15 +12,16 @@ import { siteFormat } from "@/lib/dates";
 
 
 /**
- * Admin panelində ani naviqasiya məqsəd deyil.
+ * Instant navigation is not the goal in the admin panel.
  *
- * Bu səhifələr hər açılışda bazadan TƏZƏ data oxuyur — admin dünənki siyahını
- * görməməlidir. Next isə keşlənməmiş oxunu ani naviqasiyanın qarşısını alan
- * hal kimi bildirir və dev konsolunu bu xəbərdarlıqla doldurur; e2e onları
- * problem kimi yığır və REAL konsol səhvləri həmin siyahıda itir.
+ * These pages read FRESH data from the database on every open - an admin must
+ * not be shown yesterday's list. Next reports an uncached read as something
+ * that prevents instant navigation and fills the dev console with that warning;
+ * the e2e suites collect those as problems, and REAL console errors get lost in
+ * the pile.
  *
- * `instant = false` seçimi sənədin təklif etdiyi «Allow blocking route»
- * variantıdır: production davranışı dəyişmir, sadəcə niyyət yazılır.
+ * `instant = false` is the documented "Allow blocking route" option: production
+ * behaviour does not change, the intent is simply written down.
  */
 export const instant = false;
 
@@ -50,11 +51,11 @@ export default async function EditTournamentPage({ params }: { params: Promise<{
   });
 
   /**
-   * Bölgü public səhifə ilə EYNİ funksiyalarla hesablanır.
+   * The split is computed with the SAME functions as the public page.
    *
-   * Ayrıca məntiq yazsaydıq, admin bir şey görər, ziyarətçi başqa şey görərdi —
-   * və fərq yalnız sayt canlıya çıxandan sonra üzə çıxardı. Burada nə görünürsə,
-   * turnir səhifəsində də o görünəcək.
+   * With separate logic an admin would see one thing and a visitor another,
+   * and the difference would surface only once the site was live. Whatever
+   * appears here will appear on the tournament page.
    */
   const bracketMatches = tournamentMatches.filter((m) => isBracketStage(m.stage));
   const looseMatches = tournamentMatches.filter((m) => !isBracketStage(m.stage));
@@ -65,8 +66,9 @@ export default async function EditTournamentPage({ params }: { params: Promise<{
   const whenFmt = siteFormat("az", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 
   const matchRow = (m: (typeof tournamentMatches)[number]) => {
-    // Mərhələ yazılıb, amma lüğətdə yoxdursa, matç kartında görünür və cədvələ
-    // düşmür. Bu, səssiz uğursuzluqdur — admin onu burada görməlidir.
+    // A stage that is written but absent from the vocabulary shows on the match
+    // card and never reaches the bracket. That is a silent failure - an admin
+    // has to see it here.
     const unknownStage = m.stage != null && describeStage(m.stage) === null;
     return (
       <Link

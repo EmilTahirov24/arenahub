@@ -14,9 +14,9 @@ function adData(formData: FormData) {
 
   return {
     name: String(formData.get("name") ?? ""),
-    // Default HEADER idi, amma o yeri heç bir AdSlot render etmir — belə banner
-    // yaradılırdı və heç yerdə görünmürdü. Formanın öz siyahısındakı birinci
-    // yer götürülür.
+    // The default was HEADER, but no AdSlot renders that placement - a banner
+    // was created and appeared nowhere. The first placement in the form's own
+    // list is used instead.
     placement: String(formData.get("placement") ?? "SIDEBAR_LEFT") as AdPlacement,
     imageUrl,
     linkUrl: String(formData.get("linkUrl") ?? ""),

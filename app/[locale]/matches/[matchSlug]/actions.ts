@@ -8,8 +8,9 @@ import { routing } from "@/i18n/routing";
 
 export async function submitPrediction(matchId: string, teamId: string, matchSlug: string) {
   const session = await getPlayerSession();
-  // Sessiyanın bitməsi adi haldır, proqramçı səhvi deyil — bu vidcetin mesaj
-  // göstərəcək yeri olmadığı üçün adamı girişə göndəririk, xəta səhifəsinə yox.
+  // A session running out is ordinary, not a programmer error - and since this
+  // widget has nowhere to show a message, the person goes to sign-in rather
+  // than to an error page.
   if (!session) redirect("/player/login");
 
   const match = await prisma.match.findUniqueOrThrow({ where: { id: matchId } });
@@ -26,9 +27,9 @@ export async function submitPrediction(matchId: string, teamId: string, matchSlu
     create: { matchId, playerId: session.id, predictedWinnerId: teamId },
   });
 
-  // Əvvəl burada `/[locale]/matches/${matchSlug}` yazılmışdı — hərfi `[locale]`
-  // ilə həll olunmuş slug qarışdırılmışdı və belə marşrut olmadığı üçün çağırış
-  // boşa gedirdi. Hər dilin öz həqiqi yolu ayrıca göstərilir.
+  // This used to read `/[locale]/matches/${matchSlug}` - a literal `[locale]`
+  // mixed with a resolved slug. No such route exists, so the call did nothing.
+  // Each language's real path is named separately.
   for (const locale of routing.locales) {
     revalidatePath(`/${locale}/matches/${matchSlug}`);
   }

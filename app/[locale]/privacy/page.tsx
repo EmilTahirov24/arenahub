@@ -3,8 +3,8 @@ import { setRequestLocale } from "next-intl/server";
 import PageShell from "@/components/layout/PageShell";
 import { localeAlternates } from "@/lib/localeAlternates";
 
-// Bax ../terms/page.tsx: header artıq sessiyanı serverdə oxumadığı üçün bu
-// səhifənin dinamik qalmasına ehtiyac yoxdur.
+// See ../terms/page.tsx: now that the header no longer reads the session on
+// the server, this page has no reason to stay dynamic.
 
 const CONTENT = {
   az: {

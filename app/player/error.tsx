@@ -4,12 +4,12 @@ import { useEffect } from "react";
 import Link from "next/link";
 
 /**
- * Oyunçu panelinin öz xəta sərhəddi.
+ * The player panel's own error boundary.
  *
- * Dəvət, tərkib və sahiblənmə əməliyyatları qaydanı pozanda `throw` edir —
- * vaxtı keçmiş dəvət, artıq başqa komandanın tərkibində olmaq, sahibin öz
- * komandasından ayrılmaq cəhdi. Bunlar istifadəçinin adi səhvləridir, ona görə
- * ən azı buradan geri qayıtmaq mümkün olmalıdır.
+ * The invite, roster and ownership operations `throw` when a rule is broken -
+ * an expired invite, already being on another team's roster, an owner trying
+ * to leave their own team. These are ordinary mistakes people make, so there
+ * has to be a way back from here at the very least.
  */
 export default function PlayerError({
   error,

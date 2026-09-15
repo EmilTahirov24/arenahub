@@ -3,13 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { C, Frame, Wordmark, OG_SIZE, OG_CONTENT_TYPE } from "@/lib/ogTheme";
 
 /**
- * Komanda səhifəsi üçün paylaşım şəkli.
+ * The share image for a team page.
  *
- * Loqo QƏSDƏN çəkilmir. Production-da 855 komandadan yalnız birinin loqosu var,
- * yəni uzaqdan şəkil yükləmək halların 99.9%-ində heç nə vermir, qalan halda isə
- * risk gətirir: satori şəkli ala bilməsə bütün render sınır və paylaşılan link
- * ümumiyyətlə şəkilsiz qalır. Onun əvəzinə komandanın öz rəngi işlədilir —
- * həmişə mövcuddur və heç vaxt sınmır.
+ * The logo is DELIBERATELY not fetched. In production one team in 855 has a
+ * logo, so a remote image fetch gains nothing in 99.9% of cases and carries
+ * risk in the rest: if satori cannot get the image the whole render fails and
+ * the shared link ends up with no image at all. The team's own colour is used
+ * instead - always present, and it never breaks.
  */
 export const alt = "ArenaHub — komanda";
 export const size = OG_SIZE;
@@ -48,7 +48,7 @@ export default async function Image({
   }
 
   const accent = team.primaryColor ?? team.game.accentColor;
-  // Uzun ad şəkildən daşmasın deyə ölçü ada görə seçilir.
+  // The size follows the name so a long one does not spill out of the image.
   const fontSize = team.name.length > 26 ? 62 : team.name.length > 16 ? 76 : 92;
 
   return (

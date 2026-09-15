@@ -18,12 +18,12 @@ import { siteFormat } from "@/lib/dates";
 import { isBracketStage } from "@/lib/stages";
 
 /**
- * Mərhələ adları `lib/stages.ts`-dədir.
+ * The stage names live in `lib/stages.ts`.
  *
- * Əvvəl burada beş sətirlik bir siyahı vardı və Liquipedia-nın yazdığı adların
- * heç biri ona düşmürdü — 2503 matçın 0-ının mərhələsi bilinirdi, ona görə
- * bracket heç vaxt ekrana çıxmırdı. İndi lüğət idxalçı ilə ortaqdır: idxal nə
- * yazırsa, səhifə də onu tanıyır.
+ * There used to be a five-line list here that none of the names Liquipedia
+ * writes ever matched - the stage was known for 0 of 2,503 matches, so the
+ * bracket never reached the screen. The vocabulary is now shared with the
+ * importer: whatever the import writes, the page recognises.
  */
 
 export async function generateMetadata({
@@ -44,8 +44,8 @@ export default async function EventDetailPage({
   params: Promise<{ locale: string; eventSlug: string }>;
 }) {
   "use cache";
-  // İdxal saatda bir dəfə işləyir, admin dəyişiklikləri isə revalidatePath ilə
-  // dərhal ləğv olunur — ona görə bir dəqiqəlik pəncərə datanı köhnəltmir.
+  // The import runs hourly and admin changes are invalidated at once through
+  // revalidatePath, so a one-minute window never leaves the data stale.
   cacheLife("minutes");
 
   const { locale, eventSlug } = await params;
@@ -76,31 +76,32 @@ export default async function EventDetailPage({
   ]);
 
   /**
-   * Göstəriləcək komandalar.
+   * The teams to show.
    *
-   * Kurasiya olunmuş TournamentParticipant sətirləri həmişə üstündür: onlar
-   * seed və placement daşıyır, mükafat hesablaması da onlardan asılıdır.
+   * Curated TournamentParticipant rows always win: they carry seed and
+   * placement, and the prize calculation depends on them.
    *
-   * Cədvəl boş olanda siyahı MATÇLARDAN çıxarılır. Səbəb ölçüldü: 149 turnirdən
-   * 111-inin iştirakçı sətri yox idi və bunların demək olar hamısı DAVAM EDƏN
-   * turnirlərdir. Yəni səhifə «iştirakçılar hələ açıqlanmayıb» yazırdı, halbuki
-   * elə aşağıda həmin komandaların oynadığı matçlar sadalanırdı — boş bölmə
-   * deyil, açıq ziddiyyət.
+   * When that table is empty, the list is derived from the MATCHES. The reason
+   * was measured: 111 of 149 tournaments had no participant rows, and nearly
+   * all of them are tournaments in progress. So the page said "the line-up has
+   * not been announced yet" while listing, further down the same page, the
+   * matches those very teams had played - not an empty section but a plain
+   * contradiction.
    *
-   * Data onsuz da bizdədir və `matches` yuxarıda komandaları ilə birlikdə
-   * çəkilib, ona görə bunun əlavə sorğusu yoxdur.
+   * The data is already here and `matches` was fetched above with its teams,
+   * so this costs no extra query.
    *
-   * Cədvələ YAZILMIR. TournamentParticipant kurasiya üçündür; ora yazsaq həqiqi
-   * mənbə ikiyə bölünər və yeni matç gələndə cədvəl köhnələrdi. Render zamanı
-   * çıxarmaq həmişə cari qalır və admin sonradan həqiqi siyahını yazanda
-   * avtomatik ona keçir.
+   * Nothing is WRITTEN to the table. TournamentParticipant is for curation;
+   * writing there would split the source of truth in two and the table would
+   * go stale as new matches arrived. Deriving at render time stays current,
+   * and switches to the real list automatically once an admin enters one.
    */
   const derivedTeams =
     participants.length > 0
       ? []
       : [...new Map(matches.flatMap((m) => [[m.teamAId, m.teamA], [m.teamBId, m.teamB]] as const)).values()]
-          // Əlifba sırası qəsdəndir: sıralama heç bir reytinq bildirməməlidir.
-          // Eyni mülahizə oyunçu cədvəlində də var (lib/playerTable.ts).
+          // Alphabetical on purpose: the order must not imply a ranking. The
+          // same reasoning appears in the player table (lib/playerTable.ts).
           .sort((a, b) => a.name.localeCompare(b.name));
 
   const dateFmt = siteFormat(locale, { dateStyle: "medium" });
@@ -185,8 +186,8 @@ export default async function EventDetailPage({
           );
         })}
         {derivedTeams.map((team) => (
-          // Çıxarılan komandada yer və mükafat YOXDUR — uydurma sıra nömrəsi
-          // göstərilməməlidir. Yalnız kimin oynadığı bilinir.
+          // A derived team has NO placement and no prize - an invented position
+          // must not be shown. All that is known is who played.
           <Link
             key={team.id}
             href={`/teams/${team.slug}`}
@@ -206,13 +207,13 @@ export default async function EventDetailPage({
 
       {(() => {
         /**
-         * Səhifə iki hissədir: turnirin həll olunduğu pley-off, sonra ona
-         * aparan hər şey.
+         * The page is in two halves: the play-off, where the tournament is
+         * decided, and then everything that led to it.
          *
-         * Pley-off yuxarıdadır, xronoloji sıraya baxmayaraq — səhifəyə girən
-         * adam əvvəlcə kimin qazandığını görmək istəyir, seçmə mərhələsini yox.
-         * Bölgü yalnız bracket olanda qurulur; LoL və VALORANT turnirlərinin
-         * əksəriyyətində mərhələ məlum deyil və səhifə tək siyahı olaraq qalır.
+         * The play-off comes first, chronology notwithstanding - somebody
+         * opening the page wants to see who won, not the qualifiers. The split
+         * is only built where there is a bracket; for most LoL and VALORANT
+         * tournaments the stage is unknown and the page stays a single list.
          */
         const bracketMatches = matches.filter((m) => isBracketStage(m.stage));
         const otherMatches = matches.filter((m) => !isBracketStage(m.stage));

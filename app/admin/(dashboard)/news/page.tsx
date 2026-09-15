@@ -16,14 +16,16 @@ export default async function AdminNewsPage({
   const { q, page: pageParam } = await searchParams;
   const search = (q ?? "").trim();
 
-  // Xəbərlər əl ilə yazılır, yəni say heç vaxt idxal olunan cədvəllər qədər
-  // böyüməyəcək. Səhifələmə yenə də var: burada limitsiz sorğu saxlamaq həmin
-  // qüsuru layihədə yaşadır və növbəti oxuyan onu nümunə kimi götürür.
+  // Articles are written by hand, so the count will never grow the way the
+  // imported tables do. There is pagination anyway: keeping an unbounded query
+  // here keeps the defect alive in the project, and the next person reading
+  // takes it as the pattern.
   //
-  // Başlıq ayrı cədvəldədir (NewsArticleTranslation) və hər məqalənin iki dili
-  // var, ona görə axtarış `some` ilə gedir: azərbaycanca VƏ YA ingiliscə başlıq
-  // uyğun gəlsə, sətir tapılır. Slug da daxildir — həftəlik icmal skripti
-  // məqalələri slug ilə yaradır və qaytardığı ad odur.
+  // The headline is in its own table (NewsArticleTranslation) and every
+  // article has two languages, so the search goes through `some`: a row is
+  // found if the Azerbaijani OR the English headline matches. The slug is
+  // included too - the weekly round-up script creates articles by slug, and
+  // that is the name it hands back.
   const where: Prisma.NewsArticleWhereInput = search
     ? {
         OR: [

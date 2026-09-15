@@ -14,18 +14,18 @@ function slugify(s: string) {
   return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-/** Prisma-nın «bu dəyər artıq var» xətası. */
+/** Prisma's "this value already exists" error. */
 function isDuplicate(e: unknown): boolean {
   return typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002";
 }
 
 /**
- * Turnirin sahələrini oxuyur və insanın oxuya biləcəyi səhvi qaytarır.
+ * Reads the tournament fields and returns an error a person can read.
  *
- * Ölçüldü: bitmə tarixi başlama tarixindən ƏVVƏL yazılanda forma onu sakitcə
- * qəbul edirdi (20 sentyabr → 1 sentyabr) və public səhifədə mənasız aralıq
- * görünürdü. Tarix sahələri brauzerdə «required»-dır, amma bir-birinə görə
- * yoxlanmırdı.
+ * Measured: an end date written BEFORE the start date was accepted quietly
+ * (20 September to 1 September) and the public page showed a nonsensical
+ * range. The date fields are "required" in the browser, but were never
+ * checked against each other.
  */
 function readTournament(formData: FormData): { data: ReturnType<typeof tournamentData> } | { error: string } {
   const data = tournamentData(formData);
@@ -63,9 +63,10 @@ export async function createTournament(_prev: AdminSaveState, formData: FormData
   try {
     await prisma.tournament.create({ data: read.data });
   } catch (e) {
-    // Slug unikaldır. Əvvəl bu, ümumi «əməliyyat tamamlanmadı» ekranına
-    // düşürdü və orada «çox güman sessiyanız bitib» yazılırdı — səbəb isə
-    // tamam başqa idi: eyni adlı turnir artıq var.
+    // The slug is unique. This used to land on the generic "that did not go
+    // through" screen, which said "your session has probably expired" - while
+    // the real cause was something else entirely: a tournament of that name
+    // already exists.
     if (isDuplicate(e)) return { error: `«${read.data.slug}» slug-ı artıq işlənir — adı və ya slug-ı dəyişin` };
     throw e;
   }
@@ -122,8 +123,8 @@ export async function addParticipant(
       data: { tournamentId, teamId, seed: seedRaw === "" ? null : Number(seedRaw) },
     });
   } catch (e) {
-    // Siyahı əlavə olunmuş komandaları göstərmir, amma iki tab açıq olanda
-    // köhnə siyahı hələ də onları təklif edir.
+    // The list hides teams already added, but with two tabs open the older
+    // list still offers them.
     if (isDuplicate(e)) return { error: "Bu komanda artıq turnirdədir" };
     throw e;
   }
@@ -162,15 +163,17 @@ export async function addPrize(
   await requireAdmin();
 
   const placeFrom = Number(String(formData.get("placeFrom") ?? "").trim());
-  // Boş «Yerə» = tək yer. Mükafatların çoxu tək yerədir (1-ci, 2-ci, 3-cü) və
-  // eyni rəqəmi iki dəfə yazdırmaq forma ilə mübarizəyə çevrilirdi.
+  // An empty "to" means a single place. Most prizes go to one place (1st, 2nd,
+  // 3rd), and making somebody type the same number twice turned the form into
+  // a fight.
   const placeToRaw = String(formData.get("placeTo") ?? "").trim();
   const placeTo = placeToRaw === "" ? placeFrom : Number(placeToRaw);
   const amount = Number(String(formData.get("amount") ?? "").trim());
 
-  // Səhvlər ayrı-ayrı yazılır. Əvvəl hamısı bir «Yer aralığı düzgün deyil»
-  // sətri idi və o da ekrana çatmırdı: throw ümumi səhv sərhəddinə düşürdü,
-  // istifadəçi isə «çox güman sessiyanız bitib» oxuyurdu.
+  // The errors are stated separately. They used to be one "the place range is
+  // not valid" line, and even that never reached the screen: the throw landed
+  // on the generic error boundary, where the person read "your session has
+  // probably expired".
   if (!Number.isInteger(placeFrom) || placeFrom < 1) return { error: "«Yerdən» 1 və ya daha böyük tam ədəd olmalıdır" };
   if (!Number.isInteger(placeTo) || placeTo < 1) return { error: "«Yerə» 1 və ya daha böyük tam ədəd olmalıdır" };
   if (placeTo < placeFrom) return { error: `«Yerə» «Yerdən»dən kiçik ola bilməz (${placeFrom} → ${placeTo})` };
@@ -178,10 +181,11 @@ export async function addPrize(
 
   const label = String(formData.get("label") ?? "").trim() || null;
 
-  // Eyni «Yerdən» üçün sətir varsa, upsert onu ƏVƏZ EDİR. Ölçüldü: admin
-  // «1-4-cü yerlər $20 000» yazıb sonra «1-ci yer $99 000» əlavə edəndə
-  // birinci sətir heç bir xəbər olmadan yox olurdu — yeni sətir əlavə etdiyini
-  // düşünürdü, əslində köhnəni silirdi. İndi nə baş verdiyi deyilir.
+  // Where a row already exists for the same "from", the upsert REPLACES it.
+  // Measured: an admin writing "places 1-4, $20,000" and then adding "1st
+  // place, $99,000" watched the first row vanish without a word - they
+  // believed they were adding a row and were in fact deleting one. Now they
+  // are told what happened.
   const existing = await prisma.tournamentPrize.findUnique({
     where: { tournamentId_placeFrom: { tournamentId, placeFrom } },
   });

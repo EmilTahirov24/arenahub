@@ -3,13 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { C, Frame, Wordmark, OG_SIZE, OG_CONTENT_TYPE } from "@/lib/ogTheme";
 
 /**
- * Oyunçu səhifəsi üçün paylaşım şəkli.
+ * The share image for a player page.
  *
- * Şəkil QƏSDƏN çəkilmir — 600 oyunçudan yalnız birinin şəkli var. Səbəb və
- * mülahizə komanda variantındakı ilə eynidir.
+ * The photograph is DELIBERATELY not fetched - one player in 600 has one. The
+ * reason and the reasoning are the same as in the team version.
  *
- * Əsl ad yalnız ad və soyadın hər ikisi bilinəndə yazılır: yarımçıq ad
- * göstərmək məlumat vermir, sadəcə natamam görünür.
+ * The real name is written only when both the first and last name are known:
+ * half a name carries no information, it just looks unfinished.
  */
 export const alt = "ArenaHub — oyunçu";
 export const size = OG_SIZE;

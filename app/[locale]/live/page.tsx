@@ -7,7 +7,7 @@ import NextUp from "@/components/matches/NextUp";
 import AutoRefresh from "@/components/live/AutoRefresh";
 import { localeAlternates } from "@/lib/localeAlternates";
 
-// Qəsdən dinamik: Bu səhifənin bütün mənası indi baş verənləri göstərməkdir.
+// Deliberately dynamic: the entire point of this page is what is happening now.
 export async function generateMetadata({
   params,
 }: {

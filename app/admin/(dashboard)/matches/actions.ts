@@ -21,8 +21,8 @@ function matchData(formData: FormData) {
     bestOf: Number(formData.get("bestOf") ?? 1),
     stage: String(formData.get("stage") ?? "") || null,
     starRating: Number(formData.get("starRating") ?? 1),
-    // Yoxlanmış ünvan: sahə birbaşa <a href>-ə düşür və panelə EDITOR rolu
-    // da girə bilir. javascript: və data: sxemləri kənarlaşdırılır.
+    // A checked address: the field lands straight in an <a href>, and an EDITOR
+    // can reach the panel too. The javascript: and data: schemes are rejected.
     streamUrl: normaliseStreamUrl(String(formData.get("streamUrl") ?? "")),
     status: String(formData.get("status") ?? "UPCOMING") as MatchStatus,
   };
@@ -32,7 +32,7 @@ function matchSlug(teamASlug: string, teamBSlug: string) {
   return `${teamASlug}-vs-${teamBSlug}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/** Yazılan yayım linki oxunmayan ünvandırsa, səbəbi deyilir. */
+/** If the stream link entered is not a readable address, the reason is given. */
 function streamError(formData: FormData): string | null {
   const typed = String(formData.get("streamUrl") ?? "").trim();
   if (typed && !normaliseStreamUrl(typed)) {

@@ -3,10 +3,10 @@ import { setRequestLocale } from "next-intl/server";
 import PageShell from "@/components/layout/PageShell";
 import { localeAlternates } from "@/lib/localeAlternates";
 
-// Əvvəl burada force-dynamic vardı: header sessiyanı serverdə oxuyurdu, statik
-// render isə `cookies()`-i boş qaytarır və girmiş adama məhz bu səhifədə
-// "Giriş / Qeydiyyat" göstərirdi. Header artıq cookie oxumur — bax
-// components/layout/AccountContext.tsx — ona görə səbəb qalmadı.
+// This used to carry force-dynamic: the header read the session on the server,
+// a static render returns `cookies()` empty, and a signed-in person was shown
+// "Sign in / Register" on this page in particular. The header no longer reads
+// cookies - see components/layout/AccountContext.tsx - so the reason is gone.
 
 const CONTENT = {
   az: {

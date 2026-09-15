@@ -4,12 +4,13 @@ import { useEffect } from "react";
 import Link from "next/link";
 
 /**
- * Admin panelinin öz xəta sərhəddi.
+ * The admin panel's own error boundary.
  *
- * Bu paneldəki əməliyyatların çoxu səhv gedəndə `throw` edir — sahibi qeydiyyatlı
- * olmayan komanda, şəkilsiz reklam, öz hesabını silmək cəhdi, bitmiş sessiya.
- * Ayrıca sərhəd olmayanda bunların hamısı kökdəki çılpaq ekrana düşürdü: nə
- * panelə qayıtmaq üçün link vardı, nə də nə baş verdiyinə dair işarə.
+ * Most operations in this panel `throw` when something goes wrong - a team
+ * whose owner is not registered, an advert with no image, an attempt to
+ * delete your own account, an expired session. Without a boundary of its own
+ * all of those landed on the bare screen at the root: no link back into the
+ * panel, and no hint as to what had happened.
  */
 export default function AdminError({
   error,

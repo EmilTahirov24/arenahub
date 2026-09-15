@@ -14,7 +14,7 @@ export type ClaimSearchState = {
 
 async function requirePlayer() {
   const session = await getPlayerSession();
-  // Bitmiş sessiya adi haldır — xəta ekranı yox, giriş səhifəsi (AGENTS.md).
+  // An expired session is ordinary - the sign-in page, not an error screen (AGENTS.md).
   if (!session) redirect("/player/login");
   return session.id;
 }
@@ -62,13 +62,13 @@ export async function searchClaimableProfiles(
 export type ClaimSubmitState = { ok?: boolean; error?: string } | undefined;
 
 /**
- * Müraciəti göndərir.
+ * Submits the claim.
  *
- * Bloklar `throw` edilmirdi ki, mesajları oxunsun deyə yazılıb: CLAIM_BLOCK_MESSAGE
- * hər hal üçün nə etmək lazım olduğunu izah edən cümlə saxlayır — məsələn əvvəlcə
- * indiki komandadan ayrılmaq. Atılan xəta bu cümləni Next-in xəta ekranı ilə əvəz
- * edirdi, yəni adam nə səhv etdiyini bilmirdi. Hamısı vəziyyət kimi qaytarılır və
- * formanın altında göstərilir.
+ * The blocks are not thrown, so that their messages can be read:
+ * CLAIM_BLOCK_MESSAGE holds a sentence for each case explaining what to do -
+ * leaving the current team first, for instance. A thrown error replaced that
+ * sentence with Next's error screen, leaving the person with no idea what they
+ * had done wrong. They all come back as state and are shown under the form.
  */
 export async function submitProfileClaim(
   playerId: string,

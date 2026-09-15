@@ -2,12 +2,12 @@ import { ImageResponse } from "next/og";
 import { C, Frame, Wordmark, OG_SIZE, OG_CONTENT_TYPE } from "@/lib/ogTheme";
 
 /**
- * Saytın standart paylaşım şəkli.
+ * The site's default share image.
  *
- * `[locale]` seqmentində durur, yəni ondan aşağıdakı BÜTÜN səhifələr — komanda,
- * oyunçu, turnir, siyahılar — öz şəkli yoxdursa bunu miras alır. Əvvəl heç bir
- * şəkil yox idi: Telegram, Discord və ya X-ə atılan hər link çılpaq mətn kimi
- * görünürdü.
+ * It sits in the `[locale]` segment, so EVERY page below it - teams, players,
+ * tournaments, the lists - inherits this one unless it has its own. There was
+ * no image at all before: every link dropped into Telegram, Discord or X came
+ * out as bare text.
  */
 export const alt = "ArenaHub — esports matçları, nəticələr və statistika";
 export const size = OG_SIZE;

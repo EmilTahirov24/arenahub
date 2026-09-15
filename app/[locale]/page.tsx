@@ -43,8 +43,8 @@ function SectionHead({ title, href, label }: { title: string; href: string; labe
 
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   "use cache";
-  // İdxal saatda bir dəfə işləyir, admin dəyişiklikləri isə revalidatePath ilə
-  // dərhal ləğv olunur — ona görə bir dəqiqəlik pəncərə datanı köhnəltmir.
+  // The import runs hourly and admin changes are invalidated at once through
+  // revalidatePath, so a one-minute window never leaves the data stale.
   cacheLife("minutes");
 
   const { locale } = await params;
@@ -83,8 +83,8 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     }),
     prisma.newsArticle.findMany({
       where: { publishedAt: { not: null } },
-      // Seçilmiş xəbər birinci gəlir. Sahə əvvəl yazılırdı, amma heç bir sorğu
-      // ona baxmırdı — admin qutunu işarələyirdi və heç nə dəyişmirdi.
+      // The featured article comes first. The field was already being written,
+      // but no query looked at it - an admin ticked the box and nothing moved.
       orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
       take: 6,
       include: { game: true, translations: true },

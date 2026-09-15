@@ -42,8 +42,8 @@ export default async function TeamProfilePage({
   params: Promise<{ locale: string; teamSlug: string }>;
 }) {
   "use cache";
-  // İdxal saatda bir dəfə işləyir, admin dəyişiklikləri isə revalidatePath ilə
-  // dərhal ləğv olunur — ona görə bir dəqiqəlik pəncərə datanı köhnəltmir.
+  // The import runs hourly and admin changes are invalidated at once through
+  // revalidatePath, so a one-minute window never leaves the data stale.
   cacheLife("minutes");
 
   const { locale, teamSlug } = await params;

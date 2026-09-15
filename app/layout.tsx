@@ -16,10 +16,10 @@ const spaceGrotesk = Space_Grotesk({
 const DESCRIPTION = "CS2, Dota 2, Valorant və LoL üçün matçlar, komandalar, oyunçular, xəbərlər və canlı statistika bir yerdə.";
 
 export const metadata: Metadata = {
-  // Paylaşım şəkillərinin ünvanı MÜTLƏQ olmalıdır — Telegram, Discord və X
-  // nisbi yolu aça bilmir. Bu qoyulmasa Next xəbərdarlıq verir və localhost-a,
-  // ya da Vercel-in hər deploy-da dəyişən müvəqqəti domeninə düşür; yəni
-  // paylaşılan köhnə linkin şəkli bir müddət sonra sınır.
+  // The share images need an ABSOLUTE address - Telegram, Discord and X cannot
+  // open a relative path. Without this Next warns and falls back to localhost,
+  // or to Vercel's temporary domain that changes on every deploy; so the image
+  // on an old shared link breaks after a while.
   metadataBase: new URL(siteUrl()),
   title: { default: "ArenaHub", template: "%s — ArenaHub" },
   description: DESCRIPTION,
@@ -37,32 +37,33 @@ export const metadata: Metadata = {
 };
 
 /**
- * Boyanmadan əvvəl işləyən iki düzəliş.
+ * Two corrections that run before the first paint.
  *
- * Tema: saxlanılmış seçim tətbiq olunmasa, səhifə əvvəl qaranlıq çəkilir və
- * sonra işığa sıçrayır.
+ * Theme: without applying the stored choice the page is drawn dark first and
+ * then jumps to light.
  *
- * Dil: <html> bu layoutdadır, [locale] isə altındadır — yəni hansı dilin
- * istəndiyini burada bilmək mümkün deyil və atribut sabit "az" qalırdı. Ünvanın
- * özündən oxumaq bu asılılığı aradan qaldırır və hər tam yüklənmədə işləyir.
- * Client tərəfdəki keçidlər üçün app/[locale]/HtmlLang.tsx var.
+ * Language: <html> is in this layout and [locale] sits below it - so there is
+ * no way to know here which language was asked for, and the attribute stayed
+ * fixed at "az". Reading it from the address itself removes that dependency
+ * and works on every full load. Client-side navigations are handled by
+ * app/[locale]/HtmlLang.tsx.
  */
 const themeInitScript = `
 (function () {
   try {
     var stored = localStorage.getItem("theme");
-    // Seçim edilməyibsə cihazın öz rejimi. Əvvəl burada sadəcə "dark" yazılırdı,
-    // yəni sistemi işıqlı rejimdə olan ziyarətçi işıqlı temanı düyməyə basmadan
-    // heç vaxt görmürdü.
+    // With no choice made, the device's own mode. This simply said "dark"
+    // before, so a visitor whose system was in light mode never saw the light
+    // theme without pressing the button.
     //
-    // Atribut hər halda TƏYİN OLUNUR — media sorğusuna buraxılmır — çünki bütün
-    // işıqlı qaydalar data-theme="light" seçicisinə bağlıdır və onları ikiqat
-    // yazmaq hər yeni rəngdə iki yerdə düzəliş tələb edərdi.
+    // The attribute is SET either way - not left to a media query - because
+    // every light rule hangs off the data-theme="light" selector, and writing
+    // them twice would mean fixing two places for every new colour.
     var theme = stored ||
       (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
     document.documentElement.setAttribute("data-theme", theme);
 
-    // Seçim edilməyibsə, açıq pəncərədə sistem rejimi dəyişəndə sayt da dəyişir.
+    // With no choice made, the site follows the system mode changing in an open window.
     if (!stored && window.matchMedia) {
       window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", function (e) {
         if (localStorage.getItem("theme")) return;

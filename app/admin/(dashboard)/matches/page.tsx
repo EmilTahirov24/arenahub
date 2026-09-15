@@ -33,9 +33,9 @@ export default async function AdminMatchesPage({
   const { q, page: pageParam, status: statusParam, game: gameParam } = await searchParams;
   const search = (q ?? "").trim();
 
-  // Status ünvandan gəlir, yəni istənilən mətn ola bilər. Yoxlanmadan Prisma-ya
-  // versək, `?status=xxx` enum xətası ilə 500 qaytarar — filtr səhv yazılmış
-  // linki səhifəni sındırmaqla cəzalandırmamalıdır.
+  // The status comes from the address, so it can be any text at all. Passed to
+  // Prisma unchecked, `?status=xxx` returns a 500 from an enum error - a filter
+  // must not punish a mistyped link by breaking the page.
   const status =
     statusParam && (Object.values(MatchStatus) as string[]).includes(statusParam)
       ? (statusParam as MatchStatus)
@@ -44,10 +44,10 @@ export default async function AdminMatchesPage({
   const games = await prisma.game.findMany({ orderBy: { name: "asc" }, select: { slug: true, shortName: true } });
   const gameSlug = games.some((g) => g.slug === gameParam) ? gameParam : undefined;
 
-  // Əvvəl burada yalnız `take: 100` vardı və səhifələmə yox idi — yəni ən təzə
-  // 100 matçdan başqa heç birinə çatmaq mümkün deyildi. Production-da 2349 matç
-  // var, yəni 2249-u admin üçün əlçatmaz idi. Bu, limitsiz sorğudan da pisdir:
-  // orada heç olmasa data görünürdü.
+  // This carried only `take: 100` and no pagination - so nothing beyond the
+  // 100 newest matches could be reached at all. Production holds 2,349, which
+  // put 2,249 of them out of an admin's reach. That is worse than an unbounded
+  // query: there, at least, the data was visible.
   const where: Prisma.MatchWhereInput = {
     ...(search
       ? {
@@ -73,8 +73,8 @@ export default async function AdminMatchesPage({
     skip: (page - 1) * PER_PAGE,
   });
 
-  // Saat da göstərilir, təkcə gün yox: eyni gün ərzində bir neçə matç olur və
-  // admin onları məhz vaxta görə ayırd edir.
+  // The time is shown as well as the day: several matches fall on one day, and
+  // the time is how an admin tells them apart.
   const whenFmt = siteFormat("az", {
     day: "2-digit",
     month: "short",

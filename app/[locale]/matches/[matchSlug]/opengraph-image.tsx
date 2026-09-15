@@ -4,14 +4,15 @@ import { C, Frame, Wordmark, OG_SIZE, OG_CONTENT_TYPE } from "@/lib/ogTheme";
 import { siteFormat } from "@/lib/dates";
 
 /**
- * Matç linki üçün paylaşım şəkli.
+ * The share image behind a match link.
  *
- * Bu, saytda ən çox paylaşılan səhifədir — adam Discord və ya Telegram-da
- * "bu matça bax" deyəndə məhz bu linki atır. Şəkilsiz o mesaj çılpaq ünvan kimi
- * görünürdü; indi qarşıdurma, hesab və turnir birbaşa söhbətdə oxunur.
+ * This is the most shared page on the site - it is the link somebody drops in
+ * Discord or Telegram when they say "look at this match". Without an image
+ * that message appeared as a bare URL; now the fixture, the score and the
+ * tournament read straight from the conversation.
  *
- * Qeyd: satori-nin standart şriftində yalnız bir çəki var, ona görə `fontWeight`
- * görünüşü dəyişmir. Ölçü və rəng fərqi ilə iyerarxiya qurulub.
+ * Note: satori's default font has only one weight, so `fontWeight` changes
+ * nothing here. The hierarchy is built from size and colour instead.
  */
 export const alt = "ArenaHub — matç";
 export const size = OG_SIZE;
@@ -40,8 +41,8 @@ export default async function Image({
     },
   });
 
-  // Matç tapılmasa boş şəkil qaytarmaq olmaz — sosial şəbəkə onu sınıq kimi
-  // göstərər. Brend şəkli düzgün ehtiyatdır.
+  // A missing match must not return an empty image - a social network would
+  // render it as broken. The brand image is the right fallback.
   if (!match) {
     return new ImageResponse(
       (
@@ -62,12 +63,12 @@ export default async function Image({
     ? az ? "CANLI" : "LIVE"
     : finished
       ? az ? "BİTDİ" : "FINISHED"
-      // Tarix və saat AYRI formatlanır. Birlikdə istənəndə Intl onları
-        // "4 avqust/09:00" kimi kəsir — əyri xətt səliqəsiz görünür.
-        // `Asia/Baku` əvvəl burada əl ilə yazılmışdı və saytda YEGANƏ düzgün
-        // vaxt bu idi: səhifənin özü serverin zonasında (UTC) göstərirdi, yəni
-        // eyni matç şəkildə 13:00, səhifədə 09:00 idi. İndi hər ikisi
-        // `SITE_TIME_ZONE`-dan gəlir.
+        // Date and time are formatted SEPARATELY. Asked for together, Intl cuts
+        // them as "4 August/09:00" - the slash looks careless.
+        // `Asia/Baku` was once written out by hand here, and this was the ONLY
+        // correct time on the site: the page itself rendered in the server's
+        // zone (UTC), so the same match read 13:00 in the image and 09:00 on
+        // the page. Both now come from `SITE_TIME_ZONE`.
         : `${siteFormat(az ? "az-AZ" : "en-GB", {
             day: "numeric", month: "long",
           }).format(match.scheduledAt)} · ${siteFormat(az ? "az-AZ" : "en-GB", {
@@ -109,7 +110,7 @@ export default async function Image({
                 fontSize: 58,
                 color: C.foreground,
                 lineHeight: 1.1,
-                // Uzun komanda adı şəkildən daşmamalıdır.
+                // A long team name must not spill out of the image.
                 overflow: "hidden",
               }}
             >

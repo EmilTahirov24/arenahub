@@ -12,7 +12,7 @@ function slugify(s: string) {
 
 export async function createTeam(formData: FormData) {
   const session = await getPlayerSession();
-  // Bitmiş sessiya adi haldır — xəta ekranı yox, giriş səhifəsi (AGENTS.md).
+  // An expired session is ordinary - the sign-in page, not an error screen (AGENTS.md).
   if (!session) redirect("/player/login");
 
   const existing = await prisma.team.findFirst({ where: { ownerId: session.id } });

@@ -23,7 +23,7 @@ import JsonLd from "@/components/seo/JsonLd";
 import { matchJsonLd } from "@/lib/structuredData";
 import { siteFormat } from "@/lib/dates";
 
-// Qəsdən dinamik: Canlı matçda AutoRefresh 8 saniyədən bir yeniləyir; keş həmin yeniləməyə köhnə hesab qaytarardı.
+// Deliberately dynamic: on a live match AutoRefresh reloads every 8 seconds, and a cache would answer that refresh with a stale score.
 /**
  * What a map card prints where the game has no score of its own.
  *
@@ -134,12 +134,13 @@ export default async function MatchDetailPage({
   const isFinished = match.status === "FINISHED";
 
   /**
-   * Yayım linki.
+   * The stream link.
    *
-   * Bitmiş matçda kanal linki GÖSTƏRİLMİR: «twitch.tv/blast» həmin an nə
-   * yayımlanırsa ona aparır, yəni dünənki matçın səhifəsindəki «İzlə» düyməsi
-   * bu gün tamam başqa matça göndərir. Konkret videoya işarə edən link isə
-   * qalıcıdır və təkrar kimi qalır — bax lib/streams.ts.
+   * On a finished match a channel link is NOT shown: "twitch.tv/blast" leads
+   * to whatever is being broadcast at that moment, so a "Watch" button on
+   * yesterday's match page sends somebody to an entirely different match
+   * today. A link pointing at a specific video is permanent and stays as a
+   * replay - see lib/streams.ts.
    */
   const stream = parseStream(match.streamUrl);
   const watchLabel = !stream

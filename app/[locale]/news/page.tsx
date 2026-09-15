@@ -35,15 +35,17 @@ export default async function NewsPage({
 
   const games = await activeGames();
 
-  // Oyun filtri iki mənbədən işləyir.
+  // The game filter draws on two sources.
   //
-  // Əl ilə yazılan xəbərin `gameId`-si olur. Həftəlik icmalın isə yoxdur, çünki
-  // o, bütün oyunları əhatə edir — və məhz buna görə filtr əvvəl HƏMİŞƏ boş
-  // nəticə verirdi: dörd düymə vəd edirdi, dördü də adamı boş ekrana aparırdı.
+  // A hand-written article has a `gameId`. A weekly round-up does not, because
+  // it covers every game - and that is exactly why the filter used to return
+  // an empty result EVERY time: it offered four buttons and all four led to a
+  // blank screen.
   //
-  // İcmal artıq həftədə matçı olan oyunların slug-larını `tags`-a yazır. Ona
-  // görə filtr «bu oyunun məqaləsi VƏ YA bu oyunu əhatə edən icmal» deməkdir.
-  // Uydurma deyil: etiket həmin həftədə həqiqətən oynanılmış oyunlardır.
+  // A round-up now writes the slugs of the games with matches that week into
+  // `tags`. So the filter means "an article about this game OR a round-up
+  // covering it". Nothing is invented: the tags are the games actually played
+  // that week.
   const matchesGame = (slug: string) => ({
     OR: [{ game: { slug } }, { tags: { has: slug } }],
   });
@@ -53,8 +55,9 @@ export default async function NewsPage({
     ...(gameSlug && games.some((g) => g.slug === gameSlug) ? matchesGame(gameSlug) : {}),
   };
 
-  // Pil yalnız arxasında məqalə olan oyun üçün göstərilir. Sayğac filtrin ÖZ
-  // qaydası ilə hesablanır, yoxsa düymə görünüb boş nəticə verə bilər.
+  // A chip is shown only for a game with articles behind it. The count is
+  // computed with the filter's OWN rule, or a button could appear and then
+  // return nothing.
   const perGame = await Promise.all(
     games.map(async (g) => ({
       game: g,
@@ -65,7 +68,7 @@ export default async function NewsPage({
 
   const articles = await prisma.newsArticle.findMany({
     where,
-    // Ana səhifə ilə eyni sıra: seçilmiş xəbər əvvəldə.
+    // The same order as the home page: the featured article first.
     orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
     take: 24,
     include: { game: true, translations: true },

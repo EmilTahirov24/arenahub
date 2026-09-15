@@ -32,9 +32,9 @@ export default async function MatchesPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const { game: gameSlug, date: dateParam } = await searchParams;
-  // Uydurma tarix filtr kimi qəbul edilmir: sorğu onsuz da onu nəzərə almır
-  // (lib/dates.ts), amma normallaşdırmasaq, filtr zolağında heç bir gün seçili
-  // görünmür və uydurma dəyər bütün linklərə daşınır.
+  // A junk date is not accepted as a filter: the query ignores it anyway
+  // (lib/dates.ts), but without normalising it no day appears selected in the
+  // filter strip and the junk value is carried into every link.
   const date = isDateKey(dateParam) ? dateParam : undefined;
   const t = await getTranslations();
 

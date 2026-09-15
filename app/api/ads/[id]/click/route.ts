@@ -3,18 +3,18 @@ import { prisma } from "@/lib/prisma";
 import { rateLimit, clientIp } from "@/lib/rateLimit";
 
 /**
- * Reklam kliki: sayğacı artırır və reklamçının ünvanına yönləndirir.
+ * An advert click: increments the counter and redirects to the advertiser.
  *
- * Klik niyə server tərəfdən keçir: banner-in üstündəki linkə birbaşa basanda
- * biz heç nə bilmirik — istifadəçi saytdan çıxıb gedir və hadisə itir.
- * Aradakı bu marşrut isə həm sayır, həm də yönləndirir.
+ * Why the click goes through the server: on a direct press of the link over
+ * the banner we learn nothing - the visitor leaves the site and the event is
+ * lost. This route in between both counts and redirects.
  *
- * Bu AÇIQ YÖNLƏNDİRMƏ (open redirect) deyil: hədəf sorğudan gəlmir, bazadakı
- * reklam sətrindən oxunur. Kənar adamın edə biləcəyi yeganə şey mövcud reklam
- * id-lərindən birini seçməkdir. Buna baxmayaraq protokol yoxlanılır — panelə
- * girişi olan redaktorun səhvən (və ya hesabı ələ keçirilibsə qəsdən)
- * `javascript:` yazması bu yoxlama olmadan bizim domenimizdən keçən hücuma
- * çevrilərdi.
+ * This is NOT an open redirect: the target does not come from the request, it
+ * is read from the advert row in the database. All an outsider can do is pick
+ * one of the existing advert ids. The protocol is checked all the same - an
+ * editor with panel access writing `javascript:` by mistake (or on purpose,
+ * if the account were taken over) would without that check become an attack
+ * running from our own domain.
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -33,9 +33,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.redirect(base);
   }
 
-  // Sayğac yönləndirməni gözlətməməlidir: adam reklamçının saytına getməlidir,
-  // bizim yazımızı gözləməməlidir. Səhv olsa da yönləndirmə baş verir — itmiş
-  // bir klik, dayanmış keçiddən yaxşıdır.
+  // The counter must not hold up the redirect: the person should reach the
+  // advertiser's site, not wait on our write. The redirect happens even on a
+  // failure - one lost click beats a stalled link.
   const ip = clientIp(request.headers);
   const allowed = !ip || rateLimit(`ad-click:${ip}:${id}`, 20, 60 * 60_000).ok;
   if (allowed) {

@@ -3,18 +3,18 @@ import { prisma } from "@/lib/prisma";
 import { getPlayerSession } from "@/lib/auth";
 
 /**
- * Header-in hesab menyusu üçün cari oyunçu.
+ * The current player, for the header's account menu.
  *
- * Bu marşrut ona görə var ki, Header-in özü sessiyanı oxumasın. `cookies()`
- * oxumaq marşrutu dinamik edir və Header hər səhifədə render olunduğu üçün
- * bütün public sayt keşlənə bilməz hala düşürdü — hər ziyarətçi və hər crawler
- * bazaya gedirdi. Sessiya buraya köçürüldükdən sonra səhifələr keşlənir, bu
- * kiçik sorğu isə keşdən kənarda qalır.
+ * This route exists so that the Header does not read the session itself.
+ * Reading `cookies()` makes a route dynamic, and since the Header renders on
+ * every page, the entire public site became uncacheable - every visitor and
+ * every crawler went to the database. With the session moved here the pages
+ * are cached and only this small request stays outside.
  *
- * Yalnız görünüşə lazım olan sahələr qaytarılır — e-poçt, xal və qalanı yox,
- * çünki bu cavab hər səhifə yüklənişində alınır. `slug` və `ownedTeamSlug`
- * oyunçu və komanda səhifələrindəki "Redaktə et" linki üçündür: onlar da eyni
- * səbəbdən sessiyanı serverdə oxumağı dayandırdı.
+ * Only the fields the view needs come back - not the email, the points or the
+ * rest, because this response is fetched on every page load. `slug` and
+ * `ownedTeamSlug` are for the "Edit" link on player and team pages: those
+ * stopped reading the session on the server for the same reason.
  */
 export async function GET() {
   const session = await getPlayerSession();

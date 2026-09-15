@@ -21,9 +21,9 @@ export default async function AdminDashboardPage() {
 
   const health = await importHealth(prisma);
 
-  // Turnirlər və müraciətlər menyuda öz bölmələri olmasına baxmayaraq burada
-  // görünmürdü. Müraciətlər xüsusilə vacibdir: gözləyən müraciət insanın
-  // cavab gözlədiyi yeganə yerdir, ona görə sıfırdan böyük olanda seçilir.
+  // Tournaments and claims had their own sections in the menu but did not
+  // appear here. Claims matter most: a pending claim is the one place where a
+  // person is waiting for an answer, so it is highlighted above zero.
   const stats = [
     { label: "Komandalar", value: teams, href: "/admin/teams", waiting: false },
     { label: "Oyunçular", value: players, href: "/admin/players", waiting: false },

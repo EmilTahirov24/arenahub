@@ -34,21 +34,23 @@ export default async function ResultsPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const { game: gameSlug, date: dateParam, page: pageParam } = await searchParams;
-  // Uydurma tarix filtr sayılmır — səbəb lib/dates.ts-də izah edilib.
+  // A junk date does not count as a filter - the reason is in lib/dates.ts.
   const date = isDateKey(dateParam) ? dateParam : undefined;
   const t = await getTranslations();
 
   const games = await activeGames();
 
-  // Səhifələmə bazada aparılır, yaddaşda yox. Əvvəl bu sorğu BÜTÜN bitmiş
-  // matçları çəkirdi — seed-dəki 23 matçla bu görünmürdü, amma idxal işlədikcə
-  // sətir sayı artdı və səhifə 5 saniyəyə qalxdı. Sayğac artmağa davam edir,
-  // yəni limitsiz variant vaxt keçdikcə yalnız pisləşir.
+  // Pagination happens in the database, not in memory. This query used to
+  // fetch EVERY finished match - invisible with the 23 matches in the seed,
+  // but as the import ran the row count grew and the page climbed to 5
+  // seconds. The counter keeps rising, so the unbounded version only gets
+  // worse with time.
   //
-  // Sorğu `lib/cachedQueries.ts`-dəki keşlənən köməkçidən keçir. Əvvəl eyni
-  // məntiq burada keşsiz təkrarlanırdı və ölçmə bunun bahasını göstərdi: qabıq
-  // 0.26 saniyəyə gəlirdi, amma axın hissəsi 1–2 saniyə çəkirdi, çünki hər
-  // sorğuda sayğac və siyahı yenidən bazadan oxunurdu.
+  // The query goes through the cached helper in `lib/cachedQueries.ts`. The
+  // same logic used to be repeated here without a cache, and measuring showed
+  // the price: the shell arrived in 0.26 seconds while the streamed part took
+  // 1-2, because the count and the list were read from the database on every
+  // request.
   const requested = Math.max(1, Number(pageParam) || 1);
   const first = await finishedMatches(
     gameSlug,
@@ -60,9 +62,9 @@ export default async function ResultsPage({
   let matches = first.matches;
 
   const totalPages = Math.max(1, Math.ceil(total / RESULTS_PER_PAGE));
-  // Diapazondan kənar səhifə 404 vermir, sonuncuya sıxılır — siyahı kiçiləndə
-  // 7-ci səhifədə dayanmış adama xəta yox, son səhifə göstərilməlidir. Bu
-  // nadir haldır, ona görə ikinci çağırışın bahası yoxdur; o da keşlənir.
+  // A page out of range does not 404, it clamps to the last one - somebody
+  // parked on page 7 when the list shrinks should get the final page, not an
+  // error. It is rare, so the second call costs nothing; it is cached too.
   const page = Math.min(requested, totalPages);
   if (page !== requested) {
     ({ matches } = await finishedMatches(
@@ -76,8 +78,8 @@ export default async function ResultsPage({
 
   const groups = groupBy(matches, (m) => m.tournamentId ?? "none");
 
-  // Filtrlər səhifə nömrəsi ilə birlikdə ünvanda qalmalıdır, yoxsa ikinci
-  // səhifəyə keçəndə seçilmiş oyun və tarix itir.
+  // The filters have to travel in the address alongside the page number, or
+  // moving to page two loses the chosen game and date.
   const pageQuery: Record<string, string> = {};
   if (gameSlug) pageQuery.game = gameSlug;
   if (date) pageQuery.date = date;

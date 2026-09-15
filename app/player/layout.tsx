@@ -1,20 +1,22 @@
 import { connection } from "next/server";
 
 /**
- * Oyuncu paneli qəsdən bloklayan marşrutdur.
+ * The player panel is a deliberately blocking route.
  *
- * Cache Components hər marşrutun ani açılmasını gözləyir və prerender oluna
- * bilməyən yerləri xəta kimi göstərir. Buradakı hər səhifə ya sessiya oxuyur, ya da giriş/qeydiyyat formasıdır — yəni məzmun
- * istifadəçiyə görə dəyişir və statik qabığın verəcəyi bir şey yoxdur. Onu
- * <Suspense> ilə parçalamaq da mənasızdır: gözlədilən hissə elə səhifənin özüdür.
- * Keşləmə public sayt üçün vacibdir, bunun üçün deyil.
+ * Cache Components expects every route to open instantly and reports anything
+ * that cannot be prerendered as an error. Every page here either reads the
+ * session or is the sign-in / registration form - the content varies by user
+ * and there is nothing a static shell could offer. Splitting it with
+ * <Suspense> is pointless too: the part being waited on is the page itself.
+ * Caching matters for the public site, not for this.
  *
- * Bu layout yalnız konfiq üçün var; markup əlavə etmir. Giriş səhifələri client
- * komponentdir və `instant` orada işləmir, ona görə konfiq valideyndə olmalıdır.
+ * This layout exists only for the config; it adds no markup. The sign-in pages
+ * are client components and `instant` does not work there, so the config has
+ * to sit on the parent.
  *
- * `connection()` isə bütün budağı sorğu vaxtına bağlayır. Onsuz Next hər səhifəni
- * prerender etməyə çalışır və render zamanı sabit olmayan hər dəyər — məsələn
- * reklam formasının "bu gün" defaultu — xəta verir.
+ * `connection()` ties the whole branch to request time. Without it Next tries
+ * to prerender every page and any value that is not stable at render time -
+ * the advert form's "today" default, for instance - throws.
  */
 export const instant = false;
 

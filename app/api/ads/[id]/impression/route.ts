@@ -3,24 +3,27 @@ import { prisma } from "@/lib/prisma";
 import { rateLimit, clientIp } from "@/lib/rateLimit";
 
 /**
- * Reklamın GÖRÜNMƏSİ (impression) sayğacı.
+ * The advert IMPRESSION counter.
  *
- * Serverdə saymaq mümkün deyil və bu, qəsdən belədir. `getAd()` keşlənir
- * (`use cache: remote`), yəni render keşdən gəlir — orada saysaq, hər baxışı
- * yox, hər keş pəncərəsini sayardıq. Üstəlik hər səhifə render-ində bazaya
- * yazmaq keşləmə işinin bütün qazancını geri qaytarardı.
+ * Counting on the server is impossible, and that is by design. `getAd()` is
+ * cached (`use cache: remote`), so the render comes from the cache - counting
+ * there would count cache windows rather than views. Writing to the database
+ * on every page render would also hand back everything the caching work
+ * gained.
  *
- * Ona görə sayğac brauzerdən gəlir və bunun iki əlavə üstünlüyü var:
+ * So the count comes from the browser, which carries two further advantages:
  *
- *   Yalnız həqiqətən EKRANDA görünən banner sayılır — səhifənin altında qalıb
- *   heç vaxt görünməyən reklam sayılmır. Reklamçıya deyilən rəqəm bu olmalıdır.
+ *   Only a banner that genuinely appeared ON SCREEN is counted - an advert
+ *   sitting below the fold that nobody ever saw is not. That is the number an
+ *   advertiser should be given.
  *
- *   JavaScript işlətməyən crawler-lər sayğacı şişirtmir. Bot trafiki avtomatik
- *   kənarda qalır.
+ *   Crawlers that do not run JavaScript cannot inflate the counter. Bot
+ *   traffic falls outside automatically.
  *
- * Limit: eyni IP eyni banner üçün saatda 200. Adi adam bir saatda 30-40 səhifə
- * gəzə bilər və yan paneldəki banner hər dəfə düzgün sayılmalıdır, ona görə
- * hədd yüksəkdir — bu, dəqiq nəzarət yox, kobud sui-istifadə əleyhinə qoruyucudur.
+ * The limit: 200 an hour per banner per IP. An ordinary person may browse 30
+ * to 40 pages in an hour and the banner in the side rail has to be counted
+ * correctly each time, so the ceiling is high - this is a guard against crude
+ * abuse, not precise accounting.
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -30,8 +33,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return new NextResponse(null, { status: 204 });
   }
 
-  // Olmayan id sadəcə nəzərə alınmır: bu marşrut cavab qaytarmır, ona görə
-  // brauzerə səhv bildirməyin mənası yoxdur.
+  // An id that does not exist is simply ignored: this route returns no body,
+  // so reporting an error to the browser would serve nothing.
   await prisma.adBanner
     .update({ where: { id }, data: { impressions: { increment: 1 } } })
     .catch(() => {});

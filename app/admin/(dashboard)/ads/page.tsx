@@ -4,15 +4,16 @@ import { prisma } from "@/lib/prisma";
 import { primaryButtonClass } from "@/components/admin/formStyles";
 
 /**
- * Reklam yerini satmaq üçün lazım olan yeganə rəqəmlər.
+ * The only numbers needed to sell an ad slot.
  *
- * Sütunlar sxemdə əvvəldən vardı, amma heç yerdə nə yazılır, nə oxunurdu —
- * yəni "bu banner nə qədər göstərildi?" sualına cavab yox idi. Sayğaclar indi
- * brauzerdən gəlir (components/ads/AdImpression.tsx) və klik yönləndirmə
- * marşrutundan (app/api/ads/[id]/click).
+ * The columns were in the schema from the start but were neither written nor
+ * read anywhere - so "how often was this banner shown?" had no answer. The
+ * counts now come from the browser (components/ads/AdImpression.tsx) and from
+ * the click redirect route (app/api/ads/[id]/click).
  *
- * CTR yalnız göstərilmə olanda hesablanır: sıfıra bölmək əvəzinə tire qoyulur,
- * çünki "0%" yanlış təəssürat yaradır — o, pis nəticə deyil, hələ ölçü yoxdur.
+ * CTR is computed only where there are impressions: a dash instead of a
+ * division by zero, because "0%" gives the wrong impression - it is not a bad
+ * result, there is simply no measurement yet.
  */
 function formatCount(n: number) {
   return n.toLocaleString("az-AZ");

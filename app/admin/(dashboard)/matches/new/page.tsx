@@ -7,8 +7,9 @@ export default async function NewMatchPage({
 }: {
   searchParams: Promise<{ tournamentId?: string }>;
 }) {
-  // Turnir səhifəsindəki «matç əlavə et» buradan gəlir. Oyun və turnir
-  // öncədən dolur — yoxsa admin eyni iki seçimi hər matç üçün təkrarlayır.
+  // The "add a match" link on a tournament page arrives here. The game and
+  // tournament are prefilled - otherwise an admin repeats the same two
+  // choices for every match.
   const { tournamentId } = await searchParams;
 
   const [games, teams, tournaments, defaultTournament] = await Promise.all([

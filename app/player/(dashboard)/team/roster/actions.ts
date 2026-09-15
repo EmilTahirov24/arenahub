@@ -11,7 +11,7 @@ import type { PlayerStatus } from "@/app/generated/prisma/client";
 
 async function requireOwnedTeam() {
   const session = await getPlayerSession();
-  // Bitmiş sessiya adi haldır — xəta ekranı yox, giriş səhifəsi (AGENTS.md).
+  // An expired session is ordinary - the sign-in page, not an error screen (AGENTS.md).
   if (!session) redirect("/player/login");
   const team = await prisma.team.findFirst({ where: { ownerId: session.id } });
   if (!team) throw new Error("Forbidden");

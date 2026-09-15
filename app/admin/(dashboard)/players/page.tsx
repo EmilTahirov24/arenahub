@@ -16,8 +16,8 @@ export default async function AdminPlayersPage({
   const { q, page: pageParam } = await searchParams;
   const search = (q ?? "").trim();
 
-  // Ləqəb, ad və soyad üzrə: admin oyunçunu həm nickname, həm real adı ilə
-  // axtara bilər, çünki hansının yadında qaldığı əvvəlcədən bilinmir.
+  // By nickname, first name and last name: an admin may search for a player
+  // by either, since there is no telling which one they remember.
   const where: Prisma.PlayerWhereInput = search
     ? {
         OR: [

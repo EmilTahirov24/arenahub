@@ -16,16 +16,17 @@ export default async function AdminTeamsPage({
   const { q, page: pageParam } = await searchParams;
   const search = (q ?? "").trim();
 
-  // Əvvəl bu sorğu BÜTÜN komandaları çəkirdi — production-da 814 sətir, səhifə
-  // ~3 saniyə. İdxal işlədikcə say artır, yəni limitsiz variant vaxt keçdikcə
-  // yalnız pisləşir. Eyni dərs public /results səhifəsində artıq öyrənilmişdi.
+  // This query used to fetch EVERY team - 814 rows in production, about 3
+  // seconds for the page. The count grows as the import runs, so the unbounded
+  // version only gets worse with time. The same lesson had already been learnt
+  // on the public /results page.
   const where: Prisma.TeamWhereInput = search
     ? { name: { contains: search, mode: "insensitive" } }
     : {};
 
   const total = await prisma.team.count({ where });
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
-  // Diapazondan kənar səhifə sonuncuya sıxılır, xəta vermir.
+  // A page out of range clamps to the last one rather than erroring.
   const page = Math.min(Math.max(1, Number(pageParam) || 1), totalPages);
 
   const teams = await prisma.team.findMany({

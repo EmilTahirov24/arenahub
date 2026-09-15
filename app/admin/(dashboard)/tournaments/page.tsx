@@ -8,15 +8,16 @@ import { siteFormat } from "@/lib/dates";
 
 
 /**
- * Admin panelində ani naviqasiya məqsəd deyil.
+ * Instant navigation is not the goal in the admin panel.
  *
- * Bu səhifələr hər açılışda bazadan TƏZƏ data oxuyur — admin dünənki siyahını
- * görməməlidir. Next isə keşlənməmiş oxunu ani naviqasiyanın qarşısını alan
- * hal kimi bildirir və dev konsolunu bu xəbərdarlıqla doldurur; e2e onları
- * problem kimi yığır və REAL konsol səhvləri həmin siyahıda itir.
+ * These pages read FRESH data from the database on every open - an admin must
+ * not be shown yesterday's list. Next reports an uncached read as something
+ * that prevents instant navigation and fills the dev console with that warning;
+ * the e2e suites collect those as problems, and REAL console errors get lost in
+ * the pile.
  *
- * `instant = false` seçimi sənədin təklif etdiyi «Allow blocking route»
- * variantıdır: production davranışı dəyişmir, sadəcə niyyət yazılır.
+ * `instant = false` is the documented "Allow blocking route" option: production
+ * behaviour does not change, the intent is simply written down.
  */
 export const instant = false;
 
@@ -32,8 +33,8 @@ export default async function AdminTournamentsPage({
   const { q, page: pageParam } = await searchParams;
   const search = (q ?? "").trim();
 
-  // Əvvəl bütün turnirlər bir dəfəyə çəkilirdi. Say idxal ilə artır, ona görə
-  // limitsiz variant vaxt keçdikcə yalnız pisləşir.
+  // Every tournament used to be fetched at once. The count grows with the
+  // import, so the unbounded version only gets worse with time.
   const where: Prisma.TournamentWhereInput = search
     ? { name: { contains: search, mode: "insensitive" } }
     : {};

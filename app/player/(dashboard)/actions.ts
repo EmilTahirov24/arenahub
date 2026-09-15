@@ -20,7 +20,7 @@ export async function resendPlayerVerificationEmail(
   _prevState: { waitSeconds: number; failed?: boolean } | undefined,
 ) {
   const session = await getPlayerSession();
-  // Bitmiş sessiya adi haldır — xəta ekranı yox, giriş səhifəsi (AGENTS.md).
+  // An expired session is ordinary - the sign-in page, not an error screen (AGENTS.md).
   if (!session) redirect("/player/login");
 
   const player = await prisma.player.findUnique({ where: { id: session.id } });
