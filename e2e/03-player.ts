@@ -312,7 +312,7 @@ async function main() {
     assert(team?.owner?.email === EMAIL, "the team owner was not set correctly");
   });
 
-  console.log("\nProqnoz\n");
+  console.log("\nPredictions\n");
 
   await check("choosing a prediction shows its tick straight away", async () => {
     const match = await prisma.match.findFirst({
@@ -329,12 +329,31 @@ async function main() {
     assert(await button.count(), "the prediction button was not found");
     await clickAndSettle(page, button);
 
-    // The page is deliberately NOT reloaded: if revalidation works, the tick is
-    // already here.
-    const marked = await page
+    // The page is deliberately NOT reloaded: if revalidation works, the tick
+    // arrives on its own. Waiting for it is still not a reload - what is being
+    // tested is that it appears without one, not that it appears within 300ms.
+    // `clickAndSettle` pauses a fixed 300ms after the POST, and on a cold route
+    // the revalidated render lands after that, which failed the check for a
+    // reason that had nothing to do with revalidation.
+    const tick = page
       .locator(`form:has(button:has-text("${match.teamA.name}")) button:has-text("✓")`)
-      .count();
-    assert(marked > 0, "the choice saved, but the tick needs a reload to appear");
+      .first();
+    const appeared = await tick
+      .waitFor({ state: "visible", timeout: 15_000 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (!appeared) {
+      // Say which of the two things went wrong instead of assuming. The old
+      // message claimed the choice had saved without ever looking.
+      const stored = await prisma.matchPrediction.findFirst({ where: { matchId: match.id } });
+      assert(
+        false,
+        stored
+          ? "the choice saved, but the tick needs a reload to appear"
+          : "the choice never reached the database - the button did nothing",
+      );
+    }
 
     const saved = await prisma.matchPrediction.findFirst({
       where: { matchId: match.id },
