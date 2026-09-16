@@ -70,25 +70,13 @@ feature I have built.
 
 ---
 
-### What I'm looking for
+### Research interests
 
-A master's degree in computer science in Switzerland, starting in 2027.
-
-Building ArenaHub taught me which problems I actually enjoy, and they were not
-the ones I expected. The interesting part was never adding another page — it was
-everything around getting the data right: reading a source that was never meant
-to be machine-read, deciding what may and may not be inferred from it, and
-keeping a system honest as it changes. I would like to study that properly —
-data-intensive and distributed systems, and the correctness questions that come
-with them.
-
-<!-- REVIEW-REQUIRED
-     This paragraph goes on a public profile in the first person, and it is the
-     part an admissions reader is most likely to ask about. Read it once and
-     make sure it is what you would say out loud in an interview; reword it if
-     not. The year 2027 is an assumption worth checking against the programme
-     you apply to. Delete this comment when you are happy with it — the setup
-     script refuses to publish while it is here. -->
+Sources published for people to read rather than for machines to consume, and
+what may honestly be inferred from them. ArenaHub rests on one such source, and
+most of its design follows from a single constraint: where the record is
+incomplete, the system says so instead of filling the gap. That is the problem I
+would like to study properly.
 
 ---
 
