@@ -1,34 +1,36 @@
 ﻿<#
-  İdxal tetikleyicisini bir əmrlə qurur.
+  Sets up the import trigger in one command.
 
     powershell -ExecutionPolicy Bypass -File scripts\setup-trigger.ps1
 
-  Üç işi ardıcıl görür və birincisi alınmasa dayanır:
-    1. Tokeni soruşur və `scripts\.github-token` faylına yazır
-    2. Bir dəfə sınaq sorğusu göndərir — token doğrudurmu, dərhal bilinir
-    3. Yalnız sınaq keçəndə Windows cədvəlinə qoyur
+  It does three things in order, and stops if the first one fails:
+    1. Asks for the token and writes it to `scripts\.github-token`
+    2. Sends one test request - so a bad token is known immediately
+    3. Registers the Windows task only once that test passes
 
-  Niyə belə: əvvəl bu üç addım ayrı-ayrı idi və səhv token yalnız cədvəl
-  qurulduqdan sonra, log-da üzə çıxırdı — yəni heç vaxt.
+  Why in that order: these three steps used to be separate, and a wrong token
+  only surfaced after the task was registered, in the log - which is to say,
+  never.
 
-  Token GitHub-dan kopyalanmış halda mübadilə buferində olur, ona görə skript
-  əvvəlcə oraya baxır: yazmaq lazım deyil, yalnız təsdiq. Bufer boşdursa,
-  gizli sahə açılır (`Read-Host -AsSecureString` yazılanı gizlədir).
+  A token copied from GitHub is already on the clipboard, so the script looks
+  there first: nothing to type, only to confirm. If the clipboard is empty a
+  hidden field opens (`Read-Host -AsSecureString` conceals what is typed).
 
-  Token heç bir addımda ekrana tam çıxmır — yalnız ilk 14 simvol və uzunluq.
-  Fayl `.gitignore`-dadır və repoya düşmür.
+  At no step is the whole token printed - only its first 14 characters and its
+  length. The file is in `.gitignore` and never reaches the repo.
 
-  Tokeni belə yarat:
+  Create the token like this:
     github.com/settings/personal-access-tokens -> Generate new token
     Repository access -> Only select repositories -> arenahub
     Permissions -> Repository -> Actions: Read and write
 #>
 
 param(
-  # Sual vermədən işləyir: tokeni mübadilə buferindən götürür və təsdiq
-  # istəmir. Sahibi tokeni kopyalayır, quraşdırmanı başqası (məsələn köməkçi)
-  # işlədir — açar heç bir söhbətə, log-a və ya arqument sətrinə düşmür.
-  # Arqument kimi ötürmək olmaz: proses siyahısında görünərdi.
+  # Runs without asking: takes the token from the clipboard and does not ask
+  # for confirmation. The owner copies the token, somebody else (an assistant,
+  # say) runs the setup - and the key never lands in a conversation, a log or
+  # an argument list. It must not be passed as an argument: it would be visible
+  # in the process list.
   [switch]$Yes
 )
 
@@ -37,30 +39,34 @@ try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch {}
 
 $tokenFile = Join-Path $PSScriptRoot ".github-token"
 $trigger = Join-Path $PSScriptRoot "trigger-import.ps1"
+# The registered name of the Windows task. It stays in Azerbaijani on purpose:
+# it is an identifier that already exists in Task Scheduler on the machine that
+# runs this. Renaming it here would not rename the registered task - it would
+# register a SECOND one, and the import would fire twice every 20 minutes.
 $taskName = "ArenaHub idxal tetikleyicisi"
 
 # --- 1. Token -------------------------------------------------------------
 
 if (Test-Path $tokenFile) {
-  Write-Output "Token faylı artıq var: $tokenFile"
+  Write-Output "A token file already exists: $tokenFile"
   if ($Yes) {
-    Write-Output "-Yes verilib: mövcud fayl saxlanılır."
+    Write-Output "-Yes was given: the existing file is kept."
   } else {
-    $again = Read-Host "Yenisini yazmaq istəyirsən? (h/y)"
-    if ($again -eq "h" -or $again -eq "H") { Remove-Item $tokenFile -Force }
+    $again = Read-Host "Write a new one? (y/n)"
+    if ($again -eq "y" -or $again -eq "Y") { Remove-Item $tokenFile -Force }
   }
 }
 
 if (-not (Test-Path $tokenFile)) {
   $plain = $null
 
-  # Mübadilə buferi əvvəlcə yoxlanılır. Səbəb sadədir: token GitHub-dan məhz
-  # kopyalanaraq gəlir, yəni onsuz da oradadır. Gizli sahəyə yapışdırmaq
-  # qarışıqlıq yaradırdı — ekran boş qalır və adam yazının getdiyinə əmin
-  # olmur. Burada heç nə yazmaq lazım deyil, yalnız təsdiq.
+  # The clipboard is checked first. The reason is simple: a token arrives from
+  # GitHub by being copied, so it is already there. Pasting into a hidden field
+  # was confusing - the screen stays blank and there is no sign the paste
+  # landed. Here there is nothing to type, only to confirm.
   #
-  # Tokenin özü EKRANA ÇIXMIR: yalnız ilk 14 simvol və uzunluq göstərilir,
-  # bu, "düzgün olanı kopyalamışam?" sualına cavab vermək üçün kifayətdir.
+  # The token itself is NOT PRINTED: only its first 14 characters and its
+  # length, which is enough to answer "did I copy the right one?".
   $clip = ""
   try { $clip = (Get-Clipboard -Raw -ErrorAction Stop) } catch {}
   if ($clip) { $clip = $clip.Trim() }
@@ -68,24 +74,24 @@ if (-not (Test-Path $tokenFile)) {
   if ($clip -and ($clip.StartsWith("github_pat_") -or $clip.StartsWith("ghp_"))) {
     $onIki = $clip.Substring(0, [Math]::Min(14, $clip.Length))
     Write-Output ""
-    Write-Output "Mübadilə buferində token tapıldı:"
-    Write-Output "  $onIki…  ($($clip.Length) simvol)"
+    Write-Output "A token was found on the clipboard:"
+    Write-Output "  $onIki...  ($($clip.Length) characters)"
     if ($Yes) {
-      Write-Output "-Yes verilib: bu token işlədilir."
+      Write-Output "-Yes was given: this token is used."
       $plain = $clip
     } else {
-      $istifade = Read-Host "Bunu işlədim? (h/y)"
-      if ($istifade -eq "h" -or $istifade -eq "H") { $plain = $clip }
+      $istifade = Read-Host "Use this one? (y/n)"
+      if ($istifade -eq "y" -or $istifade -eq "Y") { $plain = $clip }
     }
   }
 
   if (-not $plain -and $Yes) {
-    Write-Error "Mübadilə buferində token yoxdur. Tokeni kopyala (Ctrl+C) və yenidən işlət."
+    Write-Error "There is no token on the clipboard. Copy it (Ctrl+C) and run this again."
   }
 
   if (-not $plain) {
     Write-Output ""
-    Write-Output "GitHub tokenini yapışdır (Ctrl+V, sonra Enter — yazılan görünməyəcək):"
+    Write-Output "Paste the GitHub token (Ctrl+V, then Enter - what you type stays hidden):"
     $secure = Read-Host -AsSecureString
     $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
     try {
@@ -95,42 +101,43 @@ if (-not (Test-Path $tokenFile)) {
     }
   }
 
-  if ([string]::IsNullOrWhiteSpace($plain)) { Write-Error "Boş token." }
+  if ([string]::IsNullOrWhiteSpace($plain)) { Write-Error "Empty token." }
   if (-not $plain.StartsWith("github_pat_") -and -not $plain.StartsWith("ghp_")) {
-    Write-Error "Bu token kimi görünmür — `github_pat_` və ya `ghp_` ilə başlamalıdır."
+    Write-Error 'That does not look like a token - it has to start with `github_pat_` or `ghp_`.'
   }
 
-  # ASCII: BOM əlavə etmir. UTF-8 yazılsa, BOM tokeni səssizcə korlayır —
-  # eyni tələ Vercel dəyişənlərində də yaşanıb.
+  # ASCII: it adds no BOM. Written as UTF-8, a BOM corrupts the token silently -
+  # the same trap that was hit with Vercel's environment variables.
   [IO.File]::WriteAllText($tokenFile, $plain, [Text.Encoding]::ASCII)
-  Write-Output "Yazıldı: $tokenFile"
+  Write-Output "Written: $tokenFile"
 }
 
 # --- 2. Sınaq -------------------------------------------------------------
 
 Write-Output ""
-Write-Output "Sınaq sorğusu göndərilir..."
+Write-Output "Sending a test request..."
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $trigger
 if ($LASTEXITCODE -ne 0) {
   Write-Output ""
-  Write-Output "Token işləmədi — cədvələ QOYULMADI."
-  Write-Output "Ən çox rast gəlinən səbəb: `Actions: Read and write` icazəsi verilməyib."
+  Write-Output "The token did not work - the task was NOT registered."
+  Write-Output 'The usual cause: the `Actions: Read and write` permission was not granted.'
   exit 1
 }
 
 # --- 3. Cədvəl ------------------------------------------------------------
 
-# Log skriptin özü tərəfindən yazılır. Əvvəl burada `>> log` arqument sətrinə
-# qoyulmuşdu — Task Scheduler onu yönləndirmə kimi yox, PowerShell-ə əlavə
-# arqument kimi ötürür, yəni log heç vaxt yaranmırdı.
-# `-WindowStyle Hidden` və aşağıdakı `-Hidden` birlikdə lazımdır.
+# The log is written by the script itself. A `>> log` used to sit in this
+# argument line - Task Scheduler passes that to PowerShell as another argument
+# rather than treating it as redirection, so the log was never created.
 #
-# Bunsuz hər 20 dəqiqədə ekranda PowerShell pəncərəsi AÇILIB BAĞLANIR. İş bir
-# saniyə çəkir, amma pəncərə görünür və adamı işindən ayırır — 2026-08-30-da
-# sahibi məhz bundan şikayət etdi. Fon işi görünməməlidir.
+# `-WindowStyle Hidden` and the `-Hidden` below are both needed. Without them a
+# PowerShell window OPENS AND CLOSES on screen every 20 minutes. The job takes a
+# second, but the window is visible and interrupts whoever is working - which is
+# exactly what was complained about on 2026-08-30. Background work should be
+# invisible.
 #
-# İkisi fərqli şeyi həll edir: `-WindowStyle Hidden` PowerShell-in öz pəncərəsini
-# gizlədir, `-Hidden` isə tapşırığı gizli qeyd edir.
+# The two solve different things: `-WindowStyle Hidden` hides PowerShell's own
+# window, `-Hidden` registers the task itself as hidden.
 $action = New-ScheduledTaskAction -Execute "powershell.exe" `
   -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$trigger`""
 
@@ -144,8 +151,8 @@ Register-ScheduledTask -TaskName $taskName -Action $action `
   -Trigger $triggerTask -Settings $settings -Force | Out-Null
 
 Write-Output ""
-Write-Output "Hazırdır. İdxal hər 20 dəqiqədə işə düşəcək."
-Write-Output "Log:    $(Join-Path $PSScriptRoot '.trigger-log.txt')"
-Write-Output "Silmək: Unregister-ScheduledTask -TaskName '$taskName' -Confirm:`$false"
+Write-Output "Done. The import will run every 20 minutes."
+Write-Output "Log:       $(Join-Path $PSScriptRoot '.trigger-log.txt')"
+Write-Output "To remove: Unregister-ScheduledTask -TaskName '$taskName' -Confirm:`$false"
 Write-Output ""
-Write-Output "Qeyd: yalnız kompüter açıq olanda işləyir."
+Write-Output "Note: this only runs while the computer is on."

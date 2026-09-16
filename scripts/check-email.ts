@@ -22,26 +22,26 @@ async function main() {
   const to = arg("--to");
   const via = emailTransport();
 
-  console.log(`Seçilən yol : ${via}`);
+  console.log(`Route chosen : ${via}`);
 
   if (via === "console") {
-    console.log("\nHeç bir provayder qurulmayıb.");
-    console.log("Linklər yalnız server konsoluna yazılır — real istifadəçi heç nə almır.");
-    console.log("Həll: SMTP_USER + SMTP_PASS (Gmail App Password), yaxud RESEND_API_KEY.");
+    console.log("\nNo provider is configured.");
+    console.log("Links are only written to the server console - a real user receives nothing.");
+    console.log("Fix: SMTP_USER + SMTP_PASS (a Gmail App Password), or RESEND_API_KEY.");
     return;
   }
 
   if (via === "resend") {
-    const from = process.env.EMAIL_FROM ?? "(qurulmayıb)";
-    console.log(`Göndərici   : ${from}`);
+    const from = process.env.EMAIL_FROM ?? "(not configured)";
+    console.log(`Sender      : ${from}`);
     if (from.includes("resend.dev")) {
-      console.log("\nDİQQƏT: bu, Resend-in sınaq göndəricisidir.");
-      console.log("Məktub YALNIZ Resend hesabının sahibinə çatır — qeydiyyatdan keçən yad adam heç nə almır.");
-      console.log("Həll: Resend-də domen təsdiqləyin, yaxud SMTP_USER + SMTP_PASS qoyun.");
+      console.log("\nCAUTION: this is Resend's sandbox sender.");
+      console.log("Mail reaches ONLY the Resend account holder - a stranger who registers receives nothing.");
+      console.log("Fix: verify a domain with Resend, or set SMTP_USER + SMTP_PASS.");
     } else {
-      console.log("\nTəsdiqlənmiş domen görünür — istənilən ünvana göndərilməlidir.");
+      console.log("\nA verified domain is in use - it should send to any address.");
     }
-    if (to) console.log(`\n(--to ${to} yalnız SMTP rejimində sınanır; Resend üçün panelindən yoxlayın.)`);
+    if (to) console.log(`\n(--to ${to} is only exercised in SMTP mode; for Resend, check their dashboard.)`);
     return;
   }
 
@@ -50,25 +50,25 @@ async function main() {
   const host = process.env.SMTP_HOST ?? "smtp.gmail.com";
   const port = Number(process.env.SMTP_PORT ?? 465);
   console.log(`Server      : ${host}:${port}`);
-  console.log(`Hesab       : ${user}`);
-  console.log(`Göndərici   : ${smtpFrom(user)}`);
+  console.log(`Account     : ${user}`);
+  console.log(`Sender      : ${smtpFrom(user)}`);
 
   const mailer = await smtpTransporter();
 
-  process.stdout.write("\nBağlantı və giriş yoxlanılır... ");
+  process.stdout.write("\nChecking the connection and the login... ");
   try {
     await mailer.verify();
-    console.log("UĞURLU.");
+    console.log("OK.");
   } catch (e) {
-    console.log("UĞURSUZ.\n");
+    console.log("FAILED.\n");
     const msg = e instanceof Error ? e.message : String(e);
-    console.log(`Serverin cavabı: ${msg}`);
+    console.log(`The server said: ${msg}`);
     if (/BadCredentials|535/.test(msg)) {
       console.log(
-        "\nBu, adətən adi Google şifrəsinin işlədilməsi deməkdir. App Password lazımdır:\n" +
-          "  1) hesabda 2 addımlı doğrulama aktiv olmalıdır\n" +
-          "  2) myaccount.google.com/apppasswords → 16 simvolluq açar\n" +
-          "  3) həmin açar SMTP_PASS-a yazılır (boşluqlar olmadan)",
+        "\nThis usually means an ordinary Google password was used. An App Password is needed:\n" +
+          "  1) two-step verification has to be on for the account\n" +
+          "  2) myaccount.google.com/apppasswords -> a 16-character key\n" +
+          "  3) that key goes into SMTP_PASS (with no spaces)",
       );
     }
     process.exitCode = 1;
@@ -76,26 +76,26 @@ async function main() {
   }
 
   if (!to) {
-    console.log("\nKonfiqurasiya qaydasındadır. Əsl məktub göndərmək üçün: --to ad@numune.com");
+    console.log("\nThe configuration is sound. To send a real message: --to name@example.com");
     return;
   }
 
-  process.stdout.write(`\n${to} ünvanına sınaq məktubu göndərilir... `);
+  process.stdout.write(`\nSending a test message to ${to}... `);
   try {
     const info = await mailer.sendMail({
       from: smtpFrom(user),
       to,
-      subject: "ArenaHub — e-poçt yoxlaması",
+      subject: "ArenaHub - email check",
       html:
         `<div style="font-family:Arial,sans-serif;max-width:480px">` +
-        `<h2>ArenaHub</h2><p>Bu, e-poçt qurulumunun yoxlanışıdır. Bunu görürsünüzsə, ` +
-        `qeydiyyat və şifrə bərpası məktubları da çatacaq.</p></div>`,
+        `<h2>ArenaHub</h2><p>This is a check of the email setup. If you can see it, ` +
+        `registration and password-reset messages will arrive too.</p></div>`,
     });
-    console.log("GÖNDƏRİLDİ.");
+    console.log("SENT.");
     console.log(`Mesaj kimliyi: ${info.messageId}`);
-    console.log("\nPoçt qutusunu yoxlayın — spam qovluğuna da baxın.");
+    console.log("\nCheck the mailbox - look in the spam folder too.");
   } catch (e) {
-    console.log("UĞURSUZ.");
+    console.log("FAILED.");
     console.log(e instanceof Error ? e.message : e);
     process.exitCode = 1;
   }

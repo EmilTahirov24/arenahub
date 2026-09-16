@@ -38,7 +38,7 @@ async function main() {
     return existsSync(path.join(FILES, `${slug}.jpg`));
   });
 
-  console.log(`təsdiqlənmiş və faylı olan: ${ready.length}${apply ? "" : "  (QURU İŞLƏTMƏ)"}\n`);
+  console.log(`confirmed and with a file: ${ready.length}${apply ? "" : "  (DRY RUN)"}\n`);
 
   const players = await prisma.player.findMany({
     where: { slug: { in: ready.map(([s]) => s) } },
@@ -67,18 +67,18 @@ async function main() {
       ownPhoto++;
       continue;
     }
-    console.log(`+  ${player.nickname.padEnd(20)} ${player.photoUrl ?? "(boş)"} -> ${url}`);
+    console.log(`+  ${player.nickname.padEnd(20)} ${player.photoUrl ?? "(empty)"} -> ${url}`);
     if (apply) {
       await prisma.player.update({ where: { id: player.id }, data: { photoUrl: url } });
     }
     changed++;
   }
 
-  console.log(`\n${changed} dəyişdi, ${same} onsuz da düzgün, ${ownPhoto} öz şəkli saxlanıldı`);
+  console.log(`\n${changed} changed, ${same} already correct, ${ownPhoto} own photograph kept`);
   if (missing.length) {
-    console.log(`\nBazada tapılmayan ${missing.length} slug: ${missing.slice(0, 10).join(", ")}`);
+    console.log(`\n${missing.length} slugs not found in the database: ${missing.slice(0, 10).join(", ")}`);
   }
-  if (!apply) console.log("\nTətbiq etmək üçün: --apply");
+  if (!apply) console.log("\nTo apply: --apply");
 }
 
 main()

@@ -70,7 +70,7 @@ async function main() {
     orderBy: { startDate: "desc" },
   });
 
-  console.log(`${tournaments.length} turnirin yeri yoxdur` + (apply ? "" : "  (QURU İŞLƏTMƏ)"));
+  console.log(`${tournaments.length} tournaments have no location` + (apply ? "" : "  (DRY RUN)"));
   console.log("");
 
   let filled = 0;
@@ -119,12 +119,12 @@ async function main() {
   }
 
   console.log("");
-  console.log(`baxılan:           ${seen}`);
-  console.log(`yer tapıldı:       ${filled}  (${seen ? ((filled / seen) * 100).toFixed(1) : 0}%)`);
+  console.log(`looked at:         ${seen}`);
+  console.log(`location found:    ${filled}  (${seen ? ((filled / seen) * 100).toFixed(1) : 0}%)`);
   console.log(`onlayn / yersiz:   ${online}`);
-  console.log(`səhifə tapılmadı:  ${noPage}`);
-  if (skippedWiki > 0) console.log(`wiki yoxdur:       ${skippedWiki}`);
-  if (!apply && filled > 0) console.log("\nHeç nə yazılmadı. Yazmaq üçün --apply əlavə et.");
+  console.log(`page not found:    ${noPage}`);
+  if (skippedWiki > 0) console.log(`no wiki:           ${skippedWiki}`);
+  if (!apply && filled > 0) console.log("\nNothing was written. Add --apply to write.");
 }
 
 main()

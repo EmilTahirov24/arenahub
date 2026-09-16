@@ -164,7 +164,7 @@ function prizePoolOf(raw: string | null): string | null {
 async function main() {
   const apply = process.argv.includes("--apply");
   const only = process.argv.includes("--game") ? process.argv[process.argv.indexOf("--game") + 1] : null;
-  console.log(apply ? "REJIM: yazma (--apply)\n" : "REJIM: quru işlətmə — heç nə yazılmır\n");
+  console.log(apply ? "MODE: writing (--apply)\n" : "MODE: dry run - nothing is written\n");
 
   let tournaments = 0;
   let matchesWritten = 0;
@@ -175,7 +175,7 @@ async function main() {
     if (only && only !== def.slug) continue;
     const game = await prisma.game.findUnique({ where: { slug: def.slug } });
     if (!game) {
-      problems.push(`Oyun tapılmadı: ${def.slug}`);
+      problems.push(`Game not found: ${def.slug}`);
       continue;
     }
 
@@ -199,7 +199,7 @@ async function main() {
     }
 
     const { index: byOrg, ambiguous } = indexByOrg(teams);
-    if (ambiguous.length) problems.push(`${def.slug}: eyni adlı komandalar var, atlandı: ${ambiguous.join(", ")}`);
+    if (ambiguous.length) problems.push(`${def.slug}: teams sharing a name, skipped: ${ambiguous.join(", ")}`);
 
     for (const page of def.pages) {
       // One malformed page must not cost the whole run: an import takes the
@@ -208,21 +208,21 @@ async function main() {
       try {
         await importPage(page);
       } catch (e) {
-        problems.push(`${def.slug}: "${page}" alınmadı — ${(e as Error).message}`);
+        problems.push(`${def.slug}: could not fetch "${page}" - ${(e as Error).message}`);
       }
     }
 
     async function importPage(page: string) {
       const wikitext = await fetchWikitext(opts, page);
       if (!wikitext) {
-        problems.push(`${def.slug}: "${page}" səhifəsi yoxdur`);
+        problems.push(`${def.slug}: no page for "${page}"`);
         return;
       }
 
       const info = parseTournamentInfo(wikitext);
       const name = info.name ?? page.split("/").join(" ");
       if (!info.startDate) {
-        problems.push(`${def.slug}: "${page}" tarixi oxunmadı`);
+        problems.push(`${def.slug}: could not read the date for "${page}"`);
         return;
       }
 
@@ -266,7 +266,7 @@ async function main() {
       console.log(
         `\n${name}\n  ${info.startDate} → ${info.endDate ?? "?"}  ${info.city ?? "—"}, ${info.country ?? "—"}  ` +
           `${prizePoolOf(info.prizePool) ?? "—"}  ${tierOf(info.tier)}-tier  ` +
-          `${collected.length} matç, ${subpages.length} alt səhifə`,
+          `${collected.length} matches, ${subpages.length} subpages`,
       );
 
       // Wikitext names teams by short code; rendered pages already give the
@@ -310,7 +310,7 @@ async function main() {
         if (html) {
           collected.push(...parseRenderedMatches(html, def.wiki));
           usable = collected.filter(decided);
-          console.log(`  (mətndə matç yox idi — səhifə render edildi)`);
+          console.log(`  (no matches in the text - the page was rendered)`);
         }
       }
       for (const m of collected) {
@@ -333,8 +333,8 @@ async function main() {
 
       const staged = [...usable, ...scheduled].filter((m) => m.stage).length;
       console.log(
-        `  bazadakı komandalarla: ${usable.length} nəticə, ${scheduled.length} qarşıdakı matç` +
-          `, ${staged} mərhələli`,
+        `  with teams in the database: ${usable.length} results, ${scheduled.length} upcoming` +
+          `, ${staged} with a stage`,
       );
       tournaments++;
       if (!apply) {
@@ -374,16 +374,16 @@ async function main() {
     }
   }
 
-  console.log(`\n${tournaments} turnir, ${matchesWritten} matç.`);
+  console.log(`\n${tournaments} tournaments, ${matchesWritten} matches.`);
 
 
   if (unresolved.size) {
     const top = [...unresolved].sort((a, b) => b[1] - a[1]).slice(0, 30);
-    console.log(`\nBazada olmayan komandalar (${unresolved.size}) — bu matçlar buraxıldı:`);
+    console.log(`\nTeams not in the database (${unresolved.size}) - those matches were skipped:`);
     console.log("  " + top.map(([alias, n]) => `${alias}×${n}`).join("  "));
   }
-  if (problems.length) console.log(`\nProblemlər (${problems.length}):\n  ` + problems.join("\n  "));
-  if (!apply) console.log("\nTətbiq etmək üçün: --apply");
+  if (problems.length) console.log(`\nProblems (${problems.length}):\n  ` + problems.join("\n  "));
+  if (!apply) console.log("\nTo apply: --apply");
 }
 
 /** An unused match slug built from the given base. */

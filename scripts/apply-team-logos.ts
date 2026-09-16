@@ -32,7 +32,7 @@ async function main() {
   const manifest: Record<string, string> = JSON.parse(readFileSync(MANIFEST, "utf8"));
   const slugs = Object.keys(manifest);
 
-  console.log(`manifestdə: ${slugs.length} loqo${apply ? "" : "  (QURU İŞLƏTMƏ)"}\n`);
+  console.log(`in the manifest: ${slugs.length} logos${apply ? "" : "  (DRY RUN)"}\n`);
 
   const teams = await prisma.team.findMany({
     where: { slug: { in: slugs } },
@@ -55,19 +55,19 @@ async function main() {
       continue;
     }
     changed++;
-    console.log(`+  ${team.name.padEnd(22)} ${team.logoUrl ?? "(boş)"} -> ${manifest[slug]}`);
+    console.log(`+  ${team.name.padEnd(22)} ${team.logoUrl ?? "(empty)"} -> ${manifest[slug]}`);
     if (apply) {
       await prisma.team.update({ where: { id: team.id }, data: { logoUrl: manifest[slug] } });
     }
   }
 
   console.log("");
-  console.log(`dəyişdi:        ${changed}`);
+  console.log(`changed:        ${changed}`);
   console.log(`onsuz da eyni:  ${same}`);
   if (missing.length > 0) {
-    console.log(`komanda tapılmadı: ${missing.length} -> ${missing.join(", ")}`);
+    console.log(`teams not found: ${missing.length} -> ${missing.join(", ")}`);
   }
-  if (!apply && changed > 0) console.log("\nHeç nə yazılmadı. Yazmaq üçün --apply əlavə et.");
+  if (!apply && changed > 0) console.log("\nNothing was written. Add --apply to write.");
 }
 
 main()

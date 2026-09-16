@@ -202,15 +202,21 @@ tests/            unit tests
 ```
 
 The user interface is in Azerbaijani because the product is — that is the project, not
-an oversight. Code comments are being moved to English, and where the line currently
-sits is a decision rather than a stopping point:
+an oversight. Everything written for a developer rather than a visitor is in English,
+and the boundary is drawn on one question: **who reads this line?**
 
-- **English:** every file this README links to, the modules the unit tests cite, and
-  the shared test harness — in other words, everywhere a reader is actually sent.
-- **Still Azerbaijani:** the bodies of the six browser suites, and the import and
-  maintenance scripts. In the suites the comments and the 157 check names are one
-  voice; translating only the comments would leave the output half in each language,
-  which is worse than either. New comments and commit messages are English from here.
+- **English** — comments, commit messages, test names, and everything the scripts print
+  to whoever runs them. A developer reading this repository never has to translate
+  anything to follow it.
+- **Azerbaijani** — the interface itself: the 38 keys in `messages/az.json`, the seeded
+  demo articles, the weekly round-up the site publishes, and the strings the browser
+  suites use as selectors against that interface. Translating a selector would break a
+  suite with no obvious sign of why.
+
+What is left is exact rather than approximate: eight comment lines still contain
+Azerbaijani, and every one of them is an English sentence quoting the language it
+describes — `"1-ci yer"` in the prize formatter, `üç → üçüncü` in the ordinal rules,
+`"Çeyrək final"` in the note explaining a stage-name bug.
 
 The reasoning behind each decision is written next to the code that implements it,
 rather than collected somewhere it can drift out of date. If a comment explains why

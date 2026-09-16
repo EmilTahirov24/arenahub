@@ -122,14 +122,14 @@ async function freeSlug(table: "team" | "player", base: string) {
         : await prisma.player.findUnique({ where: { slug: candidate }, select: { id: true } });
     if (!hit) return candidate;
   }
-  throw new Error(`Slug tapılmadı: ${base}`);
+  throw new Error(`Could not derive a slug: ${base}`);
 }
 
 async function main() {
   const apply = process.argv.includes("--apply");
   const refresh = process.argv.includes("--refresh");
   const only = process.argv.includes("--game") ? process.argv[process.argv.indexOf("--game") + 1] : null;
-  console.log(apply ? "REJIM: yazma (--apply)\n" : "REJIM: quru işlətmə — heç nə yazılmır\n");
+  console.log(apply ? "MODE: writing (--apply)\n" : "MODE: dry run - nothing is written\n");
 
   let teamsCreated = 0;
   let playersCreated = 0;
@@ -139,7 +139,7 @@ async function main() {
     if (only && only !== def.slug) continue;
     const game = await prisma.game.findUnique({ where: { slug: def.slug } });
     if (!game) {
-      problems.push(`Oyun tapılmadı: ${def.slug}`);
+      problems.push(`Game not found: ${def.slug}`);
       continue;
     }
 
@@ -162,7 +162,7 @@ async function main() {
       orderBy: { createdAt: "asc" },
     });
     const { index: byOrg, ambiguous } = indexByOrg(existingTeams);
-    if (ambiguous.length) problems.push(`${def.slug}: eyni adlı komandalar: ${ambiguous.join(", ")}`);
+    if (ambiguous.length) problems.push(`${def.slug}: teams sharing a name: ${ambiguous.join(", ")}`);
 
     for (const title of def.teams) {
       const name = title.replace(/\s*\(.*\)$/, "");
@@ -175,13 +175,13 @@ async function main() {
       // most of an hour. Use --refresh to read them all again.
       const complete = byOrg.get(orgKey(name))?._count.memberships ?? 0;
       if (team && complete >= def.rosterSize && !refresh) {
-        console.log(`. ${name.padEnd(22)} ${team.country ?? "—"}   ${complete} oyunçu (dəyişmir)`);
+        console.log(`. ${name.padEnd(22)} ${team.country ?? "-"}   ${complete} players (unchanged)`);
         continue;
       }
 
       const wikitext = await fetchWikitext(opts, title);
       if (!wikitext) {
-        problems.push(`${def.slug}: "${title}" səhifəsi yoxdur`);
+        problems.push(`${def.slug}: no page for "${title}"`);
         continue;
       }
 
@@ -195,7 +195,7 @@ async function main() {
       const country = countryCode(parseTeamLocation(wikitext));
 
       if (!team) {
-        console.log(`+ ${name.padEnd(22)} ${country ?? "—"}   ${squad.length} oyunçu`);
+        console.log(`+ ${name.padEnd(22)} ${country ?? "-"}   ${squad.length} players`);
         teamsCreated++;
         if (apply) {
           team = await prisma.team.create({
@@ -211,13 +211,13 @@ async function main() {
           byOrg.set(orgKey(name), { ...team, _count: { memberships: squad.length } });
         }
       } else {
-        console.log(`= ${name.padEnd(22)} ${country ?? "—"}   ${squad.length} oyunçu`);
+        console.log(`= ${name.padEnd(22)} ${country ?? "-"}   ${squad.length} players`);
         if (apply && country && !team.country) {
           await prisma.team.update({ where: { id: team.id }, data: { country } });
         }
       }
 
-      if (squad.length === 0) problems.push(`${def.slug}: "${title}" tərkibi oxunmadı`);
+      if (squad.length === 0) problems.push(`${def.slug}: could not read the roster for "${title}"`);
       if (!apply || !team) continue;
 
       for (const member of squad) {
@@ -257,9 +257,9 @@ async function main() {
     }
   }
 
-  console.log(`\n${teamsCreated} komanda, ${playersCreated} oyunçu yaradılacaq.`);
-  if (problems.length) console.log(`\nProblemlər (${problems.length}):\n  ` + problems.join("\n  "));
-  if (!apply) console.log("\nTətbiq etmək üçün: --apply");
+  console.log(`\n${teamsCreated} teams and ${playersCreated} players would be created.`);
+  if (problems.length) console.log(`\nProblems (${problems.length}):\n  ` + problems.join("\n  "));
+  if (!apply) console.log("\nTo apply: --apply");
 }
 
 main()

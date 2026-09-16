@@ -61,7 +61,7 @@ async function main() {
     orderBy: { rating: "desc" },
   });
 
-  console.log(`${teams.length} komandanın ölkəsi yoxdur` + (apply ? "" : "  (QURU İŞLƏTMƏ)"));
+  console.log(`${teams.length} teams have no country` + (apply ? "" : "  (DRY RUN)"));
   console.log("");
 
   let filled = 0;
@@ -113,7 +113,7 @@ async function main() {
     if (!code) {
       unknownName++;
       unknownNames.set(location, (unknownNames.get(location) ?? 0) + 1);
-      console.log(`?  ${team.name.padEnd(30)} tanınmayan ölkə: ${location}`);
+      console.log(`?  ${team.name.padEnd(30)} unrecognised country: ${location}`);
       continue;
     }
 
@@ -131,21 +131,21 @@ async function main() {
   const pct = tried > 0 ? ((filled / tried) * 100).toFixed(1) : "0";
 
   console.log("");
-  console.log(`baxılan:            ${seen}`);
-  console.log(`ölkə tapıldı:       ${filled}  (${pct}%)`);
-  console.log(`səhifə tapılmadı:   ${noPage}`);
-  console.log(`location sahəsi yox: ${noLocation}`);
-  console.log(`tanınmayan ölkə adı: ${unknownName}`);
-  if (skippedWiki) console.log(`wiki uyğunluğu yox: ${skippedWiki}`);
+  console.log(`looked at:          ${seen}`);
+  console.log(`country found:      ${filled}  (${pct}%)`);
+  console.log(`page not found:     ${noPage}`);
+  console.log(`no location field:  ${noLocation}`);
+  console.log(`unrecognised name:  ${unknownName}`);
+  if (skippedWiki) console.log(`no matching wiki:   ${skippedWiki}`);
 
   if (unknownNames.size) {
-    console.log("\ntanınmayan adlar (təkrarına görə):");
+    console.log("\nunrecognised names (by how often they recur):");
     for (const [name, n] of [...unknownNames].sort((a, b) => b[1] - a[1]).slice(0, 15)) {
       console.log(`  ${String(n).padStart(3)}  ${name}`);
     }
   }
 
-  if (!apply) console.log("\nHeç nə yazılmadı. Yazmaq üçün --apply əlavə et.");
+  if (!apply) console.log("\nNothing was written. Add --apply to write.");
 }
 
 main()

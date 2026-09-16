@@ -191,7 +191,7 @@ async function main() {
     ? byGame.filter((t) => !existsSync(path.join(OUT_DIR, `${t.slug}.png`)))
     : byGame;
 
-  console.log(`komanda: ${teams.length}${only ? ` (${only})` : ""}${apply ? "" : "  (QURU İŞLƏTMƏ)"}\n`);
+  console.log(`teams: ${teams.length}${only ? ` (${only})` : ""}${apply ? "" : "  (DRY RUN)"}\n`);
 
   // 1. The file name out of each team's infobox.
   const found: {
@@ -205,7 +205,7 @@ async function main() {
   for (const team of teams) {
     const wiki = wikiForGame(team.game);
     if (!wiki) {
-      console.log(`!  ${team.name.padEnd(20)} tanınmayan oyun: ${team.game}`);
+      console.log(`!  ${team.name.padEnd(20)} unrecognised game: ${team.game}`);
       continue;
     }
     let data;
@@ -225,16 +225,16 @@ async function main() {
     const page = data?.query?.pages?.[0];
     const text: string | undefined = page?.revisions?.[0]?.slots?.main?.content;
     if (!text) {
-      console.log(`—  ${team.name.padEnd(20)} səhifə yoxdur`);
+      console.log(`-  ${team.name.padEnd(20)} no page`);
       continue;
     }
     const file = logoFileFrom(text);
     if (!file) {
-      console.log(`—  ${team.name.padEnd(20)} infoboksda şəkil yoxdur`);
+      console.log(`-  ${team.name.padEnd(20)} no image in the infobox`);
       continue;
     }
     const sameFile = file.dark === file.light;
-    console.log(`+  ${team.name.padEnd(20)} ${file.dark}${sameFile ? "" : `  |  işıqlı: ${file.light}`}`);
+    console.log(`+  ${team.name.padEnd(20)} ${file.dark}${sameFile ? "" : `  |  light: ${file.light}`}`);
     found.push({
       slug: team.slug,
       name: team.name,
@@ -246,7 +246,7 @@ async function main() {
   }
 
   if (found.length === 0) {
-    console.log("\nHeç bir loqo tapılmadı.");
+    console.log("\nNo logos were found.");
     return;
   }
 
@@ -277,8 +277,8 @@ async function main() {
   }
   for (const [key, slugs] of perTitle) {
     if (slugs.length < 2) continue;
-    console.log(`\n?  «${key}» -> ${slugs.join(", ")}`);
-    console.log(`   Ya eyni təşkilatın iki heyəti, ya da bazada təkrar komanda. Yoxlanmalıdır.`);
+    console.log(`\n?  "${key}" -> ${slugs.join(", ")}`);
+    console.log(`   Either two line-ups of one organisation, or a duplicate team in the database. Worth checking.`);
   }
 
   // 2. The real URL from the file names.
@@ -335,7 +335,7 @@ async function main() {
   for (const f of found) {
     const bestDark = resolve(f.file);
     if (bestDark && bestDark !== `File:${f.file}`) {
-      console.log(`   ${f.slug}: kvadrat variant seçildi — ${bestDark.replace("File:", "")}`);
+      console.log(`   ${f.slug}: the squarer variant was chosen - ${bestDark.replace("File:", "")}`);
     }
     if (f.fileLight !== f.file) resolve(f.fileLight, ["allmode", "lightmode"]);
   }
@@ -344,9 +344,9 @@ async function main() {
   if (!apply) {
     for (const f of found) {
       const hit = urlByTitle.get(`File:${f.file}`);
-      console.log(`${f.slug.padEnd(24)} ${hit ? `${(hit.size / 1024).toFixed(0)} KB  ${hit.url}` : "URL TAPILMADI"}`);
+      console.log(`${f.slug.padEnd(24)} ${hit ? `${(hit.size / 1024).toFixed(0)} KB  ${hit.url}` : "NO URL FOUND"}`);
     }
-    console.log(`\n${found.length} loqo hazırdır. Yazmaq üçün --apply əlavə et.`);
+    console.log(`\n${found.length} logos are ready. Add --apply to write.`);
     return;
   }
 
@@ -355,7 +355,7 @@ async function main() {
   try {
     sharp = (await import("sharp")).default;
   } catch {
-    throw new Error("sharp tapılmadı. `npm i -D sharp` işlət və yenidən cəhd et.");
+    throw new Error("sharp was not found. Run `npm i -D sharp` and try again.");
   }
 
   await mkdir(OUT_DIR, { recursive: true });
@@ -390,7 +390,7 @@ async function main() {
   for (const f of found) {
     const dark = await grab(f.file);
     if (!dark) {
-      console.log(`!  ${f.slug.padEnd(24)} yüklənmədi`);
+      console.log(`!  ${f.slug.padEnd(24)} did not download`);
       continue;
     }
 
@@ -408,16 +408,16 @@ async function main() {
     bytes += light.png.length;
 
     written++;
-    const note = light === dark ? "" : `  + işıqlı ${(light.png.length / 1024).toFixed(0)} KB`;
+    const note = light === dark ? "" : `  + light ${(light.png.length / 1024).toFixed(0)} KB`;
     console.log(`+  ${f.slug.padEnd(24)} ${(dark.rawSize / 1024).toFixed(0)} KB -> ${(dark.png.length / 1024).toFixed(0)} KB${note}`);
   }
 
   const ordered = Object.fromEntries(Object.entries(manifest).sort(([a], [b]) => a.localeCompare(b)));
   await writeFile(MANIFEST, JSON.stringify(ordered, null, 2) + "\n");
-  console.log(`\nbu qaçışda: ${written} loqo, ${(bytes / 1024).toFixed(0)} KB`);
-  console.log(`manifestdə cəmi: ${Object.keys(ordered).length}`);
+  console.log(`\nthis run: ${written} logos, ${(bytes / 1024).toFixed(0)} KB`);
+  console.log(`in the manifest: ${Object.keys(ordered).length}`);
   console.log(`Manifest: data/team-logos.json`);
-  console.log(`Bazaya yazmaq üçün: scripts/apply-team-logos.ts (GitHub Actions-da)`);
+  console.log(`To write to the database: scripts/apply-team-logos.ts (in GitHub Actions)`);
 }
 
 main().catch((e) => {

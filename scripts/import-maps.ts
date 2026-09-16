@@ -90,7 +90,7 @@ async function main() {
   const limitArg = process.argv.indexOf("--limit");
   const limit = limitArg >= 0 ? Number(process.argv[limitArg + 1]) : Infinity;
 
-  console.log(apply ? "REJIM: yazma (--apply)\n" : "REJIM: quru işlətmə — heç nə yazılmır\n");
+  console.log(apply ? "MODE: writing (--apply)\n" : "MODE: dry run - nothing is written\n");
 
   const pending = await prisma.match.findMany({
     where: { status: "FINISHED", maps: { none: {} }, tournament: { isNot: null } },
@@ -121,7 +121,7 @@ async function main() {
     groups.set(key, list);
   }
 
-  console.log(pending.length + " xəritəsiz matç, " + groups.size + " turnir səhifəsi\n");
+  console.log(pending.length + " matches without maps, " + groups.size + " tournament pages\n");
 
   let pagesRead = 0;
   let matched = 0;
@@ -146,14 +146,14 @@ async function main() {
     try {
       wikitext = await fetchWikitext(opts, title);
     } catch (e) {
-      console.log("  XƏTA  " + title + " — " + (e as Error).message);
+      console.log("  ERROR " + title + " - " + (e as Error).message);
       continue;
     }
     pagesRead++;
 
     if (!wikitext) {
       noPage += matches.length;
-      console.log("  yox   " + title + " — səhifə tapılmadı (" + matches.length + " matç)");
+      console.log("  none  " + title + " - page not found (" + matches.length + " matches)");
       continue;
     }
 
@@ -185,7 +185,7 @@ async function main() {
       try {
         html = await fetchRenderedHtml(opts, title);
       } catch (e) {
-        console.log("  XƏTA  " + title + " — " + (e as Error).message);
+        console.log("  ERROR " + title + " - " + (e as Error).message);
         continue;
       }
       if (html) {
@@ -259,22 +259,22 @@ async function main() {
     console.log(
       "  " + String(hit).padStart(3) + "/" + String(matches.length).padEnd(3) +
         " " + route.padEnd(8) + " " + title +
-        (wrote ? "  — " + wrote + " xəritə" : ""),
+        (wrote ? "  - " + wrote + " maps" : ""),
     );
   }
 
   console.log(
-    "\n" + pagesRead + " səhifə oxundu, " + matched + " matç uyğunlaşdı, " +
-      mapRows + " xəritə " + (apply ? "yazıldı" : "yazılacaq") + ".",
+    "\n" + pagesRead + " pages read, " + matched + " matches matched, " +
+      mapRows + " maps " + (apply ? "written" : "would be written") + ".",
   );
   const skipped = [
-    noPage ? noPage + " səhifəsiz" : "",
-    noSeries ? noSeries + " seriya tapılmadı" : "",
-    mismatched ? mismatched + " hesab uyğun gəlmədi" : "",
-    noMaps ? noMaps + " xəritəsiz seriya" : "",
+    noPage ? noPage + " with no page" : "",
+    noSeries ? noSeries + " series not found" : "",
+    mismatched ? mismatched + " score mismatches" : "",
+    noMaps ? noMaps + " series with no maps" : "",
   ].filter(Boolean);
-  if (skipped.length) console.log("Buraxıldı: " + skipped.join(", ") + ".");
-  if (!apply) console.log("\nTətbiq etmək üçün: --apply");
+  if (skipped.length) console.log("Skipped: " + skipped.join(", ") + ".");
+  if (!apply) console.log("\nTo apply: --apply");
 
   // The number of maps written. This errs on the cautious side: a map score can
   // change the winner of the series, so any map write makes the ratings

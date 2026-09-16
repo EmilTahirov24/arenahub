@@ -43,25 +43,25 @@ export type PlayerPhoto = {
 
 async function main() {
   const apply = process.argv.includes("--apply");
-  console.log(apply ? "REJIM: yazma (--apply)\n" : "REJIM: quru işlətmə\n");
+  console.log(apply ? "MODE: writing (--apply)\n" : "MODE: dry run\n");
 
   if (!existsSync(CONFIRMED)) {
-    console.log("data/player-photos.json yoxdur — əvvəlcə namizədləri təsdiqlə.");
+    console.log("data/player-photos.json is missing - confirm the candidates first.");
     return;
   }
   const confirmed: Record<string, PlayerPhoto> = JSON.parse(readFileSync(CONFIRMED, "utf8"));
 
   const ready = Object.entries(confirmed).filter(([slug, p]) => {
     if (!p.checked) {
-      console.log(`—  ${slug}: `.padEnd(26) + "`checked` yoxdur, atlanır");
+      console.log(`-  ${slug}: `.padEnd(26) + "no `checked` date, skipping");
       return false;
     }
     return true;
   });
-  console.log(`${ready.length} təsdiqlənmiş şəkil\n`);
+  console.log(`${ready.length} confirmed photographs\n`);
   if (!apply) {
     for (const [slug, p] of ready) console.log(`   ${slug.padEnd(22)} ${p.license.padEnd(14)} ${p.author}`);
-    console.log("\nYazmaq üçün: --apply");
+    console.log("\nTo write: --apply");
     return;
   }
 
@@ -87,13 +87,13 @@ async function main() {
     const ii = meta?.query?.pages?.[0]?.imageinfo?.[0];
     const url: string | undefined = ii?.thumburl ?? ii?.url;
     if (!url) {
-      console.log(`!  ${slug.padEnd(22)} şəkil ünvanı tapılmadı`);
+      console.log(`!  ${slug.padEnd(22)} no image URL found`);
       continue;
     }
 
     const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
     if (!res.ok) {
-      console.log(`!  ${slug.padEnd(22)} yüklənmədi (${res.status})`);
+      console.log(`!  ${slug.padEnd(22)} did not download (${res.status})`);
       continue;
     }
     const raw = Buffer.from(await res.arrayBuffer());
@@ -117,8 +117,8 @@ async function main() {
     console.log(`+  ${slug.padEnd(22)} ${(raw.length / 1024).toFixed(0)} KB -> ${(jpg.length / 1024).toFixed(0)} KB`);
   }
 
-  console.log(`\n${written} şəkil, ${(bytes / 1024).toFixed(0)} KB`);
-  console.log("Bazaya yazmaq üçün: scripts/apply-player-photos.ts");
+  console.log(`\n${written} photographs, ${(bytes / 1024).toFixed(0)} KB`);
+  console.log("To write to the database: scripts/apply-player-photos.ts");
 }
 
 main().catch((e) => {

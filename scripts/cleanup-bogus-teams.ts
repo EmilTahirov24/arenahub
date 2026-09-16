@@ -46,11 +46,11 @@ async function main() {
   });
 
   if (teams.length === 0) {
-    console.log("Təmizlənəcək komanda yoxdur.");
+    console.log("No teams to clean up.");
     return;
   }
 
-  console.log(`${teams.length} saxta komanda` + (apply ? "" : "  (QURU İŞLƏTMƏ)"));
+  console.log(`${teams.length} bogus teams` + (apply ? "" : "  (DRY RUN)"));
   console.log("");
 
   const ids = teams.map((t) => t.id);
@@ -60,7 +60,7 @@ async function main() {
   for (const t of teams) {
     const n = t._count.homeMatches + t._count.awayMatches;
     if (t._count.memberships > 0) withRoster++;
-    console.log(`  ${String(n).padStart(3)} matç  ${t.game.slug.padEnd(9)} ${t.name.slice(0, 60)}`);
+    console.log(`  ${String(n).padStart(3)} matches  ${t.game.slug.padEnd(9)} ${t.name.slice(0, 60)}`);
   }
 
   const matches = await prisma.match.findMany({
@@ -70,24 +70,24 @@ async function main() {
   const finished = matches.filter((m) => m.status === "FINISHED").length;
 
   console.log("");
-  console.log(`silinəcək matç:  ${matches.length}`);
-  console.log(`  bitmiş:        ${finished}`);
-  console.log(`tərkibi olan komanda: ${withRoster}`);
+  console.log(`matches to delete: ${matches.length}`);
+  console.log(`  finished:        ${finished}`);
+  console.log(`teams with a roster: ${withRoster}`);
 
   // An unexpected case: a finished match has already gone into the Elo. The
   // script must not delete that on its own - the ratings would need replaying,
   // and that is a separate decision.
   if (finished > 0) {
     console.log("");
-    console.log("DAYANDIRILDI: bitmiş matç var, yəni reytinqə düşüb.");
-    console.log("Silmədən sonra `npx tsx scripts/recompute-ratings.ts` lazımdır.");
-    console.log("Bu skript onu özü etmir — əvvəlcə nəticəyə bax.");
+    console.log("STOPPED: there is a finished match, so it has gone into the ratings.");
+    console.log("After deleting, `npx tsx scripts/recompute-ratings.ts` is needed.");
+    console.log("This script does not do that itself - look at the result first.");
     return;
   }
 
   if (!apply) {
     console.log("");
-    console.log("Heç nə silinmədi. Silmək üçün --apply əlavə et.");
+    console.log("Nothing was deleted. Add --apply to delete.");
     return;
   }
 
@@ -105,7 +105,7 @@ async function main() {
   await prisma.team.deleteMany({ where: { id: { in: ids } } });
 
   console.log("");
-  console.log(`${teams.length} komanda və ${matchIds.length} matç silindi.`);
+  console.log(`${teams.length} teams and ${matchIds.length} matches deleted.`);
 }
 
 main()

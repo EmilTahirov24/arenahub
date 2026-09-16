@@ -1,37 +1,39 @@
 ﻿<#
-  GitHub profilini bir əmrlə hazırlayır.
+  Prepares the GitHub profile in one command.
 
     powershell -ExecutionPolicy Bypass -File scripts\setup-github-profile.ps1
 
-  Beş işi görür:
-    1. arenahub repo-suna təsvir, sayt ünvanı və mövzular yazır
-    2. Qalan public repo-ları private edir (siyahını əvvəlcə göstərir)
-    3. Profil README-si üçün <istifadəçi>/<istifadəçi> repo-sunu yaradır
-    4. Hazır README mətnini ora yükləyir
-    5. Profil sahələrini doldurur: ad, bio, yer, sayt
+  It does five things:
+    1. Writes the description, the site address and the topics on arenahub
+    2. Makes the remaining public repos private (it lists them first)
+    3. Creates the <user>/<user> repo that holds the profile README
+    4. Uploads the README text there
+    5. Fills in the profile fields: name, bio, location, website
 
-  Profil README-si docs/github-profile-README.md faylındadır (repo ilə
-  birlikdə versiyalanır). Faylda REVIEW-REQUIRED şərhi qaldıqca skript
-  heç nə etmir və token da istəmir — o abzas sənin haqqında iddiadır,
-  ona görə əvvəlcə sən oxumalısan.
+  The profile README lives in docs/github-profile-README.md, versioned with the
+  repo. While a REVIEW-REQUIRED note is still in that file the script does
+  nothing and does not even ask for a token: the closing paragraph says what
+  you are looking for, and you should be happy with it before it is published.
 
-  HEÇ NƏ SİLMİR. Private etmək geri qaytarıla bilər, mövcud repo əvəz olunmur.
+  IT DELETES NOTHING. Making a repo private can be undone, and no existing repo
+  is replaced.
 
-  Skript əvvəlcə nə edəcəyini yazır və təsdiq istəyir:
-    -WhatIf   yalnız planı göstərir, heç nəyə toxunmur
-    -Yes      sualsız işləyir
+  The script prints what it is about to do and asks to go ahead:
+    -WhatIf   shows the plan only, touches nothing
+    -Yes      runs without asking
 
-  Token GitHub-dan kopyalanmış halda mübadilə buferində olur, ona görə skript
-  əvvəlcə oraya baxır. Token heç vaxt tam ekrana çıxmır və fayla yazılmır.
+  A token copied from GitHub is already on the clipboard, so the script looks
+  there first. The token is never printed in full and never written to a file.
 
-  TOKENİ BELƏ YARAT (klassik olmalıdır: repo yaratmaq və profil yazmaq lazımdır)
+  CREATE THE TOKEN LIKE THIS (it has to be a classic one: creating a repo and
+  writing to the profile both need it)
     github.com/settings/tokens/new
     Note        arenahub-profile-setup
     Expiration  7 days
     Scopes      [x] repo    [x] user
-    Generate token, sonra kopyala
+    Generate token, then copy it
 
-  İŞ BİTƏNDƏN SONRA TOKENİ SİL: github.com/settings/tokens
+  DELETE THE TOKEN WHEN THIS IS DONE: github.com/settings/tokens
 #>
 
 param(
@@ -55,17 +57,17 @@ $fullName = "Emil Tahirov"
 
 # Checked before anything else. Both failures here are free to find, and
 # discovering them after a token exists means that token has to be revoked.
-if (-not (Test-Path $ProfileReadme)) { throw "Profil README tapilmadi: $ProfileReadme" }
+if (-not (Test-Path $ProfileReadme)) { throw "Profile README not found: $ProfileReadme" }
 
 if ((Get-Content $ProfileReadme -Raw) -match "REVIEW-REQUIRED") {
   Write-Output ""
-  Write-Output "DAYANDIRILDI - profil README-sinde oxunmamis qeyd var."
-  Write-Output "  Fayl: $ProfileReadme"
+  Write-Output "STOPPED - the profile README still carries a REVIEW-REQUIRED note."
+  Write-Output "  File: $ProfileReadme"
   Write-Output ""
-  Write-Output "  'What I am looking for' abzasi sənin kodundan çıxarılıb, amma"
-  Write-Output "  yenə də SƏNİN haqqında iddiadır - onu mən yazmışam, sən yox."
-  Write-Output "  Bir dəfə oxu. Özünü tanımırsansa, öz sözlərinlə dəyiş."
-  Write-Output "  Razısansa, REVIEW-REQUIRED şərhini fayldan sil və yenidən qaçır."
+  Write-Output "  The closing paragraph says what you are looking for. It goes on a"
+  Write-Output "  public profile in the first person, so read it once and make sure it"
+  Write-Output "  is what you would say out loud in an interview. Reword it if not."
+  Write-Output "  When you are happy, delete the REVIEW-REQUIRED note and run this again."
   exit 1
 }
 
@@ -78,7 +80,7 @@ function Get-Token {
 
   if ($clip -and $clip -match '^(gh[ps]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})$') {
     $head = $clip.Substring(0, [Math]::Min(14, $clip.Length))
-    Write-Output "Mubadile buferinde token tapildi: $head... ($($clip.Length) simvol)"
+    Write-Output "A token was found on the clipboard: $head... ($($clip.Length) characters)"
     if ($Yes) {
       return $clip
     }
@@ -88,7 +90,7 @@ function Get-Token {
     }
   }
 
-  Write-Output "Tokeni yapisdir (yazilan gizlenir):"
+  Write-Output "Paste the token (what you type stays hidden):"
   $secure = Read-Host -AsSecureString
   $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
   try {
@@ -99,7 +101,7 @@ function Get-Token {
 }
 
 $token = Get-Token
-if (-not $token) { throw "Token verilmedi." }
+if (-not $token) { throw "No token was given." }
 
 $headers = @{
   Authorization          = "Bearer $token"
@@ -121,11 +123,11 @@ Write-Output ""
 try {
   $me = Invoke-GH GET "https://api.github.com/user"
 } catch {
-  throw "Token qebul olunmadi. Selahiyyetler: repo ve user."
+  throw "The token was not accepted. Scopes needed: repo and user."
 }
 
 $owner = $me.login
-Write-Output "Giris: $owner"
+Write-Output "Signed in as: $owner"
 
 # --- Plan -----------------------------------------------------------------
 
@@ -146,31 +148,31 @@ $profileRepo = @($allRepos | Where-Object { $_.name -eq $owner })
 
 Write-Output ""
 Write-Output "PLAN"
-Write-Output "  1. $repoName -> tesvir, sayt unvani, $($topics.Count) movzu"
-Write-Output "  2. private edilecek repo: $($toPrivate.Count)"
+Write-Output "  1. $repoName -> description, site address, $($topics.Count) topics"
+Write-Output "  2. repos to make private: $($toPrivate.Count)"
 foreach ($r in $toPrivate) {
   Write-Output "       - $($r.name)"
 }
 if ($profileRepo.Count -gt 0) {
-  Write-Output "  3. $owner/$owner artiq var, yalniz README yenilenecek"
+  Write-Output "  3. $owner/$owner already exists; only the README is updated"
 } else {
-  Write-Output "  3. $owner/$owner yaradilacaq (profil sehifesi)"
+  Write-Output "  3. $owner/$owner will be created (the profile page)"
 }
-Write-Output "  4. profil README: $ProfileReadme"
-Write-Output "  5. profil saheleri: ad, bio, yer, sayt"
+Write-Output "  4. profile README: $ProfileReadme"
+Write-Output "  5. profile fields: name, bio, location, website"
 Write-Output ""
-Write-Output "Hec ne silinmir. Private etmek geri qaytarila biler."
+Write-Output "Nothing is deleted. Making a repo private can be undone."
 
 if ($WhatIf) {
   Write-Output ""
-  Write-Output "-WhatIf: hec neye toxunulmadi."
+  Write-Output "-WhatIf: nothing was touched."
   exit 0
 }
 
 if (-not $Yes) {
   $go = Read-Host "Davam edek? (b/x)"
   if ($go -notmatch '^(b|y)$') {
-    Write-Output "Dayandirildi."
+    Write-Output "Stopped."
     exit 0
   }
 }
@@ -180,10 +182,10 @@ if (-not $Yes) {
 
 Write-Output ""
 Invoke-GH PATCH "https://api.github.com/repos/$owner/$repoName" @{ description = $description; homepage = $homepage } | Out-Null
-Write-Output "1/5  tesvir ve sayt unvani yazildi"
+Write-Output "1/5  description and site address written"
 
 Invoke-GH PUT "https://api.github.com/repos/$owner/$repoName/topics" @{ names = $topics } | Out-Null
-Write-Output "     movzular: $($topics -join ', ')"
+Write-Output "     topics: $($topics -join ', ')"
 
 # --- 2. Kohne repo-lar private --------------------------------------------
 
@@ -196,16 +198,16 @@ foreach ($r in $toPrivate) {
     Write-Warning "  $($r.name): $($_.Exception.Message)"
   }
 }
-Write-Output "2/5  private edildi: $done / $($toPrivate.Count)"
+Write-Output "2/5  made private: $done / $($toPrivate.Count)"
 
 # --- 3. Profil repo-su ----------------------------------------------------
 
 if ($profileRepo.Count -eq 0) {
   Invoke-GH POST "https://api.github.com/user/repos" @{ name = $owner; description = "Profile"; private = $false; auto_init = $true } | Out-Null
-  Write-Output "3/5  $owner/$owner yaradildi"
+  Write-Output "3/5  $owner/$owner created"
   Start-Sleep -Seconds 3
 } else {
-  Write-Output "3/5  $owner/$owner artiq var"
+  Write-Output "3/5  $owner/$owner already exists"
 }
 
 # --- 4. README ------------------------------------------------------------
@@ -231,20 +233,20 @@ foreach ($attempt in 1..3) {
     } catch {}
   }
 }
-if (-not $putOk) { throw "Profil README yuklenmedi." }
-Write-Output "4/5  profil README yuklendi"
+if (-not $putOk) { throw "The profile README was not uploaded." }
+Write-Output "4/5  profile README uploaded"
 
 # --- 5. Profil saheleri ---------------------------------------------------
 
 Invoke-GH PATCH "https://api.github.com/user" @{ name = $fullName; bio = $bio; location = $location; blog = $homepage } | Out-Null
-Write-Output "5/5  ad, bio, yer ve sayt yazildi"
+Write-Output "5/5  name, bio, location and website written"
 
 # --- Son ------------------------------------------------------------------
 
 Write-Output ""
-Write-Output "Bitdi. Yoxla: https://github.com/$owner"
+Write-Output "Done. Check: https://github.com/$owner"
 Write-Output ""
-Write-Output "IKI SEY EL ILE QALIR:"
-Write-Output "  * ArenaHub-i pin et. GitHub-in pin API-si yoxdur, yalniz interfeysden:"
+Write-Output "TWO THINGS ARE LEFT TO DO BY HAND:"
+Write-Output "  * Pin ArenaHub. GitHub has no API for pinning, only the interface:"
 Write-Output "      github.com/$owner -> Customize your pins -> arenahub -> Save"
-Write-Output "  * Tokeni sil: github.com/settings/tokens"
+Write-Output "  * Delete the token: github.com/settings/tokens"

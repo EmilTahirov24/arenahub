@@ -1,35 +1,36 @@
 ﻿<#
-  Gmail app password-u yerli .env-də və Vercel-də bir əmrlə dəyişir.
+  Changes the Gmail app password in the local .env and on Vercel, in one command.
 
     powershell -ExecutionPolicy Bypass -File scripts\rotate-smtp-password.ps1
 
-  Niyə lazımdır: 2026-08-05-də işlədilən 16 simvolluq parol bir söhbətə düşüb,
-  yəni artıq gizli deyil. Onu dəyişmək iki yerə toxunur — yerli .env və Vercel
-  Production — və ikisi arasında fərq yaransa, sayt səssizcə məktub göndərməyi
-  dayandırır.
+  Why it exists: the 16-character password in use on 2026-08-05 ended up in a
+  conversation, so it is no longer secret. Changing it touches two places - the
+  local .env and Vercel Production - and if those two drift apart, the site
+  stops sending mail without saying so.
 
-  Sıra qəsdən belədir: parol ƏVVƏLCƏ yerli sınaqdan keçir, yalnız sonra
-  production-a gedir. Sınaq uğursuz olsa .env geri qaytarılır və Vercel-ə
-  ümumiyyətlə toxunulmur — səhv parolu production-a yaymaq indiki vəziyyətdən
-  pisdir.
+  The order is deliberate: the password is tested LOCALLY FIRST, and only then
+  goes to production. If the test fails, .env is restored and Vercel is not
+  touched at all - pushing a wrong password to production is worse than the
+  situation being fixed.
 
-  Parol heç bir addımda ekrana çıxmır, log-a yazılmır və arqument kimi
-  ötürülmür (arqument proses siyahısında görünərdi).
+  At no step is the password printed, logged, or passed as an argument (an
+  argument would be visible in the process list).
 
-  ƏVVƏLCƏ: myaccount.google.com/apppasswords -> yeni 16 simvolluq açar.
-  SONRA:   bu skripti işlət.
-  AXIRDA:  köhnə açarı həmin səhifədə LƏĞV ET — skript bunu edə bilmir.
+  FIRST: myaccount.google.com/apppasswords -> a new 16-character key.
+  THEN:  run this script.
+  LAST:  REVOKE the old key on that same page - the script cannot do it.
 #>
 
 param(
-  # Sınaq məktubunun ünvanı. Boş qalsa .env-dəki SMTP_USER işlədilir: hesabın
-  # özünə göndərmək çatdırılmanı sübut edir və skriptə şəxsi ünvan yazmır.
+  # Where the test message goes. Left empty, SMTP_USER from .env is used:
+  # sending to the account itself proves delivery without writing a personal
+  # address into the script.
   [string]$To = "",
 
-  # Sual vermədən işləyir: parolu mübadilə buferindən götürür. Sahibi Google-da
-  # açarı kopyalayır, skripti başqası işlədir — parol heç bir söhbətə, log-a və
-  # ya arqument sətrinə düşmür. Arqument kimi vermək variantı QƏSDƏN yoxdur:
-  # orada olsaydı, proses siyahısında görünərdi.
+  # Runs without asking: takes the password from the clipboard. The owner copies
+  # the key at Google, somebody else runs the script - and the password never
+  # lands in a conversation, a log or an argument list. There is DELIBERATELY no
+  # option to pass it as an argument: there, it would show in the process list.
   [switch]$Yes
 )
 
@@ -40,40 +41,40 @@ $repo = Split-Path $PSScriptRoot -Parent
 $envFile = Join-Path $repo ".env"
 $backup = Join-Path $repo ".env.bak"
 
-if (-not (Test-Path $envFile)) { Write-Error ".env tapılmadı: $envFile" }
+if (-not (Test-Path $envFile)) { Write-Error ".env not found: $envFile" }
 
-# --- 1. Parolu al -----------------------------------------------------------
+# --- 1. Get the password ------------------------------------------------------
 
 $plain = $null
 
-# Mübadilə buferi əvvəlcə yoxlanılır: açar Google-dan məhz kopyalanaraq gəlir.
-# Gizli sahəyə yapışdırmaq praktikada qarışıqlıq yaradırdı — ekran boş qalır və
-# adam yazının getdiyinə əmin olmur. Parol EKRANA ÇIXMIR: yalnız ilk 4 hərf və
-# uzunluq göstərilir, bu da «düzgün olanı kopyalamışam?» sualına bəs edir.
+# The clipboard is checked first: the key arrives from Google by being copied.
+# Pasting into a hidden field was confusing in practice - the screen stays blank
+# and there is no sign the paste landed. The password is NOT PRINTED: only its
+# first 4 letters and its length, which is enough for "did I copy the right one?".
 $clip = ""
 try { $clip = (Get-Clipboard -Raw -ErrorAction Stop) } catch {}
 if ($clip) { $clip = ($clip -replace '\s', '') }
 
 if ($clip -and $clip.Length -eq 16 -and $clip -match '^[a-z]{16}$') {
   Write-Output ""
-  Write-Output "Mübadilə buferində app password tapıldı:"
-  Write-Output "  $($clip.Substring(0,4))············  (16 hərf)"
+  Write-Output "An app password was found on the clipboard:"
+  Write-Output "  $($clip.Substring(0,4))············  (16 letters)"
   if ($Yes) {
-    Write-Output "-Yes verilib: bu açar işlədilir."
+    Write-Output "-Yes was given: this key is used."
     $plain = $clip
   } else {
-    $istifade = Read-Host "Bunu işlədim? (h/y)"
-    if ($istifade -eq "h" -or $istifade -eq "H") { $plain = $clip }
+    $istifade = Read-Host "Use this one? (y/n)"
+    if ($istifade -eq "y" -or $istifade -eq "Y") { $plain = $clip }
   }
 }
 
 if (-not $plain -and $Yes) {
-  Write-Error "Mübadilə buferində app password yoxdur. Google-da açarı kopyala (Ctrl+C) və yenidən işlət."
+  Write-Error "There is no app password on the clipboard. Copy the key at Google (Ctrl+C) and run this again."
 }
 
 if (-not $plain) {
   Write-Output ""
-  Write-Output "Yeni Gmail app password-u yapışdır (yazılan görünməyəcək):"
+  Write-Output "Paste the new Gmail app password (what you type stays hidden):"
   $secure = Read-Host -AsSecureString
   $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
   try {
@@ -81,51 +82,51 @@ if (-not $plain) {
   } finally {
     [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
   }
-  # Google onu "abcd efgh ijkl mnop" kimi göstərir; boşluqlar hissəsi deyil.
+  # Google shows it as "abcd efgh ijkl mnop"; the spaces are not part of it.
   $plain = ($plain -replace '\s', '')
 }
 
 if ($plain.Length -ne 16 -or $plain -notmatch '^[a-z]{16}$') {
-  Write-Error "Bu, app password kimi görünmür: boşluqsuz 16 kiçik hərf olmalıdır (uzunluq: $($plain.Length)). Adi Google şifrəsi işləmir."
+  Write-Error "That does not look like an app password: it has to be 16 lower-case letters with no spaces (length: $($plain.Length)). An ordinary Google password will not work."
 }
 
-# --- 2. .env-i yenilə -------------------------------------------------------
+# --- 2. Update .env -----------------------------------------------------------
 
 Copy-Item $envFile $backup -Force
-Write-Output "Ehtiyat nüsxə: .env.bak"
+Write-Output "Backup: .env.bak"
 
-# Bütöv mətn üzərində işləyirik ki, sətir sonları və qalan sətirlər olduğu kimi
-# qalsın. Əvəzləmə blok şəklindədir: parolda `$` olsaydı, sadə sətir əvəzləməsi
-# onu qrup istinadı kimi oxuyardı.
+# This works on the whole text so line endings and every other line stay as
+# they are. The replacement is a script block: with a `$` in the password, a
+# plain string replacement would read it as a group reference.
 $text = [IO.File]::ReadAllText($envFile, [Text.Encoding]::UTF8)
 $hits = ([regex]::Matches($text, '(?m)^SMTP_PASS=.*$')).Count
 if ($hits -ne 1) {
   Remove-Item $backup -Force
-  Write-Error "SMTP_PASS sətri .env-də $hits dəfə tapıldı — 1 gözlənilirdi. Əl ilə bax."
+  Write-Error "The SMTP_PASS line was found $hits times in .env - 1 was expected. Look by hand."
 }
 $updated = [regex]::Replace($text, '(?m)^SMTP_PASS=.*$', { "SMTP_PASS=$plain" })
 
-# BOM-suz UTF-8: BOM .env-in ilk açarını korlayır və Azərbaycan hərfləri üçün
-# kodlaşdırma saxlanılmalıdır.
+# UTF-8 without a BOM: a BOM corrupts the first key in .env, and the encoding
+# has to be kept for the Azerbaijani letters.
 [IO.File]::WriteAllText($envFile, $updated, (New-Object Text.UTF8Encoding $false))
-Write-Output ".env yeniləndi (yalnız SMTP_PASS sətri)"
+Write-Output ".env updated (the SMTP_PASS line only)"
 
 function Restore-Env {
   Copy-Item $backup $envFile -Force
   Write-Output ""
-  Write-Output ".env ƏVVƏLKİ HALINA QAYTARILDI. Vercel-ə toxunulmadı."
+  Write-Output ".env WAS RESTORED. Vercel was not touched."
 }
 
-# --- 3. Yerli sınaq ---------------------------------------------------------
+# --- 3. Local test ------------------------------------------------------------
 
 if (-not $To) {
   $m = [regex]::Match($updated, '(?m)^SMTP_USER=(.*)$')
   $To = $m.Groups[1].Value.Trim().Trim('"').Trim("'")
 }
-if (-not $To) { Restore-Env; Write-Error "Sınaq ünvanı tapılmadı. -To ilə ver." }
+if (-not $To) { Restore-Env; Write-Error "No test address found. Pass one with -To." }
 
 Write-Output ""
-Write-Output "Yerli sınaq: $To"
+Write-Output "Local test: $To"
 Push-Location $repo
 try {
   & npx tsx scripts/check-email.ts --to $To
@@ -136,19 +137,19 @@ try {
 
 if (-not $ok) {
   Restore-Env
-  Write-Output "Parol Gmail tərəfindən qəbul edilmədi. Yeni açar yarat və yenidən cəhd et."
+  Write-Output "Gmail did not accept the password. Create a new key and try again."
   exit 1
 }
 
-# --- 4. Vercel ---------------------------------------------------------------
+# --- 4. Vercel ----------------------------------------------------------------
 
 Write-Output ""
-Write-Output "Vercel Production yenilənir..."
+Write-Output "Updating Vercel Production..."
 
-# PowerShell borusu İŞLƏDİLMİR: `$v | vercel env add` dəyərin əvvəlinə U+FEFF
-# qoyur, Vercel onu qəbul edir, heç nə xəbərdarlıq etmir və Gmail runtime-da
-# `535 BadCredentials` qaytarır. 2026-08-05-də tam olaraq bu baş verdi.
-# ASCII faylı BOM yazmır və cmd-in yönləndirməsi onu təmiz ötürür.
+# A PowerShell pipe is NOT USED: `$v | vercel env add` puts a U+FEFF in front
+# of the value, Vercel accepts it, nothing warns, and Gmail returns
+# `535 BadCredentials` at runtime. That is exactly what happened on 2026-08-05.
+# An ASCII file writes no BOM, and cmd's redirection passes it through clean.
 $tmp = Join-Path $env:TEMP ("smtp-" + [Guid]::NewGuid().ToString("N") + ".txt")
 [IO.File]::WriteAllText($tmp, $plain, [Text.Encoding]::ASCII)
 
@@ -164,17 +165,18 @@ try {
 
 if (-not $added) {
   Write-Output ""
-  Write-Output "Vercel yenilənmədi. .env DÜZGÜNDÜR, amma production köhnə parolu işlədir."
-  Write-Output "Əl ilə: npx vercel env add SMTP_PASS production"
+  Write-Output "Vercel was not updated. .env IS CORRECT, but production is using the old password."
+  Write-Output "By hand: npx vercel env add SMTP_PASS production"
   exit 1
 }
-Write-Output "Vercel yeniləndi (BOM-suz)"
+Write-Output "Vercel updated (no BOM)"
 
-# --- 5. Deploy ---------------------------------------------------------------
+# --- 5. Deploy ----------------------------------------------------------------
 
-# Dəyişən deploy olmadan işə düşmür: mövcud build köhnə dəyəri daşıyır.
+# The variable does not take effect without a deploy: the existing build carries
+# the old value.
 Write-Output ""
-Write-Output "Production-a deploy edilir..."
+Write-Output "Deploying to production..."
 Push-Location $repo
 try {
   & npx vercel deploy --prod
@@ -185,15 +187,15 @@ try {
 
 Write-Output ""
 if ($deployed) {
-  Write-Output "Hazırdır."
+  Write-Output "Done."
 } else {
-  Write-Output "Deploy alınmadı — `npx vercel deploy --prod` əl ilə işlət."
+  Write-Output 'The deploy failed - run `npx vercel deploy --prod` by hand.'
 }
 
 Write-Output ""
-Write-Output "İki addım qalır, ikisi də səndədir:"
-Write-Output "  1. Canlı saytda «şifrəmi unutdum» ilə bir dəfə yoxla — məktub gəlməlidir."
-Write-Output "  2. KÖHNƏ açarı ləğv et: myaccount.google.com/apppasswords"
-Write-Output "     Bunsuz sızmış parol hələ də işləyir və bütün iş mənasızdır."
+Write-Output "Two steps remain, both of them yours:"
+Write-Output "  1. Try \"forgot my password\" once on the live site - the mail should arrive."
+Write-Output "  2. Revoke the OLD key: myaccount.google.com/apppasswords"
+Write-Output "     Without that the leaked password still works and all of this was pointless."
 Write-Output ""
-Write-Output "Hər şey qaydasındadırsa .env.bak silinə bilər — içində köhnə parol var."
+Write-Output "If all is well, .env.bak can be deleted - it holds the old password."

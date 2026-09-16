@@ -64,7 +64,7 @@ async function main() {
   // Monday to Sunday: the week boundary has to be fixed so that a repeat run
   // updates the same article rather than creating another one.
   const now = new Date();
-  const day = (now.getUTCDay() + 6) % 7; // bazar ertəsi = 0
+  const day = (now.getUTCDay() + 6) % 7; // Monday = 0
   const thisMonday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - day));
   const start = new Date(thisMonday.getTime() - weeksBack * 7 * 86_400_000);
   const end = new Date(start.getTime() + 7 * 86_400_000);
@@ -105,12 +105,12 @@ async function main() {
     return sameMonth ? `${d(start)}–${dm(labelEnd)}` : `${dm(start)} – ${dm(labelEnd)}`;
   }
 
-  console.log(`həftə: ${range}`);
-  console.log(`bitmiş matç: ${matches.length}\n`);
+  console.log(`week: ${range}`);
+  console.log(`finished matches: ${matches.length}\n`);
 
   // No article is written for an empty week. An empty article is worse than none.
   if (matches.length === 0) {
-    console.log("Bu həftədə bitmiş matç yoxdur — məqalə yazılmır.");
+    console.log("No matches finished this week - no article is written.");
     return;
   }
 
@@ -225,20 +225,20 @@ async function main() {
     return `${head} ${label}: ${lead.name}.`;
   }
 
-  console.log("BAŞLIQ:  " + titleAz);
-  console.log("XÜLASƏ:  " + excerpt("az"));
+  console.log("HEADLINE: " + titleAz);
+  console.log("EXCERPT:  " + excerpt("az"));
   console.log("SLUG:    " + slug);
   console.log("");
   console.log(body("az").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 600) + "…");
 
   if (!apply) {
-    console.log("\nHeç nə yazılmadı. Yazmaq üçün --apply əlavə et.");
+    console.log("\nNothing was written. Add --apply to write.");
     return;
   }
 
   const author = await prisma.adminUser.findFirst({ orderBy: { createdAt: "asc" }, select: { id: true } });
   if (!author) {
-    console.log("\nAdmin istifadəçi yoxdur — məqaləyə müəllif lazımdır.");
+    console.log("\nThere is no admin user - an article needs an author.");
     return;
   }
 
@@ -280,7 +280,7 @@ async function main() {
     });
   }
 
-  console.log(`\n${existing ? "Yeniləndi" : "Yaradıldı"}: /news/${slug}`);
+  console.log(`\n${existing ? "Updated" : "Created"}: /news/${slug}`);
 }
 
 main()

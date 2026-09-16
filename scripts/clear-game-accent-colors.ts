@@ -30,7 +30,7 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const apply = process.argv.includes("--apply");
-  console.log(apply ? "REJIM: yazma (--apply)\n" : "REJIM: quru işlətmə — heç nə dəyişmir\n");
+  console.log(apply ? "MODE: writing (--apply)\n" : "MODE: dry run - nothing changes\n");
 
   const games = await prisma.game.findMany({ select: { id: true, slug: true, accentColor: true } });
   const accents = new Map(games.map((g) => [g.id, g.accentColor.toLowerCase()]));
@@ -44,21 +44,21 @@ async function main() {
   const stale = teams.filter((t) => t.primaryColor?.toLowerCase() === accents.get(t.gameId));
   const kept = teams.filter((t) => !stale.includes(t));
 
-  console.log(`${teams.length} komandada rəng var; ${stale.length}-i oyunun vurğu rəngidir.\n`);
+  console.log(`${teams.length} teams have a colour; ${stale.length} of them are the game's accent.\n`);
   for (const t of stale) {
-    console.log(`  silinir  ${t.primaryColor}  ${t.name}  [${t.game.slug}]`);
+    console.log(`  clearing ${t.primaryColor}  ${t.name}  [${t.game.slug}]`);
   }
   if (kept.length) {
-    console.log(`\nToxunulmayan (əl ilə yazılmış kimi görünür):`);
-    for (const t of kept) console.log(`  saxlanır ${t.primaryColor}  ${t.name}  [${t.game.slug}]`);
+    console.log(`\nLeft alone (looks hand-written):`);
+    for (const t of kept) console.log(`  keeping ${t.primaryColor}  ${t.name}  [${t.game.slug}]`);
   }
 
   if (!apply) {
-    console.log("\nTətbiq etmək üçün: --apply");
+    console.log("\nTo apply: --apply");
     return;
   }
   if (stale.length === 0) {
-    console.log("\nTəmizlənəcək sətir yoxdur.");
+    console.log("\nThere are no rows to clear.");
     return;
   }
 
@@ -66,7 +66,7 @@ async function main() {
     where: { id: { in: stale.map((t) => t.id) } },
     data: { primaryColor: null },
   });
-  console.log(`\n${count} komandanın rəngi silindi.`);
+  console.log(`\nThe colour was cleared on ${count} teams.`);
 }
 
 main()

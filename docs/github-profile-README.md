@@ -83,11 +83,12 @@ data-intensive and distributed systems, and the correctness questions that come
 with them.
 
 <!-- REVIEW-REQUIRED
-     The paragraph above is drawn from this codebase, not invented — but it is
-     still a reading of you, not a sentence you wrote. Read it once and decide
-     whether you recognise yourself in it; rewrite it in your own words if not.
-     The year 2027 is an assumption. Delete this whole comment when you are
-     happy with it: the setup script refuses to publish while it is here. -->
+     This paragraph goes on a public profile in the first person, and it is the
+     part an admissions reader is most likely to ask about. Read it once and
+     make sure it is what you would say out loud in an interview; reword it if
+     not. The year 2027 is an assumption worth checking against the programme
+     you apply to. Delete this comment when you are happy with it — the setup
+     script refuses to publish while it is here. -->
 
 ---
 

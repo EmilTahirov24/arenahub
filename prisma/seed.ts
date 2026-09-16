@@ -117,12 +117,13 @@ const ROLE_POOL: Record<string, string[]> = {
  * Roles are left empty rather than guessed. Rosters are a snapshot and go stale
  * as players transfer — they are maintained from the admin panel.
  */
-// `primaryColor` QƏSDƏN yazılmır. Əvvəl hər komandaya OYUNUN accent rəngi
-// qoyulurdu, yəni bir oyundakı bütün komandalar eyni rəngə düşürdü — sahə adı
-// «komandanın rəngi» olsa da, saxladığı şey komandaya aid deyildi. Loqosuz
-// avatarlar da ona görə tam eyni görünürdü. İdxal skriptləri bu sahəni onsuz da
-// doldurmur, yəni production-da o boşdur; seed indi həmin vəziyyəti təkrarlayır.
-// Rəng `lib/avatarColor.ts`-də addan hesablanır.
+// `primaryColor` is DELIBERATELY not written. Every team used to be given the
+// GAME's accent colour, so every team within a game came out the same - despite
+// its name, "the team's colour" held nothing belonging to the team. That is why
+// avatars without a logo looked identical too. The import scripts do not
+// populate this field either, so in production it is empty; the seed now
+// reproduces that state. The colour is computed from the name in
+// `lib/avatarColor.ts`.
 const REAL_CS2_TEAMS: { name: string; country: string | null; earnings?: number; players: string[] }[] = [
   { name: "Vitality", country: "FR", earnings: 1_082_500, players: ["apEX", "ropz", "ZywOo", "flameZ", "mezii"] },
   { name: "Falcons", country: "SA", earnings: 789_000, players: ["NiKo", "karrigan", "TeSeS", "m0NESY", "kyousuke"] },
@@ -342,41 +343,41 @@ function randomTeamStat(rating: number) {
 }
 
 /**
- * Seed-in yaradacağı admin hesabının açarı.
+ * The credentials of the admin account the seed will create.
  *
- * Burada əvvəl `|| "admin@example.com"` və `|| "changeme"` vardı və nəticəsi
- * bu oldu: canlı saytın admin paneli 26 gün boyunca məhz həmin iki dəyərlə
- * qorundu. Repo açıqdır, yəni parol elə bu faylda hər kəsə görünürdü —
- * sındırmaq lazım deyildi, oxumaq kifayət idi.
+ * This used to carry `|| "admin@example.com"` and `|| "changeme"`, and the
+ * consequence was that the live site's admin panel was protected by exactly
+ * those two values for 26 days. The repo is public, so the password was visible
+ * to anyone in this very file - there was nothing to break, only to read.
  *
- * Standart qiymət pis olduğu üçün deyil, SƏSSİZ olduğu üçün təhlükəlidir:
- * dəyişən qoyulmadıqda seed işini görür, heç nə demir və hamı hər şeyin
- * qaydasında olduğunu düşünür.
+ * A default is dangerous not because it is bad but because it is SILENT: with
+ * no variable set the seed does its job, says nothing, and everyone assumes all
+ * is well.
  */
 function readAdminCredentials() {
   const adminEmail = process.env.SEED_ADMIN_EMAIL;
   const adminPassword = process.env.SEED_ADMIN_PASSWORD;
   if (!adminEmail || !adminPassword) {
     throw new Error(
-      "SEED_ADMIN_EMAIL və SEED_ADMIN_PASSWORD təyin edilməyib. Standart parol YOXDUR — .env-də özün yaz.",
+      "SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD are not set. There is NO default password - choose one in .env.",
     );
   }
-  // Yalnız BU FAYLDA dərc olunmuş köhnə dəyərlər bloklanır. Səbəb dar və
-  // konkretdir: onlar açıq repoda yazılı idi, yəni tapmaq üçün təxmin etmək
-  // lazım deyildi — oxumaq kifayət idi. Onları geri qaytarmaq problemi eynilə
-  // bərpa edərdi.
+  // Only the old values published IN THIS FILE are blocked. The reason is narrow
+  // and specific: they were written in a public repo, so finding them took no
+  // guessing - only reading. Restoring them would restore the problem exactly.
   if (adminPassword === "changeme" || adminEmail === "admin@example.com") {
     throw new Error(
-      "SEED_ADMIN_EMAIL/SEED_ADMIN_PASSWORD köhnə dərc olunmuş dəyərlərdir (admin@example.com / changeme). " +
-        "Onlar açıq repoda görünürdü — başqasını seç.",
+      "SEED_ADMIN_EMAIL/SEED_ADMIN_PASSWORD are the old published values " +
+        "(admin@example.com / changeme). They were visible in a public repo - choose others.",
     );
   }
 
-  // Qalanı sahibinin qərarıdır: seed dayanmır, sadəcə deyir. Zəif parol üçün
-  // işi bloklamaq onu güclü etmir, yalnız adamı mühafizəni söndürməyə itələyir.
+  // The rest is the owner's decision: the seed does not stop, it says so.
+  // Blocking the job over a weak password does not make it strong, it only
+  // pushes people into disabling the guard.
   if (adminPassword.length < 12) {
     console.warn(
-      `\nXƏBƏRDARLIQ: SEED_ADMIN_PASSWORD ${adminPassword.length} simvoldur və admin paneli ictimai ünvandadır.\n`,
+      `\nWARNING: SEED_ADMIN_PASSWORD is ${adminPassword.length} characters, and the admin panel is at a public address.\n`,
     );
   }
 
@@ -389,10 +390,11 @@ async function main() {
   // the real CS2 teams are still created, but nothing is invented.
   const seedDemo = process.env.SEED_DEMO !== "false";
 
-  // Admin açarı SİLMƏDƏN ƏVVƏL yoxlanılır. Aşağıdakı `deleteMany` zənciri
-  // bazanı boşaldır; yoxlama sonra olsaydı, səhv konfiqurasiya ilə işlədilən
-  // seed hər şeyi silib SONRA dayanardı və geridə admini olmayan boş baza
-  // qalardı. Yoxlamanın özündən daha vacib olan onun YERİDİR.
+  // The admin credentials are checked BEFORE the deletion. The `deleteMany`
+  // chain below empties the database; with the check after it, a seed run with
+  // the wrong configuration would delete everything and THEN stop, leaving an
+  // empty database with no admin. What matters more than the check itself is
+  // WHERE it sits.
   const { adminEmail, adminPassword } = readAdminCredentials();
 
   console.log(`Cleaning existing data... (demo data: ${seedDemo ? "yes" : "no"})`);
@@ -783,7 +785,7 @@ async function main() {
     // computed — skipping it here left production with every team on the
     // default 1000 and no ranking at all.
     await recomputeRatings();
-    console.log(`Seed tamamlandı (yalnız real data).`);
+    console.log(`Seed finished (real data only).`);
     console.log(`Admin login: ${adminEmail} / ${adminPassword}`);
     return;
   }
@@ -816,7 +818,7 @@ async function main() {
   // that normally trigger a recompute never run — do it once at the end.
   await recomputeRatings();
 
-  console.log("Seed tamamlandı.");
+  console.log("Seed finished.");
   console.log(`Admin login: ${adminEmail} / ${adminPassword}`);
 }
 
@@ -861,7 +863,7 @@ async function seedCs2Tournaments(gameId: string) {
     for (const row of def.placements ?? []) {
       for (const name of row.teams) {
         const team = teamByName.get(name);
-        if (!team) throw new Error(`Seed: komanda tapılmadı — ${name}`);
+        if (!team) throw new Error(`Seed: team not found - ${name}`);
         await prisma.tournamentParticipant.create({
           data: { tournamentId: tournament.id, teamId: team.id, seed: seed++, placement: row.place },
         });
@@ -872,7 +874,7 @@ async function seedCs2Tournaments(gameId: string) {
     for (const [aName, aScore, bScore, bName, bestOf] of def.matches ?? []) {
       const a = teamByName.get(aName);
       const b = teamByName.get(bName);
-      if (!a || !b) throw new Error(`Seed: matç komandası tapılmadı — ${aName} / ${bName}`);
+      if (!a || !b) throw new Error(`Seed: match team not found - ${aName} / ${bName}`);
       await prisma.match.create({
         data: {
           slug: `${a.slug}-vs-${b.slug}-${tournament.id.slice(-5)}-${order}`,
@@ -896,7 +898,7 @@ async function seedCs2Tournaments(gameId: string) {
 
 /** Same replay the app uses, sharing the formula from lib/elo.ts. */
 async function recomputeRatings() {
-  console.log("Reytinqlər hesablanır...");
+  console.log("Computing ratings...");
   const matches = await prisma.match.findMany({
     where: { status: "FINISHED", winnerId: { not: null } },
     orderBy: [{ scheduledAt: "asc" }, { id: "asc" }],

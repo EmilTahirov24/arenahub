@@ -181,7 +181,7 @@ async function commonsPass(
         game: p.game.slug,
         ourCountry: p.country,
         entity: "—",
-        description: `Commons axtarışı: «${real}»`,
+        description: `Commons search: "${real}"`,
         wikidataCountry: null,
         countryAgrees: null,
         file: pg.title,
@@ -235,7 +235,7 @@ async function main() {
     .map((m) => m.player)
     .filter((p) => (seen.has(p.slug) ? false : (seen.add(p.slug), true)));
 
-  console.log(`${players.length} oyunçu yoxlanılır (fotosuz, aktiv rosterdə)\n`);
+  console.log(`checking ${players.length} players (no photograph, on an active roster)\n`);
 
   // 1. Candidate entities for each handle.
   const searches = new Map<string, string[]>();
@@ -268,7 +268,7 @@ async function main() {
 
   // 2. The entities themselves, in batches of 50.
   const allIds = [...new Set([...searches.values()].flat())];
-  console.log(`\n${allIds.length} namizəd qeyd oxunur...`);
+  console.log(`\nreading ${allIds.length} candidate entities...`);
   const entities = new Map<string, Record<string, unknown>>();
   for (let i = 0; i < allIds.length; i += 50) {
     const e = await wiki("www.wikidata.org", {
@@ -322,11 +322,11 @@ async function main() {
       break;
     }
   }
-  console.log(`${picks.length} oyunçu üçün esports qeydi tapıldı`);
+  console.log(`an esports entity was found for ${picks.length} players`);
 
   // 5. P18 and the Commons licence.
   const withImage = picks.filter((x) => typeof claim(x.ent, "P18") === "string");
-  console.log(`${withImage.length}-də şəkil (P18) var\n`);
+  console.log(`${withImage.length} of them have a picture (P18)\n`);
 
   const files = [...new Set(withImage.map((x) => `File:${claim(x.ent, "P18") as string}`))];
   const meta = new Map<string, Record<string, { value: string }>>();
@@ -355,14 +355,14 @@ async function main() {
     const text = (k: string) => (m[k]?.value ?? "").toString().replace(/<[^>]*>/g, "").trim();
     const license = text("LicenseShortName");
     if (!FREE_LICENCE.test(license)) {
-      rejected.push(`${x.player.nickname}: lisenziya «${license || "naməlum"}»`);
+      rejected.push(`${x.player.nickname}: licence "${license || "unknown"}"`);
       continue;
     }
     const wdCountryId = claim(x.ent, "P27") as { id?: string } | undefined;
     const wdCountry = wdCountryId?.id ? (countryCode.get(wdCountryId.id) ?? null) : null;
     const agrees = x.player.country && wdCountry ? x.player.country.toUpperCase() === wdCountry : null;
     if (agrees === false) {
-      rejected.push(`${x.player.nickname}: ölkə uyğun deyil (bizdə ${x.player.country}, Wikidata ${wdCountry})`);
+      rejected.push(`${x.player.nickname}: country does not agree (ours ${x.player.country}, Wikidata ${wdCountry})`);
       continue;
     }
 
@@ -391,24 +391,24 @@ async function main() {
     const covered = new Set(out.map((c) => c.slug));
     const rest = players.filter((p) => !covered.has(p.slug));
     console.log(`
-Commons (əsl ad) yoxlanılır: ${rest.length} oyunçu...`);
+Checking Commons by real name: ${rest.length} players...`);
     out.push(...(await commonsPass(rest)));
   }
 
   out.sort((a, b) => a.nickname.localeCompare(b.nickname));
   await writeFile(OUT, JSON.stringify(out, null, 2) + "\n");
 
-  console.log(`\n${out.length} NAMİZƏD — data/player-photo-candidates.json`);
+  console.log(`\n${out.length} CANDIDATES - data/player-photo-candidates.json`);
   for (const c of out) {
     console.log(`  ${c.nickname.padEnd(16)} ${c.license.padEnd(14)} ${c.description.slice(0, 44)}`);
   }
   if (rejected.length) {
-    console.log(`\n${rejected.length} rədd edildi:`);
+    console.log(`\n${rejected.length} rejected:`);
     for (const r of rejected.slice(0, 20)) console.log(`  ${r}`);
   }
   console.log(
-    `\nHEÇ BİRİ HƏLƏ İŞLƏNMİR. Hər şəkil gözlə yoxlanmalı və` +
-      ` data/player-photos.json faylına köçürülməlidir.`,
+    `\nNONE OF THESE ARE USED YET. Every picture has to be looked at by eye and` +
+      ` moved into data/player-photos.json.`,
   );
 }
 

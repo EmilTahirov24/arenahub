@@ -68,7 +68,7 @@ async function freeSlug(base: string) {
     const hit = await prisma.player.findUnique({ where: { slug: candidate }, select: { id: true } });
     if (!hit) return candidate;
   }
-  throw new Error(`Slug tapılmadı: ${base}`);
+  throw new Error(`Could not derive a slug: ${base}`);
 }
 
 function arg(name: string, fallback: number) {
@@ -101,8 +101,8 @@ async function main() {
   });
 
   console.log(
-    `son ${days} gündə oynayan komanda: ${activeIds.length}, tərkibi olmayan: ${targets.length}` +
-      (apply ? "" : "  (QURU İŞLƏTMƏ)"),
+    `teams that played in the last ${days} days: ${activeIds.length}, without a roster: ${targets.length}` +
+      (apply ? "" : "  (DRY RUN)"),
   );
   console.log("");
 
@@ -154,7 +154,7 @@ async function main() {
 
     filled++;
     console.log(
-      `+  ${team.name.padEnd(28)} ${team.game.slug.padEnd(9)} ${squad.length} oyunçu: ` +
+      `+  ${team.name.padEnd(28)} ${team.game.slug.padEnd(9)} ${squad.length} players: ` +
         squad.map((m) => m.nickname).join(", "),
     );
     if (!apply) continue;
@@ -203,12 +203,12 @@ async function main() {
 
   const tried = seen;
   console.log("");
-  console.log(`baxılan:            ${tried}`);
-  console.log(`tərkib tapıldı:     ${filled}  (${tried ? ((filled / tried) * 100).toFixed(1) : 0}%)`);
-  console.log(`səhifə tapılmadı:   ${noPage}`);
-  console.log(`tərkib oxunmadı:    ${noSquad}`);
-  if (apply) console.log(`yeni oyunçu:        ${playersCreated}`);
-  if (!apply) console.log("\nHeç nə yazılmadı. Yazmaq üçün --apply əlavə et.");
+  console.log(`looked at:          ${tried}`);
+  console.log(`roster found:       ${filled}  (${tried ? ((filled / tried) * 100).toFixed(1) : 0}%)`);
+  console.log(`page not found:     ${noPage}`);
+  console.log(`roster unreadable:  ${noSquad}`);
+  if (apply) console.log(`new players:        ${playersCreated}`);
+  if (!apply) console.log("\nNothing was written. Add --apply to write.");
 }
 
 main()

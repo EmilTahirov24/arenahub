@@ -1,40 +1,43 @@
 ﻿<#
-  İdxal işini GitHub-da işə salır.
+  Starts the import job on GitHub.
 
-  Niyə lazımdır: GitHub `schedule` hadisəsini pulsuz planda boğur. Ölçüldü —
-  17-25 avqust arası gündə 33-49 qaçış gəlirdi, 27 avqustda 3-ə, 28-də 1-ə
-  düşdü. `workflow_dispatch` isə boğulmur, çünki o, sorğu ilə gəlir.
+  Why it exists: GitHub throttles the `schedule` event on the free plan. It was
+  measured - between 17 and 25 August the job ran 33-49 times a day, then 3
+  times on 27 August and once on the 28th. `workflow_dispatch` is not
+  throttled, because it arrives as a request.
 
-  Bu skript həmin sorğunu göndərir. Windows Task Scheduler onu hər 20 dəqiqədə
-  çağırsa, idxal vaxtında işləyəcək.
+  This script sends that request. With Windows Task Scheduler calling it every
+  20 minutes, the import runs on time.
 
-  TOKEN: yanındakı `.github-token` faylından oxunur. Fayl .gitignore-dadır və
-  repoya düşmür. Token heç vaxt bu fayla, commit-ə və ya söhbətə yazılmamalıdır.
+  TOKEN: read from the `.github-token` file next to this one. That file is in
+  .gitignore and never reaches the repo. The token must never be written into
+  this file, into a commit, or into a conversation.
 
-  Quraşdırma:
+  Setup:
     1. github.com/settings/personal-access-tokens -> fine-grained token
-       Repository access: yalnız EmilTahirov24/arenahub
+       Repository access: EmilTahirov24/arenahub only
        Permissions -> Repository -> Actions: Read and write
-    2. Token-i bura yaz:  scripts\.github-token
-    3. Bir dəfə əl ilə yoxla:  powershell -File scripts\trigger-import.ps1
-    4. Cədvələ qoy:            powershell -File scripts\install-trigger-task.ps1
+    2. Write the token here:  scripts\.github-token
+    3. Test it once by hand:  powershell -File scripts\trigger-import.ps1
+    4. Put it on a schedule:  powershell -File scripts\install-trigger-task.ps1
 
-  Məhdudiyyət, açıq deyilir: bu, yalnız kompüter işləyəndə çalışır. 24/7 təzəlik
-  üçün kənar xidmət (məsələn cron-job.org) və ya ödənişli planlayıcı lazımdır.
+  A limitation, stated plainly: this only works while the computer is on. For
+  round-the-clock freshness it needs an outside service (cron-job.org, say) or
+  a paid scheduler.
 #>
 
 $ErrorActionPreference = "Stop"
-# Konsol UTF-8 olmasa mesajlar korlanır; bu, yalnız çıxışa təsir edir.
+# Without a UTF-8 console the messages come out mangled; this affects output only.
 try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch {}
 $tokenFile = Join-Path $PSScriptRoot ".github-token"
 
 if (-not (Test-Path $tokenFile)) {
-  Write-Error "Token faylı yoxdur: $tokenFile  (quraşdırma addımlarına bax)"
+  Write-Error "No token file: $tokenFile  (see the setup steps)"
 }
 
 $token = (Get-Content $tokenFile -Raw).Trim()
 if ([string]::IsNullOrWhiteSpace($token)) {
-  Write-Error "Token faylı boşdur: $tokenFile"
+  Write-Error "The token file is empty: $tokenFile"
 }
 
 $uri = "https://api.github.com/repos/EmilTahirov24/arenahub/actions/workflows/import-live.yml/dispatches"
@@ -45,9 +48,10 @@ $headers = @{
   "User-Agent"           = "ArenaHub-trigger"
 }
 
-# Log skriptin öz işidir. Əvvəl bunu cədvəlin arqument sətrindəki `>>` edirdi,
-# amma Task Scheduler yönləndirmə tanımır — o mətni PowerShell-ə arqument kimi
-# ötürür. Yəni log heç vaxt yaranmırdı və cədvəl səssizcə uğursuz ola bilərdi.
+# The log is the script's own job. A `>>` in the scheduled task's argument line
+# used to do it, but Task Scheduler does not understand redirection - it passes
+# that text to PowerShell as an argument. So the log was never created, and the
+# task could fail silently.
 $logFile = Join-Path $PSScriptRoot ".trigger-log.txt"
 
 function Write-Line([string]$text) {
@@ -58,29 +62,30 @@ function Write-Line([string]$text) {
 
 try {
   Invoke-RestMethod -Uri $uri -Method Post -Headers $headers -Body '{"ref":"main"}' -ContentType "application/json"
-  Write-Line "idxal işə salındı"
+  Write-Line "import started"
 } catch {
-  # Səhv gizlədilmir: cədvəllə işləyəndə yeganə iz bu sətirdir.
+  # The error is not swallowed: when this runs from a schedule, this line is the
+  # only trace there is.
   #
-  # Status koduna görə ayrılır, çünki iki hal tamam fərqli cavab tələb edir və
-  # 2026-08-30-da bunu təcrübədə gördük: log yalnız "(401) Unauthorized" yazdı
-  # və səbəbi anlamaq üçün ayrıca yoxlama lazım gəldi. 401/403 insan müdaxiləsi
-  # istəyir — özü düzəlməz, hər 20 dəqiqədə eyni sətri təkrarlayar. Şəbəkə
-  # xətası isə növbəti qaçışda öz-özünə keçir.
+  # It splits on the status code, because the two cases want completely
+  # different responses - and that was learned the hard way on 2026-08-30, when
+  # the log said only "(401) Unauthorized" and working out why took a separate
+  # investigation. A 401 or 403 needs a person: it will not fix itself, and will
+  # repeat the same line every 20 minutes. A network error clears on the next run.
   $status = $null
   try { $status = [int]$_.Exception.Response.StatusCode } catch {}
 
   if ($status -eq 401) {
-    Write-Line "ALINMADI (401): token qəbul edilmir — ləğv edilib və ya müddəti bitib."
-    Write-Line "  Düzəlişi: yeni token yarat, kopyala, sonra:"
+    Write-Line "FAILED (401): the token is not accepted - revoked or expired."
+    Write-Line "  To fix: create a new token, copy it, then:"
     Write-Line "  Remove-Item scripts\.github-token; powershell -File scripts\setup-trigger.ps1 -Yes"
-    Write-Line "  QEYD: idxal tam dayanmır — GitHub-ın öz cədvəli işləyir, sadəcə saatlarla gecikir."
+    Write-Line "  NOTE: the import does not stop entirely - GitHub's own schedule still runs, just hours late."
   } elseif ($status -eq 403 -or $status -eq 404) {
-    Write-Line "ALINMADI ($status): token var, amma icazəsi çatmır."
-    Write-Line "  Ən çox rast gəlinən səbəb: `Actions: Read and write` verilməyib,"
-    Write-Line "  ya da token `arenahub` reposuna bağlanmayıb."
+    Write-Line "FAILED ($status): the token exists, but its permissions fall short."
+    Write-Line '  The usual cause: `Actions: Read and write` was not granted,'
+    Write-Line '  or the token was not bound to the `arenahub` repository.'
   } else {
-    Write-Line "ALINMADI: $($_.Exception.Message)"
+    Write-Line "FAILED: $($_.Exception.Message)"
   }
   exit 1
 }

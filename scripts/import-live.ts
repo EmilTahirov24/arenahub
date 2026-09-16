@@ -79,7 +79,7 @@ function statusOf(m: ParsedMatch, at: Date): "FINISHED" | "LIVE" | "UPCOMING" | 
 
 async function main(): Promise<{ written: number; note: string; ratingsStale: number }> {
   const apply = process.argv.includes("--apply");
-  console.log(apply ? "REJIM: yazma (--apply)\n" : "REJIM: quru işlətmə — heç nə yazılmır\n");
+  console.log(apply ? "MODE: writing (--apply)\n" : "MODE: dry run - nothing is written\n");
 
   const now = new Date();
   let written = 0;
@@ -100,7 +100,7 @@ async function main(): Promise<{ written: number; note: string; ratingsStale: nu
   for (const def of WIKIS) {
     const game = await prisma.game.findUnique({ where: { slug: def.slug } });
     if (!game) {
-      problems.push(`Oyun tapılmadı: ${def.slug}`);
+      problems.push(`Game not found: ${def.slug}`);
       continue;
     }
 
@@ -109,7 +109,7 @@ async function main(): Promise<{ written: number; note: string; ratingsStale: nu
     try {
       matches = await fetchMatchTicker(opts);
     } catch (e) {
-      problems.push(`${def.slug}: portal oxunmadı — ${(e as Error).message}`);
+      problems.push(`${def.slug}: could not read the portal - ${(e as Error).message}`);
       continue;
     }
     fetched.push({ slug: def.slug, gameId: game.id });
@@ -127,9 +127,9 @@ async function main(): Promise<{ written: number; note: string; ratingsStale: nu
     const dropped = matches.length - usable.length;
 
     console.log(
-      `${def.slug.padEnd(9)} ${usable.length} matç — ` +
-        `${counts.UPCOMING} qarşıda, ${counts.LIVE} canlı, ${counts.FINISHED} bitib` +
-        (dropped > 0 ? `  (${dropped} naməlum, buraxıldı)` : ""),
+      `${def.slug.padEnd(9)} ${usable.length} matches - ` +
+        `${counts.UPCOMING} upcoming, ${counts.LIVE} live, ${counts.FINISHED} finished` +
+        (dropped > 0 ? `  (${dropped} unrecognised, skipped)` : ""),
     );
 
     if (!apply) {
@@ -286,7 +286,7 @@ async function main(): Promise<{ written: number; note: string; ratingsStale: nu
 
     for (const m of removable) {
       console.log(
-        `${slug.padEnd(9)} tərk edilmiş: ${m.teamA.name} vs ${m.teamB.name} — ${m.scheduledAt.toISOString().slice(0, 16)}`,
+        `${slug.padEnd(9)} abandoned: ${m.teamA.name} vs ${m.teamB.name} - ${m.scheduledAt.toISOString().slice(0, 16)}`,
       );
     }
     if (apply && removable.length) {
@@ -296,22 +296,22 @@ async function main(): Promise<{ written: number; note: string; ratingsStale: nu
   }
 
   console.log(
-    `\n${written} matç` +
-      (apply ? ` yazıldı, ${newTeams} yeni komanda, ${newTournaments} yeni turnir.` : " tapıldı."),
+    `\n${written} matches` +
+      (apply ? ` written, ${newTeams} new teams, ${newTournaments} new tournaments.` : " found."),
   );
-  if (mapRows) console.log(`${mapRows} xəritə ${apply ? "yazıldı" : "tapıldı"}.`);
-  if (swept) console.log(`${swept} tərk edilmiş matç ${apply ? "silindi" : "silinəcək"}.`);
-  if (problems.length) console.log(`\nProblemlər:\n  ` + problems.join("\n  "));
-  if (!apply) console.log("\nTətbiq etmək üçün: --apply");
+  if (mapRows) console.log(`${mapRows} maps ${apply ? "written" : "found"}.`);
+  if (swept) console.log(`${swept} abandoned matches ${apply ? "deleted" : "would be deleted"}.`);
+  if (problems.length) console.log(`\nProblems:\n  ` + problems.join("\n  "));
+  if (!apply) console.log("\nTo apply: --apply");
 
   return {
     written,
     ratingsStale,
     note:
-      `${written} matç, ${mapRows} xəritə, ${swept} təmizləmə` +
+      `${written} matches, ${mapRows} maps, ${swept} swept` +
       // The count of matches whose result changed goes into the record too:
       // when and why the ratings were replayed is read back from this row.
-      `, ${ratingsStale} nəticə dəyişdi` +
+      `, ${ratingsStale} results changed` +
       (problems.length ? `; ${problems.length} problem` : ""),
   };
 }

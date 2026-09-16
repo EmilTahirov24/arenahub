@@ -24,17 +24,17 @@ async function main() {
   const email = arg("email")?.trim().toLowerCase();
   const password = arg("password");
   if (!email || !password) {
-    console.error("İşlədilməsi: --email <ünvan> --password <şifrə>");
+    console.error("Usage: --email <address> --password <password>");
     process.exit(1);
   }
   if (!email.includes("@")) {
-    console.error("E-poçt düzgün görünmür.");
+    console.error("That email does not look valid.");
     process.exit(1);
   }
 
   const url = process.env.DATABASE_URL;
   if (!url) {
-    console.error("DATABASE_URL yoxdur.");
+    console.error("DATABASE_URL is not set.");
     process.exit(1);
   }
   console.log(`Baza: ${new URL(url).hostname}`);
@@ -47,11 +47,11 @@ async function main() {
       orderBy: { createdAt: "asc" },
     });
     if (admins.length === 0) {
-      console.error("SUPER_ADMIN tapılmadı.");
+      console.error("No SUPER_ADMIN found.");
       process.exit(1);
     }
     if (admins.length > 1) {
-      console.log(`Diqqət: ${admins.length} SUPER_ADMIN var, birincisi dəyişdirilir.`);
+      console.log(`Note: there are ${admins.length} SUPER_ADMINs; the first one is being changed.`);
     }
     const target = admins[0];
 
@@ -59,7 +59,7 @@ async function main() {
     // throws something opaque. Saying so up front is clearer.
     const clash = await prisma.adminUser.findFirst({ where: { email, NOT: { id: target.id } } });
     if (clash) {
-      console.error(`Bu e-poçt başqa admin hesabındadır: ${email}`);
+      console.error(`That email belongs to another admin account: ${email}`);
       process.exit(1);
     }
 
@@ -67,11 +67,11 @@ async function main() {
       where: { id: target.id },
       data: { email, passwordHash: await bcrypt.hash(password, 10) },
     });
-    console.log(`Dəyişdi: ${target.email}  ->  ${email}`);
-    console.log("Şifrə yeniləndi.");
+    console.log(`Changed: ${target.email}  ->  ${email}`);
+    console.log("The password was updated.");
 
     if (password.length < 12) {
-      console.log(`\nXƏBƏRDARLIQ: şifrə ${password.length} simvoldur. Panel ictimai ünvandadır.`);
+      console.log(`\nWARNING: the password is ${password.length} characters. The panel is at a public address.`);
     }
   } finally {
     await prisma.$disconnect();

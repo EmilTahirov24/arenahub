@@ -25,7 +25,7 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const apply = process.argv.includes("--apply");
-  console.log(apply ? "REJIM: yazma (--apply)\n" : "REJIM: quru işlətmə — heç nə silinmir\n");
+  console.log(apply ? "MODE: writing (--apply)\n" : "MODE: dry run - nothing is deleted\n");
 
   const all = await prisma.tournament.findMany({
     include: {
@@ -51,10 +51,10 @@ async function main() {
     // distribution is small and moves easily, a match list does not.
     const [keep, ...drop] = [...group].sort((a, b) => b._count.matches - a._count.matches);
     console.log(`\n${keep.name}`);
-    console.log(`  saxlanılır: ${keep.slug}  ${keep._count.matches} matç, ${keep.prizes.length} mükafat`);
+    console.log(`  keeping:  ${keep.slug}  ${keep._count.matches} matches, ${keep.prizes.length} prizes`);
 
     for (const loser of drop) {
-      console.log(`  silinir:    ${loser.slug}  ${loser._count.matches} matç, ${loser.prizes.length} mükafat`);
+      console.log(`  deleting: ${loser.slug}  ${loser._count.matches} matches, ${loser.prizes.length} prizes`);
 
       const matches = await prisma.match.findMany({
         where: { tournamentId: loser.id },
@@ -62,14 +62,14 @@ async function main() {
       });
       const predicted = matches.filter((m) => m._count.predictions > 0);
       if (predicted.length) {
-        console.log(`  ! ${predicted.length} matçda proqnoz var — bu turnir toxunulmadan buraxılır`);
+        console.log(`  ! ${predicted.length} matches carry predictions - this tournament is left alone`);
         continue;
       }
 
       // Places the keeper is missing; an existing place is left as it is.
       const have = new Set(keep.prizes.map((p) => p.placeFrom));
       const moving = loser.prizes.filter((p) => !have.has(p.placeFrom));
-      if (moving.length) console.log(`  → ${moving.length} mükafat sətri köçürülür`);
+      if (moving.length) console.log(`  -> moving ${moving.length} prize rows`);
 
       backup.push({ tournament: loser, matches, movedPrizes: moving });
       if (!apply) continue;
@@ -103,7 +103,7 @@ async function main() {
   });
   const removable = undecided.filter((m) => m._count.predictions === 0);
   if (removable.length) {
-    console.log(`\n${removable.length} nəticəsiz "bitmiş" matç silinir:`);
+    console.log(`\ndeleting ${removable.length} "finished" matches with no result:`);
     for (const m of removable) console.log(`  ${m.slug}`);
     backup.push({ undecidedMatches: removable });
     if (apply) await prisma.match.deleteMany({ where: { id: { in: removable.map((m) => m.id) } } });
@@ -112,10 +112,10 @@ async function main() {
   if (backup.length) {
     const path = `scripts/.merge-backup-${new Date().toISOString().slice(0, 10)}.json`;
     writeFileSync(path, JSON.stringify(backup, null, 2));
-    console.log(`\nSilinən hər şey burada saxlanıldı: ${path}`);
+    console.log(`\nEverything deleted was saved here: ${path}`);
   }
 
-  console.log(apply ? `\n${merged} dublikat birləşdirildi.` : "\nTətbiq etmək üçün: --apply");
+  console.log(apply ? `\n${merged} duplicates merged.` : "\nTo apply: --apply");
 }
 
 main()

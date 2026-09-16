@@ -26,7 +26,7 @@ async function main() {
     orderBy: [{ scheduledAt: "asc" }, { id: "asc" }],
     select: { teamAId: true, teamBId: true, winnerId: true, tournament: { select: { tier: true } } },
   });
-  console.log(`${matches.length} bitmiş matç oxundu.`);
+  console.log(`${matches.length} finished matches read.`);
 
   const { rating, previous } = replayRatings(matches);
 
@@ -60,7 +60,7 @@ async function main() {
   for (let i = 0; i < updates.length; i += CHUNK) {
     await prisma.$transaction(updates.slice(i, i + CHUNK));
   }
-  console.log(`${updates.length} komandanın reytinqi yeniləndi.\n`);
+  console.log(`${updates.length} team ratings updated.\n`);
 
   const games = await prisma.game.findMany({ where: { isActive: true }, orderBy: { name: "asc" } });
   for (const game of games) {

@@ -60,7 +60,7 @@ async function freeSlug(nickname: string) {
     const candidate = i === 0 ? base : `${base}-${Math.random().toString(36).slice(2, 6)}`;
     if (!(await prisma.player.findUnique({ where: { slug: candidate }, select: { id: true } }))) return candidate;
   }
-  throw new Error(`Slug tapılmadı: ${nickname}`);
+  throw new Error(`Could not derive a slug: ${nickname}`);
 }
 
 /** Liquipedia sometimes writes partial dates like "2026-01-??". */
@@ -72,7 +72,7 @@ function parseJoinDate(raw: string | null) {
 
 async function main() {
   const apply = process.argv.includes("--apply");
-  console.log(apply ? "REJIM: yazma (--apply)\n" : "REJIM: quru işlətmə — heç nə yazılmır. Yazmaq üçün --apply\n");
+  console.log(apply ? "MODE: writing (--apply)\n" : "MODE: dry run - nothing is written. To write: --apply\n");
 
   const game = await prisma.game.findUniqueOrThrow({ where: { slug: "cs2" } });
   const teams = await prisma.team.findMany({
@@ -91,13 +91,13 @@ async function main() {
     const wikitext = await fetchWikitext(OPTS, title);
 
     if (!wikitext) {
-      notFound.push(`${team.name} (axtarılan səhifə: ${title})`);
+      notFound.push(`${team.name} (page looked for: ${title})`);
       continue;
     }
 
     const squad = parseActiveSquad(wikitext);
     if (squad.length === 0) {
-      unmatched.push(`${team.name} — səhifə var, aktiv tərkib tapılmadı`);
+      unmatched.push(`${team.name} - the page exists, no active roster found`);
       continue;
     }
 
@@ -113,7 +113,7 @@ async function main() {
 
       if (existing) {
         const changes: string[] = [];
-        if (country && existing.player.country !== country) changes.push(`ölkə ${existing.player.country ?? "—"}→${country}`);
+        if (country && existing.player.country !== country) changes.push(`country ${existing.player.country ?? "-"} -> ${country}`);
         if (firstName && existing.player.firstName !== firstName) changes.push("ad");
         if (member.role && existing.player.role !== member.role) changes.push(`rol→${member.role}`);
         if (changes.length === 0) {
@@ -191,10 +191,10 @@ async function main() {
     }
   }
 
-  console.log(`\n${updatedPlayers} oyunçu yenilənəcək, ${createdPlayers} oyunçu yaradılacaq.`);
-  if (notFound.length) console.log(`\nSəhifəsi tapılmayan (${notFound.length}):\n  ` + notFound.join("\n  "));
-  if (unmatched.length) console.log(`\nTərkibi oxunmayan (${unmatched.length}):\n  ` + unmatched.join("\n  "));
-  if (!apply) console.log("\nHeç nə yazılmadı. Tətbiq etmək üçün: npx tsx scripts/import-rosters.ts --apply");
+  console.log(`\n${updatedPlayers} players would be updated, ${createdPlayers} created.`);
+  if (notFound.length) console.log(`\nNo page found (${notFound.length}):\n  ` + notFound.join("\n  "));
+  if (unmatched.length) console.log(`\nRoster unreadable (${unmatched.length}):\n  ` + unmatched.join("\n  "));
+  if (!apply) console.log("\nNothing was written. To apply: npx tsx scripts/import-rosters.ts --apply");
 }
 
 main()

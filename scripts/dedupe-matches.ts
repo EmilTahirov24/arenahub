@@ -28,7 +28,7 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const apply = process.argv.includes("--apply");
-  console.log(apply ? "REJIM: yazma (--apply)\n" : "REJIM: quru işlətmə — heç nə silinmir\n");
+  console.log(apply ? "MODE: writing (--apply)\n" : "MODE: dry run - nothing is deleted\n");
 
   const backup: unknown[] = [];
   const doomed: string[] = [];
@@ -56,11 +56,11 @@ async function main() {
     const [keep, ...rest] = [...group].sort(
       (a, b) => b._count.maps + b._count.playerStats - (a._count.maps + a._count.playerStats),
     );
-    console.log(`${keep.teamA.name} vs ${keep.teamB.name} — ${group.length} nüsxə, ${rest.length} silinir`);
+    console.log(`${keep.teamA.name} vs ${keep.teamB.name} - ${group.length} copies, deleting ${rest.length}`);
 
     for (const dup of rest) {
       if (dup._count.predictions > 0) {
-        console.log(`  ! ${dup.slug} proqnoz daşıyır, toxunulmur`);
+        console.log(`  ! ${dup.slug} carries predictions, left alone`);
         continue;
       }
       backup.push(dup);
@@ -74,7 +74,7 @@ async function main() {
   });
   const staleRemovable = stale.filter((m) => m._count.predictions === 0 && !doomed.includes(m.id));
   if (staleRemovable.length) {
-    console.log(`\n${staleRemovable.length} keçmiş tarixli "qarşıdakı" matç silinir:`);
+    console.log(`\nDeleting ${staleRemovable.length} "upcoming" matches with a past date:`);
     for (const m of staleRemovable) {
       console.log(`  ${m.teamA.name} vs ${m.teamB.name} — ${m.scheduledAt.toISOString().slice(0, 16)}`);
       backup.push(m);
@@ -83,22 +83,22 @@ async function main() {
   }
 
   if (!doomed.length) {
-    console.log("\nTəmizlənəcək sətir yoxdur.");
+    console.log("\nThere are no rows to clean up.");
     return;
   }
 
   if (backup.length) {
     const path = `scripts/.match-cleanup-${new Date().toISOString().slice(0, 10)}.json`;
     writeFileSync(path, JSON.stringify(backup, null, 2));
-    console.log(`\nSilinənlər burada saxlanıldı: ${path}`);
+    console.log(`\nWhat was deleted is saved here: ${path}`);
   }
 
   if (apply) {
     // Maps cascade with the match; nothing else references it.
     const { count } = await prisma.match.deleteMany({ where: { id: { in: doomed } } });
-    console.log(`${count} matç silindi.`);
+    console.log(`${count} matches deleted.`);
   } else {
-    console.log(`\n${doomed.length} matç silinəcək. Tətbiq etmək üçün: --apply`);
+    console.log(`\n${doomed.length} matches would be deleted. To apply: --apply`);
   }
 }
 
