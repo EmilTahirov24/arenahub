@@ -116,7 +116,7 @@ Numbers here were measured, not estimated.
 **Code**: ~30,500 lines of first-party TypeScript, SQL, schema and CI
 definitions. 86% TypeScript.
 
-**Verification**: 79 unit tests (under a second) · 157 end-to-end checks in real
+**Verification**: 79 unit tests (under a second) · 167 end-to-end checks in real
 Chromium across 6 suites · 0 axe-core contrast violations in both themes · 0
 dependency vulnerabilities · `docker compose up` executed and the served page
 checked on every push.

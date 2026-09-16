@@ -103,7 +103,7 @@ bracket is drawn at all ([components/events/Bracket.tsx](components/events/Brack
 | | |
 |---|---|
 | **Unit tests** | 79 checks in Vitest, under a second — Elo maths, round vocabulary, prize ranges, timezone handling, WCAG contrast, URL safety |
-| **End-to-end** | 157 checks in real Chromium via Playwright, across 6 suites |
+| **End-to-end** | 167 checks in real Chromium via Playwright, across 6 suites |
 | **Accessibility** | axe-core — 0 contrast violations in both themes |
 | **Dependencies** | `npm audit` — 0 vulnerabilities |
 
